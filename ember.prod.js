@@ -13496,31 +13496,6 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     }
   };
 
-  function injectedPropertyAssertion() {}
-
-  /**
-    Returns a hash of property names and container names that injected
-    properties will lookup on the container lazily.
-  
-    @method _lazyInjections
-    @return {Object} Hash of all lazy injected property keys to container names
-    @private
-  */
-  ClassMixinProps._lazyInjections = function () {
-    var injections = {};
-    var proto = this.proto();
-    var key, desc;
-
-    for (key in proto) {
-      desc = proto[key];
-      if (desc instanceof _emberMetalInjected_property.default) {
-        injections[key] = desc.type + ':' + (desc.name || key);
-      }
-    }
-
-    return injections;
-  };
-
   var ClassMixin = _emberMetalMixin.Mixin.create(ClassMixinProps);
 
   ClassMixin.ownerConstructor = CoreObject;
@@ -14998,8 +14973,6 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     this.owner = options && options.owner ? options.owner : null;
     this.cache = _emberMetalDictionary.default(options && options.cache ? options.cache : null);
     this.factoryCache = _emberMetalDictionary.default(options && options.factoryCache ? options.factoryCache : null);
-    this.validationCache = _emberMetalDictionary.default(options && options.validationCache ? options.validationCache : null);
-
     this._fakeContainerToInject = _emberRuntimeMixinsContainer_proxy.buildFakeContainerWithDeprecations(this);
     this[CONTAINER_OVERRIDE] = undefined;
   }
@@ -15033,13 +15006,6 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
      @type InheritingDict
      */
     factoryCache: null,
-
-    /**
-     @private
-     @property validationCache
-     @type InheritingDict
-     */
-    validationCache: null,
 
     /**
      Given a fullName return a corresponding instance.
@@ -15289,7 +15255,6 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
   function instantiate(container, fullName) {
     var factory = factoryFor(container, fullName);
-    var lazyInjections, validationCache;
 
     if (container.registry.getOption(fullName, 'instantiate') === false) {
       return factory;
@@ -15299,18 +15264,6 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       if (typeof factory.create !== 'function') {
         throw new Error('Failed to create an instance of \'' + fullName + '\'. ' + 'Most likely an improperly defined class or an invalid module export.');
       }
-
-      validationCache = container.validationCache;
-
-      // Ensure that all lazy injections are valid at instantiation time
-      if (!validationCache[fullName] && typeof factory._lazyInjections === 'function') {
-        lazyInjections = factory._lazyInjections();
-        lazyInjections = container.registry.normalizeInjectionsHash(lazyInjections);
-
-        container.registry.validateInjections(lazyInjections);
-      }
-
-      validationCache[fullName] = true;
 
       var obj = undefined;
 

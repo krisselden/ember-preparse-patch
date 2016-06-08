@@ -1483,6 +1483,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   var HAS_SUPER_PATTERN = /\.(_super|call\(this|apply\(this)/;
+  var fnToString = Function.prototype.toString;
 
   var checkHasSuper = (function () {
     var sourceAvailable = (function () {
@@ -1491,7 +1492,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     if (sourceAvailable) {
       return function checkHasSuper(func) {
-        return HAS_SUPER_PATTERN.test(func.toString());
+        return HAS_SUPER_PATTERN.test(fnToString.call(func));
       };
     }
 
@@ -1538,32 +1539,8 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   function _wrap(func, superFunc) {
     function superWrapper() {
       var orig = this._super;
-      var length = arguments.length;
-      var ret = undefined;
       this._super = superFunc;
-      switch (length) {
-        case 0:
-          ret = func.call(this);break;
-        case 1:
-          ret = func.call(this, arguments[0]);break;
-        case 2:
-          ret = func.call(this, arguments[0], arguments[1]);break;
-        case 3:
-          ret = func.call(this, arguments[0], arguments[1], arguments[2]);break;
-        case 4:
-          ret = func.call(this, arguments[0], arguments[1], arguments[2], arguments[3]);break;
-        case 5:
-          ret = func.call(this, arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]);break;
-        default:
-          // v8 bug potentially incorrectly deopts this function: https://code.google.com/p/v8/issues/detail?id=3709
-          // we may want to keep this around till this ages out on mobile
-          var args = new Array(length);
-          for (var x = 0; x < length; x++) {
-            args[x] = arguments[x];
-          }
-          ret = func.apply(this, args);
-          break;
-      }
+      var ret = func.apply(this, arguments);
       this._super = orig;
       return ret;
     }

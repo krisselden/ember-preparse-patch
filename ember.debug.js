@@ -5,11 +5,11 @@
  *            Portions Copyright 2008-2011 Apple Inc. All rights reserved.
  * @license   Licensed under MIT license
  *            See https://raw.github.com/emberjs/ember.js/master/LICENSE
- * @version   2.9.0-canary+6ebf1b6f
+ * @version   2.9.0-alpha+6449018e
  */
 if (typeof Ember === 'undefined') { Em = Ember = {}; }
 Em.__global = this
-Em._eager = ["ember-metal/debug","ember-metal/empty_object","ember-metal/cache","ember-metal/path_cache","ember-metal/property_get","ember-environment/global","ember-environment/utils","ember-environment/index","ember-metal/assign","ember/features","ember-metal/features","ember-metal/utils","ember-metal/meta_listeners","ember-metal/symbol","ember-metal/meta","ember-metal/events","require","ember-metal/tags","ember-metal/observer_set","ember-metal/transaction","ember-metal/property_events","ember-metal/error","ember-metal/property_set","ember-metal/properties","ember-metal/watch_key","ember-metal/watch_path","ember-metal/chains","ember-metal/expand_properties","ember-metal/watching","ember-metal/dependent_keys","ember-metal/computed","ember-console/index","ember-metal/testing","ember-metal/error_handler","backburner/utils","backburner/platform","backburner/binary-search","backburner/queue","backburner/deferred-action-queues","backburner","ember-metal/run_loop","ember-metal/observer","ember-metal/binding","ember-metal/mixin","ember-runtime/mixins/action_handler","ember-metal/alias","container/owner","ember-metal/injected_property","ember-runtime/inject","ember-runtime/system/core_object","ember-metal/get_properties","ember-metal/set_properties","ember-metal/is_none","ember-runtime/mixins/observable","ember-runtime/system/object","ember-runtime/mixins/evented","ember-metal/core","ember-runtime/mixins/comparable","ember-runtime/compare","ember-runtime/mixins/enumerable","ember-runtime/system/each_proxy","ember-runtime/mixins/array","ember-runtime/utils","ember-views/compat/attrs-proxy","ember-views/views/states/default","ember-views/views/states/pre_render","ember-views/system/jquery","ember-metal/instrumentation","ember-views/views/states/has_element","ember-views/views/states/in_dom","ember-views/views/states/destroying","ember-views/views/states","ember-views/views/core_view","ember-glimmer/ember-views/class-names-support","ember-views/mixins/child_views_support","ember-views/mixins/view_state_support","ember-views/mixins/instrumentation_support","ember-views/mixins/aria_role_support","ember-views/mixins/view_support","ember-views/mixins/action_support","ember-runtime/mixins/target_action_support","glimmer-reference/lib/reference","glimmer-reference/lib/validators","glimmer-reference/lib/const","glimmer-reference/lib/utils","glimmer-util/lib/object-utils","glimmer-util/lib/namespaces","glimmer-util/lib/platform-utils","glimmer-util/lib/assert","glimmer-util/lib/array-utils","glimmer-util/lib/void-tag-names","glimmer-util/lib/logger","glimmer-util/lib/guid","glimmer-util/lib/collections","glimmer-util/lib/list-utils","glimmer-util/index","glimmer-reference/lib/iterable","glimmer-reference/index","glimmer-runtime/lib/syntax","glimmer-runtime/lib/bounds","glimmer-runtime/lib/opcodes","glimmer-runtime/lib/references","glimmer-runtime/lib/compiled/expressions","glimmer-runtime/lib/compiled/expressions/value","glimmer-runtime/lib/compiled/opcodes/dom","glimmer-runtime/lib/builder","glimmer-runtime/lib/upsert","glimmer-runtime/lib/dom/sanitized-values","glimmer-runtime/lib/dom/props","glimmer-runtime/lib/compat/inner-html-fix","glimmer-runtime/lib/compat/svg-inner-html-fix","glimmer-runtime/lib/compat/text-node-merging-fix","glimmer-runtime/lib/dom/helper","glimmer-runtime/lib/component/interfaces","glimmer-runtime/lib/compiled/expressions/positional-args","glimmer-runtime/lib/compiled/expressions/named-args","glimmer-runtime/lib/compiled/expressions/args","glimmer-runtime/lib/vm/update","glimmer-runtime/lib/utils","glimmer-wire-format/index","glimmer-runtime/lib/syntax/statements","glimmer-runtime/lib/symbol-table","glimmer-runtime/lib/compiled/blocks","glimmer-runtime/lib/scanner","glimmer-runtime/lib/compiled/opcodes/vm","glimmer-runtime/lib/compiled/opcodes/component","glimmer-runtime/lib/syntax/expressions","glimmer-runtime/lib/compiled/expressions/ref","glimmer-runtime/lib/compiled/expressions/has-block","glimmer-runtime/lib/compiled/expressions/has-block-params","glimmer-runtime/lib/compiled/expressions/helper","glimmer-runtime/lib/compiled/expressions/concat","glimmer-runtime/lib/syntax/core","glimmer-runtime/lib/compiled/expressions/function","glimmer-runtime/lib/compiled/opcodes/lists","glimmer-runtime/lib/compiled/opcodes/builder","glimmer-runtime/lib/compiler","glimmer-runtime/lib/compiled/opcodes/content","glimmer-runtime/lib/dom/change-lists","glimmer-runtime/lib/syntax/builtins/if","glimmer-runtime/lib/syntax/builtins/unless","glimmer-runtime/lib/syntax/builtins/with","glimmer-runtime/lib/syntax/builtins/each","glimmer-runtime/lib/syntax/builtins/partial","glimmer-runtime/lib/environment","glimmer-runtime/lib/vm/render-result","glimmer-runtime/lib/vm/frame","glimmer-runtime/lib/vm/append","glimmer-runtime/lib/vm","glimmer-runtime/lib/template","glimmer-runtime/lib/opcode-builder","glimmer-runtime/lib/partial","glimmer-runtime/lib/modifier/interfaces","glimmer-runtime/index","ember-glimmer/utils/to-bool","ember-glimmer/helper","ember-metal/is_empty","ember-runtime/computed/computed_macros","ember-runtime/mixins/-proxy","ember-glimmer/utils/references","ember-glimmer/component","ember-glimmer/components/checkbox","ember-views/system/utils","ember-runtime/system/service","ember-runtime/mixins/controller_content_model_alias_deprecation","ember-runtime/mixins/controller","ember-views/system/lookup_partial","ember-runtime/string_registry","ember-runtime/system/string","ember-glimmer/utils/string","ember-glimmer/utils/bindings","ember-glimmer/utils/process-args","ember-metal/dictionary","ember-runtime/mixins/container_proxy","container/container","container/registry","ember-glimmer/syntax/curly-component","ember-glimmer/helpers/component","ember-glimmer/syntax/dynamic-component","ember-routing/system/generate_controller","ember-glimmer/syntax/outlet","ember-glimmer/syntax/render","ember-views/utils/lookup-component","ember-glimmer/helpers/each-in","ember-glimmer/utils/iterable","ember-glimmer/helpers/if-unless","ember-glimmer/helpers/action","ember-glimmer/helpers/concat","ember-glimmer/helpers/get","ember-glimmer/helpers/hash","ember-glimmer/helpers/loc","ember-glimmer/helpers/log","ember-glimmer/helpers/mut","ember-glimmer/helpers/readonly","ember-glimmer/helpers/unbound","ember-glimmer/helpers/-class","ember-glimmer/helpers/-input-type","ember-routing/system/query_params","ember-glimmer/helpers/query-param","ember-glimmer/helpers/-normalize-class","ember-glimmer/helpers/-html-safe","ember-views/system/action_manager","ember-glimmer/modifiers/action","ember-glimmer/environment","ember-glimmer/template","ember-glimmer/index","ember-glimmer/templates/link-to","ember-glimmer/components/link-to","ember-views/mixins/text_support","ember-glimmer/components/text_area","ember-glimmer/components/text_field","ember-views/compat/fallback-view-registry","ember-glimmer/renderer","ember-glimmer/make-bound-helper","ember-glimmer/setup-registry","ember-glimmer/views/outlet","ember-glimmer/templates/outlet","ember-glimmer/templates/component","ember-glimmer/dom","ember/version","ember-metal/merge","ember-metal/weak_map","ember-metal/map","ember-metal/libraries","ember-metal/is_blank","ember-metal/is_present","ember-debug/handlers","ember-debug/deprecate","ember-debug/warn","ember-debug/index","ember-metal/index","ember-runtime/is-equal","ember-runtime/mixins/freezable","ember-runtime/mixins/copyable","ember-runtime/copy","ember-runtime/system/namespace","ember-runtime/system/container","ember-runtime/mixins/mutable_enumerable","ember-runtime/mixins/mutable_array","ember-runtime/system/array_proxy","ember-runtime/system/object_proxy","ember-metal/replace","ember-runtime/system/native_array","ember-runtime/system/lazy_load","ember-runtime/mixins/promise_proxy","ember-runtime/computed/reduce_computed_macros","ember-runtime/controllers/controller","rsvp/events","rsvp/config","rsvp/utils","rsvp/instrument","rsvp/-internal","rsvp/enumerator","rsvp/promise/all","rsvp/promise/race","rsvp/promise/resolve","rsvp/promise/reject","rsvp/promise","rsvp/node","rsvp/all","rsvp/all-settled","rsvp/race","rsvp/promise-hash","rsvp/hash","rsvp/hash-settled","rsvp/rethrow","rsvp/defer","rsvp/map","rsvp/resolve","rsvp/reject","rsvp/filter","rsvp/asap","rsvp","ember-runtime/ext/rsvp","ember-runtime/ext/string","ember-runtime/ext/function","ember-runtime/mixins/registry_proxy","ember-runtime/index","ember-views/system/ext","ember-views/system/event_dispatcher","ember-views/mixins/view_target_action_support","ember-views/component_lookup","ember-views/index","ember-routing/ext/run_loop","ember-routing/ext/controller","ember-routing/location/util","ember-routing/location/api","ember-routing/location/none_location","ember-routing/location/hash_location","ember-routing/location/history_location","ember-routing/location/auto_location","ember-routing/system/controller_for","ember-routing/system/dsl","ember-routing/utils","ember-routing/system/route","ember-routing/system/router_state","route-recognizer/dsl","route-recognizer/normalizer","route-recognizer","router/utils","router/handler-info","router/transition-state","router/transition","router/transition-intent","router/handler-info/resolved-handler-info","router/handler-info/unresolved-handler-info-by-object","router/handler-info/unresolved-handler-info-by-param","router/handler-info/factory","router/transition-intent/named-transition-intent","router/unrecognized-url-error","router/transition-intent/url-transition-intent","router/router","router","ember-routing/system/router","ember-routing/index","ember-application/utils/validate-type","ember-templates/template_registry","ember-application/system/resolver","ember-routing/system/cache","ember-application/system/engine-parent","ember-application/system/engine-instance","ember-application/system/application-instance","vertex","visit","dag-map","ember-routing/services/routing","ember-extension-support/container_debug_adapter","ember-application/system/engine","ember-application/system/application","ember-application/initializers/dom-templates","ember-application/index","ember-extension-support/data_adapter","ember-extension-support/index","ember-templates/renderer","ember-templates/component","ember-templates/helper","ember-templates/components/checkbox","ember-templates/components/text_field","ember-templates/components/text_area","ember-templates/components/link-to","ember-templates/string","ember-templates/template","ember-templates/make-bound-helper","ember-templates/compat","ember-templates/index","ember/index"];
+Em._eager = ["glimmer-reference/lib/reference","glimmer-reference/lib/validators","glimmer-reference/lib/const","glimmer-reference/lib/utils","glimmer-util/lib/object-utils","glimmer-util/lib/namespaces","glimmer-util/lib/platform-utils","glimmer-util/lib/assert","glimmer-util/lib/array-utils","glimmer-util/lib/void-tag-names","glimmer-util/lib/logger","glimmer-util/lib/guid","glimmer-util/lib/collections","glimmer-util/lib/list-utils","glimmer-util/index","glimmer-reference/lib/iterable","glimmer-reference/index","ember-metal/debug","ember-metal/empty_object","ember-metal/cache","ember-metal/path_cache","ember-metal/property_get","ember-environment/global","ember-environment/utils","ember-environment/index","ember-metal/assign","ember/features","ember-metal/features","ember-metal/utils","ember-metal/meta_listeners","ember-metal/symbol","ember-metal/meta","ember-metal/events","require","ember-metal/tags","ember-metal/observer_set","ember-metal/transaction","ember-metal/property_events","ember-metal/error","ember-metal/property_set","ember-metal/properties","ember-metal/watch_key","ember-metal/watch_path","ember-metal/chains","ember-metal/expand_properties","ember-metal/watching","ember-metal/dependent_keys","ember-metal/computed","ember-console/index","ember-metal/testing","ember-metal/error_handler","backburner/utils","backburner/platform","backburner/binary-search","backburner/queue","backburner/deferred-action-queues","backburner","ember-metal/run_loop","ember-metal/observer","ember-metal/binding","ember-metal/mixin","ember-runtime/mixins/action_handler","ember-metal/alias","container/owner","ember-metal/injected_property","ember-runtime/inject","ember-runtime/system/core_object","ember-metal/get_properties","ember-metal/set_properties","ember-metal/is_none","ember-runtime/mixins/observable","ember-runtime/system/object","ember-runtime/mixins/evented","ember-metal/core","ember-runtime/mixins/comparable","ember-runtime/compare","ember-runtime/mixins/enumerable","ember-runtime/system/each_proxy","ember-runtime/mixins/array","ember-runtime/utils","ember-views/compat/attrs-proxy","ember-views/views/states/default","ember-views/views/states/pre_render","ember-views/system/jquery","ember-metal/instrumentation","ember-views/views/states/has_element","ember-views/views/states/in_dom","ember-views/views/states/destroying","ember-views/views/states","ember-views/views/core_view","ember-glimmer/ember-views/class-names-support","ember-views/mixins/child_views_support","ember-views/mixins/view_state_support","ember-views/mixins/instrumentation_support","ember-views/mixins/aria_role_support","ember-views/system/utils","ember-views/mixins/view_support","ember-views/mixins/action_support","ember-runtime/mixins/target_action_support","glimmer-runtime/lib/syntax","glimmer-runtime/lib/bounds","glimmer-runtime/lib/opcodes","glimmer-runtime/lib/references","glimmer-runtime/lib/compiled/expressions","glimmer-runtime/lib/compiled/expressions/value","glimmer-runtime/lib/compiled/opcodes/dom","glimmer-runtime/lib/builder","glimmer-runtime/lib/upsert","glimmer-runtime/lib/dom/sanitized-values","glimmer-runtime/lib/dom/props","glimmer-runtime/lib/compat/inner-html-fix","glimmer-runtime/lib/compat/svg-inner-html-fix","glimmer-runtime/lib/compat/text-node-merging-fix","glimmer-runtime/lib/dom/helper","glimmer-runtime/lib/component/interfaces","glimmer-runtime/lib/compiled/expressions/positional-args","glimmer-runtime/lib/compiled/expressions/named-args","glimmer-runtime/lib/compiled/expressions/args","glimmer-runtime/lib/vm/update","glimmer-runtime/lib/utils","glimmer-wire-format/index","glimmer-runtime/lib/syntax/statements","glimmer-runtime/lib/symbol-table","glimmer-runtime/lib/compiled/blocks","glimmer-runtime/lib/scanner","glimmer-runtime/lib/compiled/opcodes/vm","glimmer-runtime/lib/compiled/opcodes/component","glimmer-runtime/lib/syntax/expressions","glimmer-runtime/lib/compiled/expressions/ref","glimmer-runtime/lib/compiled/expressions/has-block","glimmer-runtime/lib/compiled/expressions/has-block-params","glimmer-runtime/lib/compiled/expressions/helper","glimmer-runtime/lib/compiled/expressions/concat","glimmer-runtime/lib/syntax/core","glimmer-runtime/lib/compiled/expressions/function","glimmer-runtime/lib/compiled/opcodes/lists","glimmer-runtime/lib/compiled/opcodes/builder","glimmer-runtime/lib/compiler","glimmer-runtime/lib/compiled/opcodes/content","glimmer-runtime/lib/dom/change-lists","glimmer-runtime/lib/syntax/builtins/if","glimmer-runtime/lib/syntax/builtins/unless","glimmer-runtime/lib/syntax/builtins/with","glimmer-runtime/lib/syntax/builtins/each","glimmer-runtime/lib/syntax/builtins/partial","glimmer-runtime/lib/environment","glimmer-runtime/lib/vm/render-result","glimmer-runtime/lib/vm/frame","glimmer-runtime/lib/vm/append","glimmer-runtime/lib/vm","glimmer-runtime/lib/template","glimmer-runtime/lib/opcode-builder","glimmer-runtime/lib/partial","glimmer-runtime/lib/modifier/interfaces","glimmer-runtime/index","ember-glimmer/utils/to-bool","ember-glimmer/helper","ember-metal/is_empty","ember-runtime/computed/computed_macros","ember-runtime/mixins/-proxy","ember-glimmer/utils/references","ember-glimmer/component","ember-glimmer/components/checkbox","ember-runtime/system/service","ember-runtime/mixins/controller_content_model_alias_deprecation","ember-runtime/mixins/controller","ember-views/system/lookup_partial","ember-runtime/string_registry","ember-runtime/system/string","ember-glimmer/utils/string","ember-glimmer/utils/bindings","ember-glimmer/utils/process-args","ember-metal/dictionary","ember-runtime/mixins/container_proxy","container/container","container/registry","ember-glimmer/syntax/curly-component","ember-glimmer/helpers/component","ember-glimmer/syntax/dynamic-component","ember-routing/system/generate_controller","ember-glimmer/syntax/outlet","ember-glimmer/syntax/render","ember-views/utils/lookup-component","ember-glimmer/helpers/each-in","ember-glimmer/utils/iterable","ember-glimmer/helpers/if-unless","ember-glimmer/helpers/action","ember-glimmer/helpers/concat","ember-glimmer/helpers/get","ember-glimmer/helpers/hash","ember-glimmer/helpers/loc","ember-glimmer/helpers/log","ember-glimmer/helpers/mut","ember-glimmer/helpers/readonly","ember-glimmer/helpers/unbound","ember-glimmer/helpers/-class","ember-glimmer/helpers/-input-type","ember-routing/system/query_params","ember-glimmer/helpers/query-param","ember-glimmer/helpers/-normalize-class","ember-glimmer/helpers/-html-safe","ember-views/system/action_manager","ember-glimmer/modifiers/action","ember-glimmer/environment","ember-glimmer/template","ember-glimmer/index","ember-glimmer/templates/link-to","ember-glimmer/components/link-to","ember-views/mixins/text_support","ember-glimmer/components/text_area","ember-glimmer/components/text_field","ember-views/compat/fallback-view-registry","ember-glimmer/renderer","ember-glimmer/make-bound-helper","ember-glimmer/setup-registry","ember-glimmer/views/outlet","ember-glimmer/templates/outlet","ember-glimmer/templates/component","ember-glimmer/dom","ember/version","ember-metal/merge","ember-metal/weak_map","ember-metal/map","ember-metal/libraries","ember-metal/is_blank","ember-metal/is_present","ember-debug/handlers","ember-debug/deprecate","ember-debug/warn","ember-debug/index","ember-metal/index","ember-runtime/is-equal","ember-runtime/mixins/freezable","ember-runtime/mixins/copyable","ember-runtime/copy","ember-runtime/system/namespace","ember-runtime/system/container","ember-runtime/mixins/mutable_enumerable","ember-runtime/mixins/mutable_array","ember-runtime/system/array_proxy","ember-runtime/system/object_proxy","ember-metal/replace","ember-runtime/system/native_array","ember-runtime/system/lazy_load","ember-runtime/mixins/promise_proxy","ember-runtime/computed/reduce_computed_macros","ember-runtime/controllers/controller","rsvp/events","rsvp/config","rsvp/utils","rsvp/instrument","rsvp/-internal","rsvp/enumerator","rsvp/promise/all","rsvp/promise/race","rsvp/promise/resolve","rsvp/promise/reject","rsvp/promise","rsvp/node","rsvp/all","rsvp/all-settled","rsvp/race","rsvp/promise-hash","rsvp/hash","rsvp/hash-settled","rsvp/rethrow","rsvp/defer","rsvp/map","rsvp/resolve","rsvp/reject","rsvp/filter","rsvp/asap","rsvp","ember-runtime/ext/rsvp","ember-runtime/ext/string","ember-runtime/ext/function","ember-runtime/mixins/registry_proxy","ember-runtime/index","ember-views/system/ext","ember-views/system/event_dispatcher","ember-views/mixins/view_target_action_support","ember-views/component_lookup","ember-views/index","ember-routing/ext/run_loop","ember-routing/ext/controller","ember-routing/location/util","ember-routing/location/api","ember-routing/location/none_location","ember-routing/location/hash_location","ember-routing/location/history_location","ember-routing/location/auto_location","ember-routing/system/controller_for","ember-routing/system/dsl","ember-routing/utils","ember-routing/system/route","ember-routing/system/router_state","route-recognizer/dsl","route-recognizer/normalizer","route-recognizer","router/utils","router/handler-info","router/transition-state","router/transition","router/transition-intent","router/handler-info/resolved-handler-info","router/handler-info/unresolved-handler-info-by-object","router/handler-info/unresolved-handler-info-by-param","router/handler-info/factory","router/transition-intent/named-transition-intent","router/unrecognized-url-error","router/transition-intent/url-transition-intent","router/router","router","ember-routing/system/router","ember-routing/index","ember-application/utils/validate-type","ember-templates/template_registry","ember-application/system/resolver","ember-routing/system/cache","ember-application/system/engine-parent","ember-application/system/engine-instance","ember-application/system/application-instance","vertex","visit","dag-map","ember-routing/services/routing","ember-extension-support/container_debug_adapter","ember-application/system/engine","ember-application/system/application","ember-application/initializers/dom-templates","ember-application/index","ember-extension-support/data_adapter","ember-extension-support/index","ember-templates/renderer","ember-templates/component","ember-templates/helper","ember-templates/components/checkbox","ember-templates/components/text_field","ember-templates/components/text_area","ember-templates/components/link-to","ember-templates/string","ember-templates/template","ember-templates/make-bound-helper","ember-templates/compat","ember-templates/index","ember/index"];
 (function() {
   'use strict';
   var seen = {};
@@ -35,6 +35,9 @@ Em._eager = ["ember-metal/debug","ember-metal/empty_object","ember-metal/cache",
       loader._define(name, deps, callback);
     },
     _define: function define(name, deps, callback) {
+      if (this.registry[name]) {
+        return;
+      }
       this.registry[name] = {
         deps: deps,
         callback: callback
@@ -43,28 +46,32 @@ Em._eager = ["ember-metal/debug","ember-metal/empty_object","ember-metal/cache",
     require: function (name) {
       return loader._require(name, undefined);
     },
-    _require: function require(name, referrerName) {
-      var exports = this.seen[name];
+    _require: function require(_name, referrerName) {
+      var exports = this.seen[_name];
       if (exports !== undefined) {
         return exports;
       }
 
-      exports = this.seen[name] = { default: undefined };
-
-      var mod = this.registry[name];
-
+      var name = _name;
+      var mod = this.registry[_name];
       if (!mod) {
-        name = name + '/index';
+        name = _name + '/index';
+        exports = this.seen[name];
+        if (exports !== undefined) {
+          return exports;
+        }
         mod = registry[name];
       }
 
       if (mod === undefined) {
         if (referrerName) {
-          throw new Error('Could not find module ' + name + ' required by: ' + referrerName);
+          throw new Error('Could not find module ' + _name + ' required by: ' + referrerName);
         } else {
-          throw new Error('Could not find module ' + name);
+          throw new Error('Could not find module ' + _name);
         }
       }
+
+      this.seen[name] = exports = { default: undefined };
 
       var deps = mod.deps;
       var reified = new Array(deps.length);
@@ -86,7 +93,8 @@ Em._eager = ["ember-metal/debug","ember-metal/empty_object","ember-metal/cache",
 
   loader.require['default'] = loader.require;
   loader.require.has = function(name) {
-    return !!loader.registry[name];
+    var registry = loader.registry;
+    return !!registry[name] || !!registry[name + '/index'];
   };
 
   Em.__loader = loader;
@@ -1171,7 +1179,7 @@ Em.__loader.define("ember-testing/support", ["exports","ember-metal/debug","embe
     $('<input type="checkbox">').css({ position: 'absolute', left: '-1000px', top: '-1000px' }).appendTo('body').on('click', handler).trigger('click').remove();
   }
 
-  if (_emberEnvironment.environment.hasDOM) {
+  if (_emberEnvironment.environment.hasDOM && typeof $ === 'function') {
     $(function () {
       /*
         Determine whether a checkbox checked using jQuery's "click" method will have
@@ -2663,6 +2671,1447 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.default = platform;
 });
 (function (exports) {
+    "use strict";
+
+    exports.combineTagged = combineTagged;
+    exports.combineSlice = combineSlice;
+    exports.combine = combine;
+    exports.map = map;
+    exports.isModified = isModified;
+
+    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+
+    function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
+
+    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+    var CONSTANT = 0;
+    exports.CONSTANT = CONSTANT;
+    var INITIAL = 1;
+    exports.INITIAL = INITIAL;
+    var VOLATILE = NaN;
+    exports.VOLATILE = VOLATILE;
+
+    var RevisionTag = (function () {
+        function RevisionTag() {
+            _classCallCheck(this, RevisionTag);
+        }
+
+        RevisionTag.prototype.validate = function validate(snapshot) {
+            return this.value() === snapshot;
+        };
+
+        return RevisionTag;
+    })();
+
+    exports.RevisionTag = RevisionTag;
+
+    var $REVISION = INITIAL;
+
+    var DirtyableTag = (function (_RevisionTag) {
+        _inherits(DirtyableTag, _RevisionTag);
+
+        function DirtyableTag() {
+            var revision = arguments.length <= 0 || arguments[0] === undefined ? $REVISION : arguments[0];
+
+            _classCallCheck(this, DirtyableTag);
+
+            _RevisionTag.call(this);
+            this.revision = revision;
+        }
+
+        DirtyableTag.prototype.value = function value() {
+            return this.revision;
+        };
+
+        DirtyableTag.prototype.dirty = function dirty() {
+            this.revision = ++$REVISION;
+        };
+
+        return DirtyableTag;
+    })(RevisionTag);
+
+    exports.DirtyableTag = DirtyableTag;
+
+    function combineTagged(tagged) {
+        var optimized = [];
+        for (var i = 0, l = tagged.length; i < l; i++) {
+            var tag = tagged[i].tag;
+            if (tag === VOLATILE_TAG) return VOLATILE_TAG;
+            if (tag === CONSTANT_TAG) continue;
+            optimized.push(tag);
+        }
+        return _combine(optimized);
+    }
+
+    function combineSlice(slice) {
+        var optimized = [];
+        var node = slice.head();
+        while (node !== null) {
+            var tag = node.tag;
+            if (tag === VOLATILE_TAG) return VOLATILE_TAG;
+            if (tag !== CONSTANT_TAG) optimized.push(tag);
+            node = slice.nextNode(node);
+        }
+        return _combine(optimized);
+    }
+
+    function combine(tags) {
+        var optimized = [];
+        for (var i = 0, l = tags.length; i < l; i++) {
+            var tag = tags[i];
+            if (tag === VOLATILE_TAG) return VOLATILE_TAG;
+            if (tag === CONSTANT_TAG) continue;
+            optimized.push(tag);
+        }
+        return _combine(optimized);
+    }
+
+    function _combine(tags) {
+        switch (tags.length) {
+            case 0:
+                return CONSTANT_TAG;
+            case 1:
+                return tags[0];
+            case 2:
+                return new TagsPair(tags[0], tags[1]);
+            default:
+                return new TagsCombinator(tags);
+        }
+        ;
+    }
+
+    var CachedTag = (function (_RevisionTag2) {
+        _inherits(CachedTag, _RevisionTag2);
+
+        function CachedTag() {
+            _classCallCheck(this, CachedTag);
+
+            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+                args[_key] = arguments[_key];
+            }
+
+            _RevisionTag2.call.apply(_RevisionTag2, [this].concat(args));
+            this.lastChecked = null;
+            this.lastValue = null;
+        }
+
+        CachedTag.prototype.value = function value() {
+            var lastChecked = this.lastChecked;
+            var lastValue = this.lastValue;
+
+            if (lastChecked !== $REVISION) {
+                this.lastChecked = $REVISION;
+                this.lastValue = lastValue = this.compute();
+            }
+            return this.lastValue;
+        };
+
+        CachedTag.prototype.invalidate = function invalidate() {
+            this.lastChecked = null;
+        };
+
+        return CachedTag;
+    })(RevisionTag);
+
+    exports.CachedTag = CachedTag;
+
+    var TagsPair = (function (_CachedTag) {
+        _inherits(TagsPair, _CachedTag);
+
+        function TagsPair(first, second) {
+            _classCallCheck(this, TagsPair);
+
+            _CachedTag.call(this);
+            this.first = first;
+            this.second = second;
+        }
+
+        TagsPair.prototype.compute = function compute() {
+            return Math.max(this.first.value(), this.second.value());
+        };
+
+        return TagsPair;
+    })(CachedTag);
+
+    var TagsCombinator = (function (_CachedTag2) {
+        _inherits(TagsCombinator, _CachedTag2);
+
+        function TagsCombinator(tags) {
+            _classCallCheck(this, TagsCombinator);
+
+            _CachedTag2.call(this);
+            this.tags = tags;
+        }
+
+        TagsCombinator.prototype.compute = function compute() {
+            var tags = this.tags;
+
+            var max = -1;
+            for (var i = 0; i < tags.length; i++) {
+                var value = tags[i].value();
+                max = Math.max(value, max);
+            }
+            return max;
+        };
+
+        return TagsCombinator;
+    })(CachedTag);
+
+    var UpdatableTag = (function (_CachedTag3) {
+        _inherits(UpdatableTag, _CachedTag3);
+
+        function UpdatableTag(tag) {
+            _classCallCheck(this, UpdatableTag);
+
+            _CachedTag3.call(this);
+            this.tag = tag;
+            this.lastUpdated = INITIAL;
+        }
+
+        //////////
+
+        UpdatableTag.prototype.compute = function compute() {
+            return Math.max(this.lastUpdated, this.tag.value());
+        };
+
+        UpdatableTag.prototype.update = function update(tag) {
+            if (tag !== this.tag) {
+                this.tag = tag;
+                this.lastUpdated = $REVISION;
+                this.invalidate();
+            }
+        };
+
+        return UpdatableTag;
+    })(CachedTag);
+
+    exports.UpdatableTag = UpdatableTag;
+    var CONSTANT_TAG = new ((function (_RevisionTag3) {
+        _inherits(ConstantTag, _RevisionTag3);
+
+        function ConstantTag() {
+            _classCallCheck(this, ConstantTag);
+
+            _RevisionTag3.apply(this, arguments);
+        }
+
+        ConstantTag.prototype.value = function value() {
+            return CONSTANT;
+        };
+
+        return ConstantTag;
+    })(RevisionTag))();
+    exports.CONSTANT_TAG = CONSTANT_TAG;
+    var VOLATILE_TAG = new ((function (_RevisionTag4) {
+        _inherits(VolatileTag, _RevisionTag4);
+
+        function VolatileTag() {
+            _classCallCheck(this, VolatileTag);
+
+            _RevisionTag4.apply(this, arguments);
+        }
+
+        VolatileTag.prototype.value = function value() {
+            return VOLATILE;
+        };
+
+        return VolatileTag;
+    })(RevisionTag))();
+    exports.VOLATILE_TAG = VOLATILE_TAG;
+    var CURRENT_TAG = new ((function (_DirtyableTag) {
+        _inherits(CurrentTag, _DirtyableTag);
+
+        function CurrentTag() {
+            _classCallCheck(this, CurrentTag);
+
+            _DirtyableTag.apply(this, arguments);
+        }
+
+        CurrentTag.prototype.value = function value() {
+            return $REVISION;
+        };
+
+        return CurrentTag;
+    })(DirtyableTag))();
+    exports.CURRENT_TAG = CURRENT_TAG;
+
+    var CachedReference = (function () {
+        function CachedReference() {
+            _classCallCheck(this, CachedReference);
+
+            this.lastRevision = null;
+            this.lastValue = null;
+        }
+
+        CachedReference.prototype.value = function value() {
+            var tag = this.tag;
+            var lastRevision = this.lastRevision;
+            var lastValue = this.lastValue;
+
+            if (!lastRevision || !tag.validate(lastRevision)) {
+                lastValue = this.lastValue = this.compute();
+                this.lastRevision = tag.value();
+            }
+            return lastValue;
+        };
+
+        CachedReference.prototype.invalidate = function invalidate() {
+            this.lastRevision = null;
+        };
+
+        return CachedReference;
+    })();
+
+    exports.CachedReference = CachedReference;
+
+    var MapperReference = (function (_CachedReference) {
+        _inherits(MapperReference, _CachedReference);
+
+        function MapperReference(reference, mapper) {
+            _classCallCheck(this, MapperReference);
+
+            _CachedReference.call(this);
+            this.tag = reference.tag;
+            this.reference = reference;
+            this.mapper = mapper;
+        }
+
+        MapperReference.prototype.compute = function compute() {
+            var reference = this.reference;
+            var mapper = this.mapper;
+
+            return mapper(reference.value());
+        };
+
+        return MapperReference;
+    })(CachedReference);
+
+    function map(reference, mapper) {
+        return new MapperReference(reference, mapper);
+    }
+
+    //////////
+
+    var ReferenceCache = (function () {
+        function ReferenceCache(reference) {
+            _classCallCheck(this, ReferenceCache);
+
+            this.lastValue = null;
+            this.lastRevision = null;
+            this.initialized = false;
+            this.tag = reference.tag;
+            this.reference = reference;
+        }
+
+        ReferenceCache.prototype.peek = function peek() {
+            if (!this.initialized) {
+                return this.initialize();
+            }
+            return this.lastValue;
+        };
+
+        ReferenceCache.prototype.revalidate = function revalidate() {
+            if (!this.initialized) {
+                return this.initialize();
+            }
+            var reference = this.reference;
+            var lastRevision = this.lastRevision;
+
+            var tag = reference.tag;
+            if (tag.validate(lastRevision)) return NOT_MODIFIED;
+            this.lastRevision = tag.value();
+            var lastValue = this.lastValue;
+
+            var value = reference.value();
+            if (value === lastValue) return NOT_MODIFIED;
+            this.lastValue = value;
+            return value;
+        };
+
+        ReferenceCache.prototype.initialize = function initialize() {
+            var reference = this.reference;
+
+            var value = this.lastValue = reference.value();
+            this.lastRevision = reference.tag.value();
+            this.initialized = true;
+            return value;
+        };
+
+        return ReferenceCache;
+    })();
+
+    exports.ReferenceCache = ReferenceCache;
+
+    var NOT_MODIFIED = "adb3b78e-3d22-4e4b-877a-6317c2c5c145";
+
+    function isModified(value) {
+        return value !== NOT_MODIFIED;
+    }
+})(Em._e[1]);
+(function (exports, _glimmerReferenceLibValidators) {
+    "use strict";
+
+    exports.isConst = isConst;
+
+    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+    var CONST_REFERENCE = "503c5a44-e4a9-4bb5-85bc-102d35af6985";
+    exports.CONST_REFERENCE = CONST_REFERENCE;
+
+    var ConstReference = (function () {
+        function ConstReference(inner) {
+            _classCallCheck(this, ConstReference);
+
+            this.tag = _glimmerReferenceLibValidators.CONSTANT_TAG;
+            this["503c5a44-e4a9-4bb5-85bc-102d35af6985"] = true;
+            this.inner = inner;
+        }
+
+        ConstReference.prototype.value = function value() {
+            return this.inner;
+        };
+
+        return ConstReference;
+    })();
+
+    exports.ConstReference = ConstReference;
+
+    function isConst(reference) {
+        return !!reference[CONST_REFERENCE];
+    }
+})(Em._e[2],Em._e[1]);
+(function (exports) {
+    "use strict";
+
+    exports.referenceFromParts = referenceFromParts;
+
+    function referenceFromParts(root, parts) {
+        var reference = root;
+        for (var i = 0; i < parts.length; i++) {
+            reference = reference.get(parts[i]);
+        }
+        return reference;
+    }
+})(Em._e[3]);
+(function (exports) {
+    /*globals console*/
+    "use strict";
+
+    exports.merge = merge;
+    exports.assign = assign;
+    exports.shallowCopy = shallowCopy;
+    exports.keySet = keySet;
+    exports.keyLength = keyLength;
+
+    function merge(options, defaults) {
+        for (var prop in defaults) {
+            if (options.hasOwnProperty(prop)) {
+                continue;
+            }
+            options[prop] = defaults[prop];
+        }
+        return options;
+    }
+
+    function assign(obj) {
+        for (var _len = arguments.length, assignments = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+            assignments[_key - 1] = arguments[_key];
+        }
+
+        return assignments.reduce(function (obj, extensions) {
+            Object.keys(extensions).forEach(function (key) {
+                return obj[key] = extensions[key];
+            });
+            return obj;
+        }, obj);
+    }
+
+    function shallowCopy(obj) {
+        return merge({}, obj);
+    }
+
+    function keySet(obj) {
+        var set = {};
+        for (var prop in obj) {
+            if (obj.hasOwnProperty(prop)) {
+                set[prop] = true;
+            }
+        }
+        return set;
+    }
+
+    function keyLength(obj) {
+        var count = 0;
+        for (var prop in obj) {
+            if (obj.hasOwnProperty(prop)) {
+                count++;
+            }
+        }
+        return count;
+    }
+})(Em._e[4]);
+(function (exports) {
+    // There is a small whitelist of namespaced attributes specially
+    // enumerated in
+    // https://www.w3.org/TR/html/syntax.html#attributes-0
+    //
+    // > When a foreign element has one of the namespaced attributes given by
+    // > the local name and namespace of the first and second cells of a row
+    // > from the following table, it must be written using the name given by
+    // > the third cell from the same row.
+    //
+    // In all other cases, colons are interpreted as a regular character
+    // with no special meaning:
+    //
+    // > No other namespaced attribute can be expressed in the HTML syntax.
+    'use strict';
+
+    exports.getAttrNamespace = getAttrNamespace;
+    var XLINK = 'http://www.w3.org/1999/xlink';
+    var XML = 'http://www.w3.org/XML/1998/namespace';
+    var XMLNS = 'http://www.w3.org/2000/xmlns/';
+    var WHITELIST = {
+        'xlink:actuate': XLINK,
+        'xlink:arcrole': XLINK,
+        'xlink:href': XLINK,
+        'xlink:role': XLINK,
+        'xlink:show': XLINK,
+        'xlink:title': XLINK,
+        'xlink:type': XLINK,
+        'xml:base': XML,
+        'xml:lang': XML,
+        'xml:space': XML,
+        'xmlns': XMLNS,
+        'xmlns:xlink': XMLNS
+    };
+
+    function getAttrNamespace(attrName) {
+        return WHITELIST[attrName] || null;
+    }
+})(Em._e[5]);
+(function (exports) {
+    'use strict';
+
+    exports.intern = intern;
+    exports.opaque = opaque;
+    exports.numberKey = numberKey;
+    exports.LITERAL = LITERAL;
+    exports.symbol = symbol;
+
+    function intern(str) {
+        return str;
+        // let obj = {};
+        // obj[str] = 1;
+        // for (let key in obj) return <InternedString>key;
+    }
+
+    function opaque(value) {
+        return value;
+    }
+
+    function numberKey(num) {
+        return String(num);
+    }
+
+    function LITERAL(str) {
+        return str;
+    }
+
+    var BASE_KEY = intern('__glimmer{+ new Date()}');
+
+    function symbol(debugName) {
+        var number = +new Date();
+        return intern(debugName + ' [id=' + BASE_KEY + Math.floor(Math.random() * number) + ']');
+    }
+})(Em._e[6]);
+(function (exports) {
+    // import Logger from './logger';
+    // let alreadyWarned = false;
+    "use strict";
+
+    exports.debugAssert = debugAssert;
+    exports.prodAssert = prodAssert;
+
+    function debugAssert(test, msg) {
+        // if (!alreadyWarned) {
+        //   alreadyWarned = true;
+        //   Logger.warn("Don't leave debug assertions on in public builds");
+        // }
+        if (!test) {
+            throw new Error(msg || "assertion failure");
+        }
+    }
+
+    function prodAssert() {}
+
+    exports.default = debugAssert;
+})(Em._e[7]);
+(function (exports) {
+    'use strict';
+
+    exports.forEach = forEach;
+    exports.map = map;
+
+    function forEach(array, callback) {
+        var binding = arguments.length <= 2 || arguments[2] === undefined ? undefined : arguments[2];
+
+        var i = undefined,
+            l = undefined;
+        if (binding === undefined) {
+            for (i = 0, l = array.length; i < l; i++) {
+                callback(array[i], i, array);
+            }
+        } else {
+            for (i = 0, l = array.length; i < l; i++) {
+                callback.call(binding, array[i], i, array);
+            }
+        }
+    }
+
+    function map(array, callback) {
+        var output = [];
+        var i = undefined,
+            l = undefined;
+        for (i = 0, l = array.length; i < l; i++) {
+            output.push(callback(array[i], i, array));
+        }
+        return output;
+    }
+
+    var getIdx = undefined;
+    if (Array.prototype.indexOf) {
+        getIdx = function (array, obj, from) {
+            return array.indexOf(obj, from);
+        };
+    } else {
+        getIdx = function (array, obj, from) {
+            if (from === undefined || from === null) {
+                from = 0;
+            } else if (from < 0) {
+                from = Math.max(0, array.length + from);
+            }
+            for (var i = from, l = array.length; i < l; i++) {
+                if (array[i] === obj) {
+                    return i;
+                }
+            }
+            return -1;
+        };
+    }
+    var isArray = Array.isArray || function (array) {
+        return Object.prototype.toString.call(array) === '[object Array]';
+    };
+    exports.isArray = isArray;
+    var indexOfArray = getIdx;
+    exports.indexOfArray = indexOfArray;
+})(Em._e[8]);
+(function (exports, _glimmerUtilLibArrayUtils) {
+  "use strict";
+
+  // The HTML elements in this list are speced by
+  // http://www.w3.org/TR/html-markup/syntax.html#syntax-elements,
+  // and will be forced to close regardless of if they have a
+  // self-closing /> at the end.
+  var voidTagNames = "area base br col command embed hr img input keygen link meta param source track wbr";
+  var voidMap = {};
+  _glimmerUtilLibArrayUtils.forEach(voidTagNames.split(" "), function (tagName) {
+    return voidMap[tagName] = true;
+  });
+  exports.default = voidMap;
+})(Em._e[9],Em._e[8]);
+(function (exports) {
+    "use strict";
+
+    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+    var LogLevel;
+    exports.LogLevel = LogLevel;
+    (function (LogLevel) {
+        LogLevel[LogLevel["Trace"] = 0] = "Trace";
+        LogLevel[LogLevel["Debug"] = 1] = "Debug";
+        LogLevel[LogLevel["Warn"] = 2] = "Warn";
+        LogLevel[LogLevel["Error"] = 3] = "Error";
+    })(LogLevel || (exports.LogLevel = LogLevel = {}));
+
+    var NullConsole = (function () {
+        function NullConsole() {
+            _classCallCheck(this, NullConsole);
+        }
+
+        NullConsole.prototype.log = function log(message) {};
+
+        NullConsole.prototype.warn = function warn(message) {};
+
+        NullConsole.prototype.error = function error(message) {};
+
+        NullConsole.prototype.trace = function trace() {};
+
+        return NullConsole;
+    })();
+
+    var Logger = (function () {
+        function Logger(_ref) {
+            var console = _ref.console;
+            var level = _ref.level;
+
+            _classCallCheck(this, Logger);
+
+            this.f = ALWAYS;
+            this.force = ALWAYS;
+            this.console = console;
+            this.level = level;
+        }
+
+        Logger.prototype.skipped = function skipped(level) {
+            return level < this.level;
+        };
+
+        Logger.prototype.trace = function trace(message) {
+            var _ref2 = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+            var _ref2$stackTrace = _ref2.stackTrace;
+            var stackTrace = _ref2$stackTrace === undefined ? false : _ref2$stackTrace;
+
+            if (this.skipped(LogLevel.Trace)) return;
+            this.console.log(message);
+            if (stackTrace) this.console.trace();
+        };
+
+        Logger.prototype.debug = function debug(message) {
+            var _ref3 = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+            var _ref3$stackTrace = _ref3.stackTrace;
+            var stackTrace = _ref3$stackTrace === undefined ? false : _ref3$stackTrace;
+
+            if (this.skipped(LogLevel.Debug)) return;
+            this.console.log(message);
+            if (stackTrace) this.console.trace();
+        };
+
+        Logger.prototype.warn = function warn(message) {
+            var _ref4 = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+            var _ref4$stackTrace = _ref4.stackTrace;
+            var stackTrace = _ref4$stackTrace === undefined ? false : _ref4$stackTrace;
+
+            if (this.skipped(LogLevel.Warn)) return;
+            this.console.warn(message);
+            if (stackTrace) this.console.trace();
+        };
+
+        Logger.prototype.error = function error(message) {
+            if (this.skipped(LogLevel.Error)) return;
+            this.console.error(message);
+        };
+
+        return Logger;
+    })();
+
+    exports.Logger = Logger;
+
+    var _console = typeof console === 'undefined' ? new NullConsole() : console;
+    var ALWAYS = new Logger({ console: _console, level: LogLevel.Trace });
+    var LOG_LEVEL = LogLevel.Warn;
+    exports.default = new Logger({ console: _console, level: LOG_LEVEL });
+})(Em._e[10]);
+(function (exports) {
+    "use strict";
+
+    exports.initializeGuid = initializeGuid;
+    exports.ensureGuid = ensureGuid;
+    var GUID = 0;
+
+    function initializeGuid(object) {
+        return object._guid = ++GUID;
+    }
+
+    function ensureGuid(object) {
+        return object._guid || initializeGuid(object);
+    }
+})(Em._e[11]);
+(function (exports, _glimmerUtilLibGuid) {
+    'use strict';
+
+    exports.dict = dict;
+
+    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+    var proto = Object.create(null, {
+        // without this, we will always still end up with (new
+        // EmptyObject()).constructor === Object
+        constructor: {
+            value: undefined,
+            enumerable: false,
+            writable: true
+        }
+    });
+    function EmptyObject() {}
+    EmptyObject.prototype = proto;
+
+    function dict() {
+        // let d = Object.create(null);
+        // d.x = 1;
+        // delete d.x;
+        // return d;
+        return new EmptyObject();
+    }
+
+    var DictSet = (function () {
+        function DictSet() {
+            _classCallCheck(this, DictSet);
+
+            this.dict = dict();
+        }
+
+        DictSet.prototype.add = function add(obj) {
+            if (typeof obj === 'string') this.dict[obj] = obj;else this.dict[_glimmerUtilLibGuid.ensureGuid(obj)] = obj;
+            return this;
+        };
+
+        DictSet.prototype.delete = function _delete(obj) {
+            if (typeof obj === 'string') delete this.dict[obj];else if (obj._guid) delete this.dict[obj._guid];
+        };
+
+        DictSet.prototype.forEach = function forEach(callback) {
+            var dict = this.dict;
+
+            Object.keys(dict).forEach(function (key) {
+                return callback(dict[key]);
+            });
+        };
+
+        DictSet.prototype.toArray = function toArray() {
+            return Object.keys(this.dict);
+        };
+
+        return DictSet;
+    })();
+
+    exports.DictSet = DictSet;
+
+    var Stack = (function () {
+        function Stack() {
+            _classCallCheck(this, Stack);
+
+            this.stack = [];
+            this.current = null;
+        }
+
+        Stack.prototype.push = function push(item) {
+            this.current = item;
+            this.stack.push(item);
+        };
+
+        Stack.prototype.pop = function pop() {
+            var item = this.stack.pop();
+            var len = this.stack.length;
+            this.current = len === 0 ? null : this.stack[len - 1];
+            return item;
+        };
+
+        Stack.prototype.isEmpty = function isEmpty() {
+            return this.stack.length === 0;
+        };
+
+        return Stack;
+    })();
+
+    exports.Stack = Stack;
+})(Em._e[12],Em._e[11]);
+(function (exports) {
+    "use strict";
+
+    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+    var ListNode = function ListNode(value) {
+        _classCallCheck(this, ListNode);
+
+        this.next = null;
+        this.prev = null;
+        this.value = value;
+    };
+
+    exports.ListNode = ListNode;
+
+    var LinkedList = (function () {
+        function LinkedList() {
+            _classCallCheck(this, LinkedList);
+
+            this.clear();
+        }
+
+        LinkedList.fromSlice = function fromSlice(slice) {
+            var list = new LinkedList();
+            slice.forEachNode(function (n) {
+                return list.append(n.clone());
+            });
+            return list;
+        };
+
+        LinkedList.prototype.head = function head() {
+            return this._head;
+        };
+
+        LinkedList.prototype.tail = function tail() {
+            return this._tail;
+        };
+
+        LinkedList.prototype.clear = function clear() {
+            this._head = this._tail = null;
+        };
+
+        LinkedList.prototype.isEmpty = function isEmpty() {
+            return this._head === null;
+        };
+
+        LinkedList.prototype.toArray = function toArray() {
+            var out = [];
+            this.forEachNode(function (n) {
+                return out.push(n);
+            });
+            return out;
+        };
+
+        LinkedList.prototype.splice = function splice(start, end, reference) {
+            var before = undefined;
+            if (reference === null) {
+                before = this._tail;
+                this._tail = end;
+            } else {
+                before = reference.prev;
+                end.next = reference;
+                reference.prev = end;
+            }
+            if (before) {
+                before.next = start;
+                start.prev = before;
+            }
+        };
+
+        LinkedList.prototype.spliceList = function spliceList(list, reference) {
+            if (list.isEmpty()) return;
+            this.splice(list.head(), list.tail(), reference);
+        };
+
+        LinkedList.prototype.nextNode = function nextNode(node) {
+            return node.next;
+        };
+
+        LinkedList.prototype.prevNode = function prevNode(node) {
+            return node.prev;
+        };
+
+        LinkedList.prototype.forEachNode = function forEachNode(callback) {
+            var node = this._head;
+            while (node !== null) {
+                callback(node);
+                node = node.next;
+            }
+        };
+
+        LinkedList.prototype.contains = function contains(needle) {
+            var node = this._head;
+            while (node !== null) {
+                if (node === needle) return true;
+                node = node.next;
+            }
+            return false;
+        };
+
+        LinkedList.prototype.insertBefore = function insertBefore(node) {
+            var reference = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+
+            if (reference === null) return this.append(node);
+            if (reference.prev) reference.prev.next = node;else this._head = node;
+            node.prev = reference.prev;
+            node.next = reference;
+            reference.prev = node;
+            return node;
+        };
+
+        LinkedList.prototype.append = function append(node) {
+            var tail = this._tail;
+            if (tail) {
+                tail.next = node;
+                node.prev = tail;
+                node.next = null;
+            } else {
+                this._head = node;
+            }
+            return this._tail = node;
+        };
+
+        LinkedList.prototype.pop = function pop() {
+            if (this._tail) return this.remove(this._tail);
+            return null;
+        };
+
+        LinkedList.prototype.prepend = function prepend(node) {
+            if (this._head) return this.insertBefore(node, this._head);
+            return this._head = this._tail = node;
+        };
+
+        LinkedList.prototype.remove = function remove(node) {
+            if (node.prev) node.prev.next = node.next;else this._head = node.next;
+            if (node.next) node.next.prev = node.prev;else this._tail = node.prev;
+            return node;
+        };
+
+        return LinkedList;
+    })();
+
+    exports.LinkedList = LinkedList;
+
+    var LinkedListRemover = (function () {
+        function LinkedListRemover(node) {
+            _classCallCheck(this, LinkedListRemover);
+
+            this.node = node;
+        }
+
+        LinkedListRemover.prototype.destroy = function destroy() {
+            var _node = this.node;
+            var prev = _node.prev;
+            var next = _node.next;
+
+            prev.next = next;
+            next.prev = prev;
+        };
+
+        return LinkedListRemover;
+    })();
+
+    var ListSlice = (function () {
+        function ListSlice(head, tail) {
+            _classCallCheck(this, ListSlice);
+
+            this._head = head;
+            this._tail = tail;
+        }
+
+        ListSlice.toList = function toList(slice) {
+            var list = new LinkedList();
+            slice.forEachNode(function (n) {
+                return list.append(n.clone());
+            });
+            return list;
+        };
+
+        ListSlice.prototype.forEachNode = function forEachNode(callback) {
+            var node = this._head;
+            while (node !== null) {
+                callback(node);
+                node = this.nextNode(node);
+            }
+        };
+
+        ListSlice.prototype.contains = function contains(needle) {
+            var node = this._head;
+            while (node !== null) {
+                if (node === needle) return true;
+                node = node.next;
+            }
+            return false;
+        };
+
+        ListSlice.prototype.head = function head() {
+            return this._head;
+        };
+
+        ListSlice.prototype.tail = function tail() {
+            return this._tail;
+        };
+
+        ListSlice.prototype.toArray = function toArray() {
+            var out = [];
+            this.forEachNode(function (n) {
+                return out.push(n);
+            });
+            return out;
+        };
+
+        ListSlice.prototype.nextNode = function nextNode(node) {
+            if (node === this._tail) return null;
+            return node.next;
+        };
+
+        ListSlice.prototype.prevNode = function prevNode(node) {
+            if (node === this._head) return null;
+            return node.prev;
+        };
+
+        ListSlice.prototype.isEmpty = function isEmpty() {
+            return false;
+        };
+
+        return ListSlice;
+    })();
+
+    exports.ListSlice = ListSlice;
+    var EMPTY_SLICE = new ListSlice(null, null);
+    exports.EMPTY_SLICE = EMPTY_SLICE;
+})(Em._e[13]);
+(function (exports, _glimmerUtilLibObjectUtils, _glimmerUtilLibNamespaces, _glimmerUtilLibPlatformUtils, _glimmerUtilLibAssert, _glimmerUtilLibArrayUtils, _glimmerUtilLibVoidTagNames, _glimmerUtilLibLogger, _glimmerUtilLibGuid, _glimmerUtilLibCollections, _glimmerUtilLibListUtils) {
+  /*globals console*/
+  'use strict';
+
+  exports.getAttrNamespace = _glimmerUtilLibNamespaces.getAttrNamespace;
+  exports.LITERAL = _glimmerUtilLibPlatformUtils.LITERAL;
+  exports.InternedString = _glimmerUtilLibPlatformUtils.InternedString;
+  exports.Opaque = _glimmerUtilLibPlatformUtils.Opaque;
+  exports.opaque = _glimmerUtilLibPlatformUtils.opaque;
+  exports.symbol = _glimmerUtilLibPlatformUtils.symbol;
+  exports.intern = _glimmerUtilLibPlatformUtils.intern;
+  exports.numberKey = _glimmerUtilLibPlatformUtils.numberKey;
+  exports.assert = _glimmerUtilLibAssert.default;
+  exports.forEach = _glimmerUtilLibArrayUtils.forEach;
+  exports.map = _glimmerUtilLibArrayUtils.map;
+  exports.isArray = _glimmerUtilLibArrayUtils.isArray;
+  exports.indexOfArray = _glimmerUtilLibArrayUtils.indexOfArray;
+  exports.voidMap = _glimmerUtilLibVoidTagNames.default;
+  exports.LOGGER = _glimmerUtilLibLogger.default;
+  exports.Logger = _glimmerUtilLibLogger.Logger;
+  exports.LogLevel = _glimmerUtilLibLogger.LogLevel;
+
+  /* tslint:enable:no-unused-variable */
+  exports.merge = _glimmerUtilLibObjectUtils.merge;
+  exports.assign = _glimmerUtilLibObjectUtils.assign;
+  exports.ensureGuid = _glimmerUtilLibGuid.ensureGuid;
+  exports.initializeGuid = _glimmerUtilLibGuid.initializeGuid;
+  exports.HasGuid = _glimmerUtilLibGuid.HasGuid;
+  exports.types = _glimmerUtilLibObjectUtils;
+  exports.Stack = _glimmerUtilLibCollections.Stack;
+  exports.Dict = _glimmerUtilLibCollections.Dict;
+  exports.DictWithNumberKeys = _glimmerUtilLibCollections.DictWithNumberKeys;
+  exports.Set = _glimmerUtilLibCollections.Set;
+  exports.DictSet = _glimmerUtilLibCollections.DictSet;
+  exports.dict = _glimmerUtilLibCollections.dict;
+  exports.EMPTY_SLICE = _glimmerUtilLibListUtils.EMPTY_SLICE;
+  exports.LinkedList = _glimmerUtilLibListUtils.LinkedList;
+  exports.LinkedListNode = _glimmerUtilLibListUtils.LinkedListNode;
+  exports.ListNode = _glimmerUtilLibListUtils.ListNode;
+  exports.CloneableListNode = _glimmerUtilLibListUtils.CloneableListNode;
+  exports.ListSlice = _glimmerUtilLibListUtils.ListSlice;
+  exports.Slice = _glimmerUtilLibListUtils.Slice;
+})(Em._e[14],Em._e[4],Em._e[5],Em._e[6],Em._e[7],Em._e[8],Em._e[9],Em._e[10],Em._e[11],Em._e[12],Em._e[13]);
+(function (exports, _glimmerUtil) {
+    "use strict";
+
+    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+
+    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+    function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
+
+    var ListItem = (function (_ListNode) {
+        _inherits(ListItem, _ListNode);
+
+        function ListItem(iterable, result) {
+            _classCallCheck(this, ListItem);
+
+            _ListNode.call(this, iterable.valueReferenceFor(result));
+            this.retained = false;
+            this.seen = false;
+            this.key = result.key;
+            this.iterable = iterable;
+            this.memo = iterable.memoReferenceFor(result);
+        }
+
+        ListItem.prototype.update = function update(item) {
+            this.retained = true;
+            this.iterable.updateValueReference(this.value, item);
+            this.iterable.updateMemoReference(this.memo, item);
+        };
+
+        ListItem.prototype.shouldRemove = function shouldRemove() {
+            return !this.retained;
+        };
+
+        ListItem.prototype.reset = function reset() {
+            this.retained = false;
+            this.seen = false;
+        };
+
+        return ListItem;
+    })(_glimmerUtil.ListNode);
+
+    var IterationArtifacts = (function () {
+        function IterationArtifacts(iterable) {
+            _classCallCheck(this, IterationArtifacts);
+
+            this.map = _glimmerUtil.dict();
+            this.list = new _glimmerUtil.LinkedList();
+            this.tag = iterable.tag;
+            this.iterable = iterable;
+        }
+
+        IterationArtifacts.prototype.isEmpty = function isEmpty() {
+            var iterator = this.iterator = this.iterable.iterate();
+            return iterator.isEmpty();
+        };
+
+        IterationArtifacts.prototype.iterate = function iterate() {
+            var iterator = this.iterator || this.iterable.iterate();
+            this.iterator = null;
+            return iterator;
+        };
+
+        IterationArtifacts.prototype.has = function has(key) {
+            return !!this.map[key];
+        };
+
+        IterationArtifacts.prototype.get = function get(key) {
+            return this.map[key];
+        };
+
+        IterationArtifacts.prototype.wasSeen = function wasSeen(key) {
+            var node = this.map[key];
+            return node && node.seen;
+        };
+
+        IterationArtifacts.prototype.append = function append(item) {
+            var map = this.map;
+            var list = this.list;
+            var iterable = this.iterable;
+
+            var node = map[item.key] = new ListItem(iterable, item);
+            list.append(node);
+            return node;
+        };
+
+        IterationArtifacts.prototype.insertBefore = function insertBefore(item, reference) {
+            var map = this.map;
+            var list = this.list;
+            var iterable = this.iterable;
+
+            var node = map[item.key] = new ListItem(iterable, item);
+            node.retained = true;
+            list.insertBefore(node, reference);
+            return node;
+        };
+
+        IterationArtifacts.prototype.move = function move(item, reference) {
+            var list = this.list;
+
+            item.retained = true;
+            list.remove(item);
+            list.insertBefore(item, reference);
+        };
+
+        IterationArtifacts.prototype.remove = function remove(item) {
+            var list = this.list;
+
+            list.remove(item);
+            delete this.map[item.key];
+        };
+
+        IterationArtifacts.prototype.nextNode = function nextNode(item) {
+            return this.list.nextNode(item);
+        };
+
+        IterationArtifacts.prototype.head = function head() {
+            return this.list.head();
+        };
+
+        return IterationArtifacts;
+    })();
+
+    exports.IterationArtifacts = IterationArtifacts;
+
+    var ReferenceIterator = (function () {
+        // if anyone needs to construct this object with something other than
+        // an iterable, let @wycats know.
+
+        function ReferenceIterator(iterable) {
+            _classCallCheck(this, ReferenceIterator);
+
+            this.iterator = null;
+            var artifacts = new IterationArtifacts(iterable);
+            this.artifacts = artifacts;
+        }
+
+        ReferenceIterator.prototype.next = function next() {
+            var artifacts = this.artifacts;
+
+            var iterator = this.iterator = this.iterator || artifacts.iterate();
+            var item = iterator.next();
+            if (!item) return null;
+            return artifacts.append(item);
+        };
+
+        return ReferenceIterator;
+    })();
+
+    exports.ReferenceIterator = ReferenceIterator;
+
+    var Phase;
+    (function (Phase) {
+        Phase[Phase["Append"] = 0] = "Append";
+        Phase[Phase["Prune"] = 1] = "Prune";
+        Phase[Phase["Done"] = 2] = "Done";
+    })(Phase || (Phase = {}));
+
+    var IteratorSynchronizer = (function () {
+        function IteratorSynchronizer(_ref) {
+            var target = _ref.target;
+            var artifacts = _ref.artifacts;
+
+            _classCallCheck(this, IteratorSynchronizer);
+
+            this.target = target;
+            this.artifacts = artifacts;
+            this.iterator = artifacts.iterate();
+            this.current = artifacts.head();
+        }
+
+        IteratorSynchronizer.prototype.sync = function sync() {
+            var phase = Phase.Append;
+            while (true) {
+                switch (phase) {
+                    case Phase.Append:
+                        phase = this.nextAppend();
+                        break;
+                    case Phase.Prune:
+                        phase = this.nextPrune();
+                        break;
+                    case Phase.Done:
+                        this.nextDone();
+                        return;
+                }
+            }
+        };
+
+        IteratorSynchronizer.prototype.advanceToKey = function advanceToKey(key) {
+            var current = this.current;
+            var artifacts = this.artifacts;
+
+            var seek = current;
+            while (seek && seek.key !== key) {
+                seek.seen = true;
+                seek = artifacts.nextNode(seek);
+            }
+            this.current = seek && artifacts.nextNode(seek);
+        };
+
+        IteratorSynchronizer.prototype.nextAppend = function nextAppend() {
+            var iterator = this.iterator;
+            var current = this.current;
+            var artifacts = this.artifacts;
+
+            var item = iterator.next();
+            if (item === null) {
+                return this.startPrune();
+            }
+            var key = item.key;
+
+            if (current && current.key === key) {
+                this.nextRetain(item);
+            } else if (artifacts.has(key)) {
+                this.nextMove(item);
+            } else {
+                this.nextInsert(item);
+            }
+            return Phase.Append;
+        };
+
+        IteratorSynchronizer.prototype.nextRetain = function nextRetain(item) {
+            var artifacts = this.artifacts;
+            var current = this.current;
+
+            current.update(item);
+            this.current = artifacts.nextNode(current);
+            this.target.retain(item.key, current.value, current.memo);
+        };
+
+        IteratorSynchronizer.prototype.nextMove = function nextMove(item) {
+            var current = this.current;
+            var artifacts = this.artifacts;
+            var target = this.target;
+            var key = item.key;
+
+            var found = artifacts.get(item.key);
+            found.update(item);
+            if (artifacts.wasSeen(item.key)) {
+                artifacts.move(found, current);
+                target.move(found.key, found.value, found.memo, current ? current.key : null);
+            } else {
+                this.advanceToKey(key);
+            }
+        };
+
+        IteratorSynchronizer.prototype.nextInsert = function nextInsert(item) {
+            var artifacts = this.artifacts;
+            var target = this.target;
+            var current = this.current;
+
+            var node = artifacts.insertBefore(item, current);
+            target.insert(node.key, node.value, node.memo, current ? current.key : null);
+        };
+
+        IteratorSynchronizer.prototype.startPrune = function startPrune() {
+            this.current = this.artifacts.head();
+            return Phase.Prune;
+        };
+
+        IteratorSynchronizer.prototype.nextPrune = function nextPrune() {
+            var artifacts = this.artifacts;
+            var target = this.target;
+            var current = this.current;
+
+            if (current === null) {
+                return Phase.Done;
+            }
+            var node = current;
+            this.current = artifacts.nextNode(node);
+            if (node.shouldRemove()) {
+                artifacts.remove(node);
+                target.delete(node.key);
+            } else {
+                node.reset();
+            }
+            return Phase.Prune;
+        };
+
+        IteratorSynchronizer.prototype.nextDone = function nextDone() {
+            this.target.done();
+        };
+
+        return IteratorSynchronizer;
+    })();
+
+    exports.IteratorSynchronizer = IteratorSynchronizer;
+})(Em._e[15],Em._e[14]);
+(function (exports, _glimmerReferenceLibReference, _glimmerReferenceLibConst, _glimmerReferenceLibValidators, _glimmerReferenceLibUtils, _glimmerReferenceLibIterable) {
+  'use strict';
+
+  function _interopExportWildcard(obj, defaults) { var newObj = defaults({}, obj); delete newObj['default']; return newObj; }
+
+  function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+
+  exports.BasicReference = _glimmerReferenceLibReference.Reference;
+  exports.BasicPathReference = _glimmerReferenceLibReference.PathReference;
+  exports.ConstReference = _glimmerReferenceLibConst.ConstReference;
+  exports.isConst = _glimmerReferenceLibConst.isConst;
+
+  _defaults(exports, _interopExportWildcard(_glimmerReferenceLibValidators, _defaults));
+
+  exports.Reference = _glimmerReferenceLibValidators.VersionedReference;
+  exports.PathReference = _glimmerReferenceLibValidators.VersionedPathReference;
+  exports.referenceFromParts = _glimmerReferenceLibUtils.referenceFromParts;
+  exports.IterationItem = _glimmerReferenceLibIterable.IterationItem;
+  exports.Iterator = _glimmerReferenceLibIterable.Iterator;
+  exports.Iterable = _glimmerReferenceLibIterable.Iterable;
+  exports.OpaqueIterator = _glimmerReferenceLibIterable.OpaqueIterator;
+  exports.OpaqueIterable = _glimmerReferenceLibIterable.OpaqueIterable;
+  exports.AbstractIterator = _glimmerReferenceLibIterable.AbstractIterator;
+  exports.AbstractIterable = _glimmerReferenceLibIterable.AbstractIterable;
+  exports.IterationArtifacts = _glimmerReferenceLibIterable.IterationArtifacts;
+  exports.ReferenceIterator = _glimmerReferenceLibIterable.ReferenceIterator;
+  exports.IteratorSynchronizer = _glimmerReferenceLibIterable.IteratorSynchronizer;
+  exports.IteratorSynchronizerDelegate = _glimmerReferenceLibIterable.IteratorSynchronizerDelegate;
+})(Em._e[16],Em._e[0],Em._e[2],Em._e[1],Em._e[3],Em._e[15]);
+(function (exports) {
   "use strict";
 
   exports.getDebugFunction = getDebugFunction;
@@ -2733,7 +4182,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   function debugSeal() {
     return debugFunctions.debugSeal.apply(undefined, arguments);
   }
-})(Em._e[0]);
+})(Em._e[17]);
 (function (exports) {
   // This exists because `Object.create(null)` is absurdly slow compared
   // to `new EmptyObject()`. In either case, you want a null prototype
@@ -2756,7 +4205,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   function EmptyObject() {}
   EmptyObject.prototype = proto;
   exports.default = EmptyObject;
-})(Em._e[1]);
+})(Em._e[18]);
 (function (exports, _emberMetalEmpty_object) {
   'use strict';
 
@@ -2845,7 +4294,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return DefaultStore;
   })();
-})(Em._e[2],Em._e[1]);
+})(Em._e[19],Em._e[18]);
 (function (exports, _emberMetalCache) {
   'use strict';
 
@@ -2923,7 +4372,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   function getTailPath(path) {
     return tailPathCache.get(path);
   }
-})(Em._e[3],Em._e[2]);
+})(Em._e[20],Em._e[19]);
 (function (exports, _emberMetalDebug, _emberMetalPath_cache) {
   /**
   @module ember-metal
@@ -3060,7 +4509,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = get;
-})(Em._e[4],Em._e[0],Em._e[3]);
+})(Em._e[21],Em._e[17],Em._e[20]);
 (function (exports) {
   /* globals global, window, self, Em.__global */
 
@@ -3080,7 +4529,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.default = checkGlobal(checkElementIdShadowing(typeof global === 'object' && global)) || checkGlobal(typeof self === 'object' && self) || checkGlobal(typeof window === 'object' && window) || Em.__global || // set before strict mode in Ember loader/wrapper
   new Function('return this')();
   // eval outside of strict mode
-})(Em._e[5]);
+})(Em._e[22]);
 (function (exports) {
   "use strict";
 
@@ -3109,7 +4558,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       };
     }
   }
-})(Em._e[6]);
+})(Em._e[23]);
 (function (exports, _emberEnvironmentGlobal, _emberEnvironmentUtils) {
   /* globals module */
   'use strict';
@@ -3233,7 +4682,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     window: null
   };
   exports.environment = environment;
-})(Em._e[7],Em._e[5],Em._e[6]);
+})(Em._e[24],Em._e[22],Em._e[23]);
 (function (exports) {
   /**
     Copy properties from a source object to a target object.
@@ -3277,12 +4726,12 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return original;
   }
-})(Em._e[8]);
+})(Em._e[25]);
 (function (exports) {
   "use strict";
 
-  exports.default = { "features-stripped-test": null, "ember-routing-route-configured-query-params": null, "ember-libraries-isregistered": null, "ember-glimmer": null, "ember-improved-instrumentation": null, "ember-metal-weakmap": null, "ember-glimmer-allow-backtracking-rerender": null };
-})(Em._e[9]);
+  exports.default = { "features-stripped-test": false, "ember-routing-route-configured-query-params": false, "ember-libraries-isregistered": false, "ember-application-engines": true, "ember-glimmer": true, "ember-runtime-computed-uniq-by": true, "ember-improved-instrumentation": false, "ember-runtime-enumerable-includes": true, "ember-string-ishtmlsafe": true, "ember-testing-check-waiters": true, "ember-metal-weakmap": false, "ember-glimmer-allow-backtracking-rerender": false, "mandatory-setter": true, "ember-glimmer-detect-backtracking-rerender": true };
+})(Em._e[26]);
 (function (exports, _emberEnvironment, _emberMetalAssign, _emberFeatures) {
   'use strict';
 
@@ -3334,7 +4783,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.DEFAULT_FEATURES = _emberFeatures.default;
-})(Em._e[10],Em._e[7],Em._e[8],Em._e[9]);
+})(Em._e[27],Em._e[24],Em._e[25],Em._e[26]);
 (function (exports) {
   'no use strict';
   // Remove "use strict"; from transpiled module until
@@ -3874,7 +5323,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.GUID_KEY = GUID_KEY;
   exports.makeArray = makeArray;
   exports.canInvoke = canInvoke;
-})(Em._e[11]);
+})(Em._e[28]);
 (function (exports) {
   /*
    When we render a rich template hierarchy, the set of events that
@@ -4047,7 +5496,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     }
     destination.push(target, method, source[index + 3]);
   }
-})(Em._e[12]);
+})(Em._e[29]);
 (function (exports, _emberMetalUtils) {
   'use strict';
 
@@ -4060,7 +5509,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return _emberMetalUtils.intern(debugName + ' [id=' + _emberMetalUtils.GUID_KEY + Math.floor(Math.random() * new Date()) + ']');
   }
-})(Em._e[13],Em._e[11]);
+})(Em._e[30],Em._e[28]);
 (function (exports, _emberMetalFeatures, _emberMetalMeta_listeners, _emberMetalEmpty_object, _emberMetalUtils, _emberMetalSymbol) {
   'no use strict';
   // Remove "use strict"; from transpiled module until
@@ -4485,7 +5934,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     }
     obj[META_FIELD] = null;
   }
-})(Em._e[14],Em._e[10],Em._e[12],Em._e[1],Em._e[11],Em._e[13]);
+})(Em._e[31],Em._e[27],Em._e[29],Em._e[18],Em._e[28],Em._e[30]);
 (function (exports, _emberMetalDebug, _emberMetalUtils, _emberMetalMeta, _emberMetalMeta_listeners) {
   'no use strict';
   // Remove "use strict"; from transpiled module until
@@ -4825,7 +6274,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     func.__ember_listens__ = events;
     return func;
   }
-})(Em._e[15],Em._e[0],Em._e[11],Em._e[14],Em._e[12]);
+})(Em._e[32],Em._e[17],Em._e[28],Em._e[31],Em._e[29]);
 (function (exports, _emberMetalMeta, _require2) {
   'use strict';
 
@@ -4894,7 +6343,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   } else {
     exports.markObjectAsDirty = markObjectAsDirty = function () {};
   }
-})(Em._e[17],Em._e[14],Em.__loader.require);
+})(Em._e[34],Em._e[31],Em.__loader.require);
 (function (exports, _emberMetalUtils, _emberMetalEvents) {
   'use strict';
 
@@ -4966,7 +6415,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     this.observerSet = {};
     this.observers = [];
   };
-})(Em._e[18],Em._e[11],Em._e[15]);
+})(Em._e[35],Em._e[28],Em._e[32]);
 (function (exports, _emberMetalMeta, _emberMetalDebug, _emberMetalFeatures) {
   'use strict';
 
@@ -4983,6 +6432,13 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     raise = function (message, test) {
       _emberMetalDebug.deprecate(message, test, { id: 'ember-views.render-double-modify', until: '3.0.0' });
     };
+  }
+
+  var implication = undefined;
+  if (false) {
+    implication = 'will be removed in Ember 3.0.';
+  } else if (true) {
+    implication = 'is no longer supported. See https://github.com/emberjs/ember.js/issues/13948 for more details.';
   }
 
   if (true || false) {
@@ -5024,12 +6480,20 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
             var parts = [];
             var lastRef = ref[key];
 
-            while (lastRef && lastRef._propertyKey && lastRef._parentReference) {
-              parts.unshift(lastRef._propertyKey);
-              lastRef = lastRef._parentReference;
+            var label = undefined;
+
+            if (lastRef) {
+              while (lastRef && lastRef._propertyKey && lastRef._parentReference) {
+                parts.unshift(lastRef._propertyKey);
+                lastRef = lastRef._parentReference;
+              }
+
+              label = parts.join();
+            } else {
+              label = 'the same value';
             }
 
-            return 'You modified ' + parts.join('.') + ' twice in a single render. This was unreliable and slow in Ember 1.x and will be removed in Ember 3.0.';
+            return 'You modified ' + parts.join('.') + ' twice in a single render. This was unreliable and slow in Ember 1.x and ' + implication;
           })(), false);
 
           shouldReflush = true;
@@ -5053,7 +6517,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.default = runInTransaction;
   exports.didRender = didRender;
   exports.assertNotRendered = assertNotRendered;
-})(Em._e[19],Em._e[14],Em._e[0],Em._e[10]);
+})(Em._e[36],Em._e[31],Em._e[17],Em._e[27]);
 (function (exports, _emberMetalUtils, _emberMetalMeta, _emberMetalEvents, _emberMetalTags, _emberMetalObserver_set, _emberMetalSymbol, _emberMetalFeatures, _emberMetalTransaction) {
   'use strict';
 
@@ -5344,12 +6808,8 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.beginPropertyChanges = beginPropertyChanges;
   exports.endPropertyChanges = endPropertyChanges;
   exports.changeProperties = changeProperties;
-})(Em._e[20],Em._e[11],Em._e[14],Em._e[15],Em._e[17],Em._e[18],Em._e[13],Em._e[10],Em._e[19]);
+})(Em._e[37],Em._e[28],Em._e[31],Em._e[32],Em._e[34],Em._e[35],Em._e[30],Em._e[27],Em._e[36]);
 (function (exports) {
-  'use strict';
-
-  exports.default = EmberError;
-  var errorProps = ['description', 'fileName', 'lineNumber', 'message', 'name', 'number', 'stack'];
 
   /**
     A subclass of the JavaScript Error object for use in Ember.
@@ -5360,28 +6820,34 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     @constructor
     @public
   */
+  "use strict";
 
-  function EmberError() {
-    var tmp = Error.apply(this, arguments);
+  exports.default = EmberError;
 
-    // Adds a `stack` property to the given error object that will yield the
-    // stack trace at the time captureStackTrace was called.
-    // When collecting the stack trace all frames above the topmost call
-    // to this function, including that call, will be left out of the
-    // stack trace.
-    // This is useful because we can hide Ember implementation details
-    // that are not very helpful for the user.
+  function EmberError(message) {
+    if (!(this instanceof EmberError)) {
+      return new EmberError(message);
+    }
+
+    var error = Error.call(this, message);
+
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, EmberError);
+    } else {
+      this.stack = error.stack;
     }
-    // Unfortunately errors are not enumerable in Chrome (at least), so `for prop in tmp` doesn't work.
-    for (var idx = 0; idx < errorProps.length; idx++) {
-      this[errorProps[idx]] = tmp[errorProps[idx]];
-    }
+
+    this.description = error.description;
+    this.fileName = error.fileName;
+    this.lineNumber = error.lineNumber;
+    this.message = error.message;
+    this.name = error.name;
+    this.number = error.number;
+    this.code = error.code;
   }
 
   EmberError.prototype = Object.create(Error.prototype);
-})(Em._e[21]);
+})(Em._e[38]);
 (function (exports, _emberMetalDebug, _emberMetalFeatures, _emberMetalProperty_get, _emberMetalProperty_events, _emberMetalError, _emberMetalPath_cache, _emberMetalMeta, _emberMetalUtils) {
   'use strict';
 
@@ -5516,7 +6982,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   function trySet(root, path, value) {
     return set(root, path, value, true);
   }
-})(Em._e[22],Em._e[0],Em._e[10],Em._e[4],Em._e[20],Em._e[21],Em._e[3],Em._e[14],Em._e[11]);
+})(Em._e[39],Em._e[17],Em._e[27],Em._e[21],Em._e[37],Em._e[38],Em._e[20],Em._e[31],Em._e[28]);
 (function (exports, _emberMetalDebug, _emberMetalFeatures, _emberMetalMeta, _emberMetalProperty_events) {
   /**
   @module ember-metal
@@ -5742,7 +7208,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     Object.defineProperty(obj, keyName, { configurable: true, writable: true, value: 'iCry' });
     Object.defineProperty(obj, keyName, desc);
   }
-})(Em._e[23],Em._e[0],Em._e[10],Em._e[14],Em._e[20]);
+})(Em._e[40],Em._e[17],Em._e[27],Em._e[31],Em._e[37]);
 (function (exports, _emberMetalFeatures, _emberMetalMeta, _emberMetalProperties, _emberMetalUtils) {
   'use strict';
 
@@ -5876,7 +7342,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       m.writeWatching(keyName, count - 1);
     }
   }
-})(Em._e[24],Em._e[10],Em._e[14],Em._e[23],Em._e[11]);
+})(Em._e[41],Em._e[27],Em._e[31],Em._e[40],Em._e[28]);
 (function (exports, _emberMetalMeta, _emberMetalChains) {
   'use strict';
 
@@ -5918,7 +7384,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       m.writeWatching(keyPath, counter - 1);
     }
   }
-})(Em._e[25],Em._e[14],Em._e[26]);
+})(Em._e[42],Em._e[31],Em._e[43]);
 (function (exports, _emberMetalProperty_get, _emberMetalMeta, _emberMetalWatch_key, _emberMetalEmpty_object, _emberMetalWatch_path) {
   'use strict';
 
@@ -6276,7 +7742,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
   exports.removeChainWatcher = removeChainWatcher;
   exports.ChainNode = ChainNode;
-})(Em._e[26],Em._e[4],Em._e[14],Em._e[24],Em._e[1],Em._e[25]);
+})(Em._e[43],Em._e[21],Em._e[31],Em._e[41],Em._e[18],Em._e[42]);
 (function (exports, _emberMetalDebug) {
   'use strict';
 
@@ -6350,7 +7816,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return all;
   }
-})(Em._e[27],Em._e[0]);
+})(Em._e[44],Em._e[17]);
 (function (exports, _emberMetalChains, _emberMetalWatch_key, _emberMetalWatch_path, _emberMetalPath_cache, _emberMetalMeta) {
   /**
   @module ember-metal
@@ -6453,7 +7919,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
     }
   }
-})(Em._e[28],Em._e[26],Em._e[24],Em._e[25],Em._e[3],Em._e[14]);
+})(Em._e[45],Em._e[43],Em._e[41],Em._e[42],Em._e[20],Em._e[31]);
 (function (exports, _emberMetalWatching) {
   'no use strict';
   // Remove "use strict"; from transpiled module until
@@ -6506,7 +7972,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       _emberMetalWatching.unwatch(obj, depKey, meta);
     }
   }
-})(Em._e[29],Em._e[28]);
+})(Em._e[46],Em._e[45]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_set, _emberMetalUtils, _emberMetalMeta, _emberMetalExpand_properties, _emberMetalError, _emberMetalProperties, _emberMetalProperty_events, _emberMetalDependent_keys) {
   'use strict';
 
@@ -7088,7 +8554,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.ComputedProperty = ComputedProperty;
   exports.computed = computed;
   exports.cacheFor = cacheFor;
-})(Em._e[30],Em._e[0],Em._e[22],Em._e[11],Em._e[14],Em._e[27],Em._e[21],Em._e[23],Em._e[20],Em._e[29]);
+})(Em._e[47],Em._e[17],Em._e[39],Em._e[28],Em._e[31],Em._e[44],Em._e[38],Em._e[40],Em._e[37],Em._e[46]);
 (function (exports, _emberEnvironment) {
   'use strict';
 
@@ -7227,7 +8693,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     */
     assert: consoleMethod('assert') || assertPolyfill
   };
-})(Em._e[31],Em._e[7]);
+})(Em._e[48],Em._e[24]);
 (function (exports) {
   "use strict";
 
@@ -7242,7 +8708,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   function setTesting(value) {
     testing = !!value;
   }
-})(Em._e[32]);
+})(Em._e[49]);
 (function (exports, _emberConsole, _emberMetalTesting) {
   'use strict';
 
@@ -7303,7 +8769,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       _emberConsole.default.error(getStack(error));
     }
   }
-})(Em._e[33],Em._e[31],Em._e[32]);
+})(Em._e[50],Em._e[48],Em._e[49]);
 (function (exports) {
   'use strict';
 
@@ -7335,7 +8801,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   function isCoercableNumber(number) {
     return isNumber(number) || NUMBER.test(number);
   }
-})(Em._e[34]);
+})(Em._e[51]);
 (function (exports) {
   'use strict';
 
@@ -7357,7 +8823,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
 
   exports.default = GlobalContext;
-})(Em._e[35]);
+})(Em._e[52]);
 (function (exports) {
   "use strict";
 
@@ -7386,7 +8852,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return time >= timers[start] ? start + 2 : start;
   }
-})(Em._e[36]);
+})(Em._e[53]);
 (function (exports, _backburnerUtils) {
   'use strict';
 
@@ -7619,7 +9085,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
     }
   };
-})(Em._e[37],Em._e[34]);
+})(Em._e[54],Em._e[51]);
 (function (exports, _backburnerUtils, _backburnerQueue) {
   'use strict';
 
@@ -7686,7 +9152,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
     }
   };
-})(Em._e[38],Em._e[34],Em._e[37]);
+})(Em._e[55],Em._e[51],Em._e[54]);
 (function (exports, _backburnerUtils, _backburnerPlatform, _backburnerBinarySearch, _backburnerDeferredActionQueues) {
   'use strict';
 
@@ -8344,7 +9810,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   function clearItems(item) {
     this._platform.clearTimeout(item[2]);
   }
-})(Em._e[39],Em._e[34],Em._e[35],Em._e[36],Em._e[38]);
+})(Em._e[56],Em._e[51],Em._e[52],Em._e[53],Em._e[55]);
 (function (exports, _emberMetalDebug, _emberMetalTesting, _emberMetalError_handler, _emberMetalUtils, _emberMetalProperty_events, _backburner) {
   'use strict';
 
@@ -9026,7 +10492,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       run.queues.splice(run.queues.indexOf(after) + 1, 0, name);
     }
   };
-})(Em._e[40],Em._e[0],Em._e[32],Em._e[33],Em._e[11],Em._e[20],Em._e[39]);
+})(Em._e[57],Em._e[17],Em._e[49],Em._e[50],Em._e[28],Em._e[37],Em._e[56]);
 (function (exports, _emberMetalWatching, _emberMetalEvents) {
   'use strict';
 
@@ -9140,7 +10606,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return this;
   }
-})(Em._e[41],Em._e[28],Em._e[15]);
+})(Em._e[58],Em._e[45],Em._e[32]);
 (function (exports, _emberConsole, _emberEnvironment, _emberMetalRun_loop, _emberMetalDebug, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalUtils, _emberMetalEvents, _emberMetalObserver, _emberMetalPath_cache) {
   'use strict';
 
@@ -9616,7 +11082,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.Binding = Binding;
-})(Em._e[42],Em._e[31],Em._e[7],Em._e[40],Em._e[0],Em._e[4],Em._e[22],Em._e[11],Em._e[15],Em._e[41],Em._e[3]);
+})(Em._e[59],Em._e[48],Em._e[24],Em._e[57],Em._e[17],Em._e[21],Em._e[39],Em._e[28],Em._e[32],Em._e[58],Em._e[20]);
 (function (exports, _emberMetalError, _emberMetalDebug, _emberMetalAssign, _emberMetalUtils, _emberMetalMeta, _emberMetalExpand_properties, _emberMetalProperties, _emberMetalComputed, _emberMetalBinding, _emberMetalObserver, _emberMetalEvents) {
   'no use strict';
   // Remove "use strict"; from transpiled module until
@@ -10532,7 +11998,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.Mixin = Mixin;
   exports.required = required;
   exports.REQUIRED = REQUIRED;
-})(Em._e[43],Em._e[21],Em._e[0],Em._e[8],Em._e[11],Em._e[14],Em._e[27],Em._e[23],Em._e[30],Em._e[42],Em._e[41],Em._e[15]);
+})(Em._e[60],Em._e[38],Em._e[17],Em._e[25],Em._e[28],Em._e[31],Em._e[44],Em._e[40],Em._e[47],Em._e[59],Em._e[58],Em._e[32]);
 (function (exports, _emberMetalDebug, _emberMetalMixin, _emberMetalProperty_get) {
   /**
   @module ember
@@ -10733,7 +12199,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
     });
   }
-})(Em._e[44],Em._e[0],Em._e[43],Em._e[4]);
+})(Em._e[61],Em._e[17],Em._e[60],Em._e[21]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalError, _emberMetalProperties, _emberMetalComputed, _emberMetalUtils, _emberMetalMeta, _emberMetalDependent_keys) {
   'use strict';
 
@@ -10805,7 +12271,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   // Backwards compatibility with Ember Data.
   AliasedProperty.prototype._meta = undefined;
   AliasedProperty.prototype.meta = _emberMetalComputed.ComputedProperty.prototype.meta;
-})(Em._e[45],Em._e[0],Em._e[4],Em._e[22],Em._e[21],Em._e[23],Em._e[30],Em._e[11],Em._e[14],Em._e[29]);
+})(Em._e[62],Em._e[17],Em._e[21],Em._e[39],Em._e[38],Em._e[40],Em._e[47],Em._e[28],Em._e[31],Em._e[46]);
 (function (exports, _emberMetalSymbol) {
   /**
   @module ember
@@ -10879,7 +12345,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   function setOwner(object, owner) {
     object[OWNER] = owner;
   }
-})(Em._e[46],Em._e[13]);
+})(Em._e[63],Em._e[30]);
 (function (exports, _emberMetalDebug, _emberMetalComputed, _emberMetalAlias, _emberMetalProperties, _containerOwner) {
   'use strict';
 
@@ -10926,7 +12392,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   InjectedPropertyPrototype.get = ComputedPropertyPrototype.get;
   InjectedPropertyPrototype.readOnly = ComputedPropertyPrototype.readOnly;
   InjectedPropertyPrototype.teardown = ComputedPropertyPrototype.teardown;
-})(Em._e[47],Em._e[0],Em._e[30],Em._e[45],Em._e[23],Em._e[46]);
+})(Em._e[64],Em._e[17],Em._e[47],Em._e[62],Em._e[40],Em._e[63]);
 (function (exports, _emberMetalDebug, _emberMetalInjected_property) {
   'use strict';
 
@@ -11005,7 +12471,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return true;
   }
-})(Em._e[48],Em._e[0],Em._e[47]);
+})(Em._e[65],Em._e[17],Em._e[64]);
 (function (exports, _emberMetalDebug, _emberMetalFeatures, _emberMetalAssign, _emberMetalProperty_get, _emberMetalUtils, _emberMetalMeta, _emberMetalChains, _emberMetalEvents, _emberMetalMixin, _emberMetalError, _emberRuntimeMixinsAction_handler, _emberMetalProperties, _emberMetalBinding, _emberMetalComputed, _emberMetalInjected_property, _emberMetalRun_loop, _emberMetalWatching, _emberRuntimeInject, _emberMetalSymbol) {
   'no use strict';
   // Remove "use strict"; from transpiled module until
@@ -11632,7 +13098,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   });
 
   exports.default = CoreObject;
-})(Em._e[49],Em._e[0],Em._e[10],Em._e[8],Em._e[4],Em._e[11],Em._e[14],Em._e[26],Em._e[15],Em._e[43],Em._e[21],Em._e[44],Em._e[23],Em._e[42],Em._e[30],Em._e[47],Em._e[40],Em._e[28],Em._e[48],Em._e[13]);
+})(Em._e[66],Em._e[17],Em._e[27],Em._e[25],Em._e[21],Em._e[28],Em._e[31],Em._e[43],Em._e[32],Em._e[60],Em._e[38],Em._e[61],Em._e[40],Em._e[59],Em._e[47],Em._e[64],Em._e[57],Em._e[45],Em._e[65],Em._e[30]);
 (function (exports, _emberMetalProperty_get) {
   'use strict';
 
@@ -11676,7 +13142,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     }
     return ret;
   }
-})(Em._e[50],Em._e[4]);
+})(Em._e[67],Em._e[21]);
 (function (exports, _emberMetalProperty_events, _emberMetalProperty_set) {
   'use strict';
 
@@ -11720,7 +13186,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     });
     return properties;
   }
-})(Em._e[51],Em._e[20],Em._e[22]);
+})(Em._e[68],Em._e[37],Em._e[39]);
 (function (exports) {
   /**
     Returns true if the passed value is null or undefined. This avoids errors
@@ -11749,7 +13215,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   function isNone(obj) {
     return obj === null || obj === undefined;
   }
-})(Em._e[52]);
+})(Em._e[69]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalGet_properties, _emberMetalSet_properties, _emberMetalMixin, _emberMetalEvents, _emberMetalProperty_events, _emberMetalObserver, _emberMetalComputed, _emberMetalIs_none) {
   /**
   @module ember
@@ -12189,7 +13655,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return _emberMetalObserver.observersFor(this, keyName);
     }
   });
-})(Em._e[53],Em._e[0],Em._e[4],Em._e[22],Em._e[50],Em._e[51],Em._e[43],Em._e[15],Em._e[20],Em._e[41],Em._e[30],Em._e[52]);
+})(Em._e[70],Em._e[17],Em._e[21],Em._e[39],Em._e[67],Em._e[68],Em._e[60],Em._e[32],Em._e[37],Em._e[58],Em._e[47],Em._e[69]);
 (function (exports, _emberRuntimeSystemCore_object, _emberRuntimeMixinsObservable) {
   /**
   @module ember
@@ -12215,7 +13681,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   };
 
   exports.default = EmberObject;
-})(Em._e[54],Em._e[49],Em._e[53]);
+})(Em._e[71],Em._e[66],Em._e[70]);
 (function (exports, _emberMetalMixin, _emberMetalEvents) {
   'use strict';
 
@@ -12358,7 +13824,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return _emberMetalEvents.hasListeners(this, name);
     }
   });
-})(Em._e[55],Em._e[43],Em._e[15]);
+})(Em._e[72],Em._e[60],Em._e[32]);
 (function (exports, _emberEnvironment) {
   'use strict';
 
@@ -12396,7 +13862,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   //
 
   exports.default = Ember;
-})(Em._e[56],Em._e[7]);
+})(Em._e[73],Em._e[24]);
 (function (exports, _emberMetalMixin) {
   'use strict';
 
@@ -12434,7 +13900,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     */
     compare: null
   });
-})(Em._e[57],Em._e[43]);
+})(Em._e[74],Em._e[60]);
 (function (exports, _emberRuntimeUtils, _emberRuntimeMixinsComparable) {
   'use strict';
 
@@ -12580,7 +14046,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
         return 0;
     }
   }
-})(Em._e[58],Em._e[62],Em._e[57]);
+})(Em._e[75],Em._e[79],Em._e[74]);
 (function (exports, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalMixin, _emberMetalUtils, _emberMetalComputed, _emberMetalEmpty_object, _emberMetalFeatures, _emberMetalProperty_events, _emberMetalEvents, _emberRuntimeCompare, _require, _emberMetalDebug) {
   /**
   @module ember
@@ -13658,7 +15124,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = Enumerable;
-})(Em._e[59],Em._e[4],Em._e[22],Em._e[43],Em._e[11],Em._e[30],Em._e[1],Em._e[10],Em._e[20],Em._e[15],Em._e[58],Em.__loader.require,Em._e[0]);
+})(Em._e[76],Em._e[21],Em._e[39],Em._e[60],Em._e[28],Em._e[47],Em._e[18],Em._e[27],Em._e[37],Em._e[32],Em._e[75],Em.__loader.require,Em._e[17]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberMetalObserver, _emberMetalProperty_events, _emberMetalEmpty_object, _emberRuntimeMixinsArray) {
   'use strict';
 
@@ -13781,7 +15247,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
     }
   }
-})(Em._e[60],Em._e[0],Em._e[4],Em._e[41],Em._e[20],Em._e[1],Em._e[61]);
+})(Em._e[77],Em._e[17],Em._e[21],Em._e[58],Em._e[37],Em._e[18],Em._e[78]);
 (function (exports, _emberMetalCore, _emberMetalSymbol, _emberMetalProperty_get, _emberMetalComputed, _emberMetalIs_none, _emberRuntimeMixinsEnumerable, _emberMetalMixin, _emberMetalProperty_events, _emberMetalEvents, _emberMetalMeta, _emberMetalTags, _emberRuntimeSystemEach_proxy, _emberMetalDebug, _emberMetalFeatures) {
   /**
   @module ember
@@ -14139,7 +15605,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = ArrayMixin;
-})(Em._e[61],Em._e[56],Em._e[13],Em._e[4],Em._e[30],Em._e[52],Em._e[59],Em._e[43],Em._e[20],Em._e[15],Em._e[14],Em._e[17],Em._e[60],Em._e[0],Em._e[10]);
+})(Em._e[78],Em._e[73],Em._e[30],Em._e[21],Em._e[47],Em._e[69],Em._e[76],Em._e[60],Em._e[37],Em._e[32],Em._e[31],Em._e[34],Em._e[77],Em._e[17],Em._e[27]);
 (function (exports, _emberRuntimeMixinsArray, _emberRuntimeSystemObject) {
   'use strict';
 
@@ -14287,7 +15753,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return ret;
   }
-})(Em._e[62],Em._e[61],Em._e[54]);
+})(Em._e[79],Em._e[78],Em._e[71]);
 (function (exports, _emberMetalMixin, _emberMetalSymbol, _emberMetalProperty_events) {
   'use strict';
 
@@ -14350,7 +15816,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   };
 
   exports.default = _emberMetalMixin.Mixin.create(AttrsProxyMixin);
-})(Em._e[63],Em._e[43],Em._e[13],Em._e[20]);
+})(Em._e[80],Em._e[60],Em._e[30],Em._e[37]);
 (function (exports, _emberMetalError, _emberMetalProperty_get, _emberViewsCompatAttrsProxy) {
   'use strict';
 
@@ -14398,7 +15864,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       view.renderer.ensureViewNotRendering(view);
     }
   };
-})(Em._e[64],Em._e[21],Em._e[4],Em._e[63]);
+})(Em._e[81],Em._e[38],Em._e[21],Em._e[80]);
 (function (exports, _emberViewsViewsStatesDefault, _emberMetalAssign) {
   'use strict';
 
@@ -14414,7 +15880,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   });
 
   exports.default = preRender;
-})(Em._e[65],Em._e[64],Em._e[8]);
+})(Em._e[82],Em._e[81],Em._e[25]);
 (function (exports, _emberEnvironment) {
   'use strict';
 
@@ -14438,7 +15904,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = jQuery;
-})(Em._e[66],Em._e[7]);
+})(Em._e[83],Em._e[24]);
 (function (exports, _emberEnvironment, _emberMetalFeatures) {
   'use strict';
 
@@ -14705,7 +16171,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     subscribers.length = 0;
     cache = {};
   }
-})(Em._e[67],Em._e[7],Em._e[10]);
+})(Em._e[84],Em._e[24],Em._e[27]);
 (function (exports, _emberViewsViewsStatesDefault, _emberMetalAssign, _emberViewsSystemJquery, _emberMetalRun_loop, _emberMetalInstrumentation, _emberMetalProperty_get) {
   'use strict';
 
@@ -14754,7 +16220,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   });
 
   exports.default = hasElement;
-})(Em._e[68],Em._e[64],Em._e[8],Em._e[66],Em._e[40],Em._e[67],Em._e[4]);
+})(Em._e[85],Em._e[81],Em._e[25],Em._e[83],Em._e[57],Em._e[84],Em._e[21]);
 (function (exports, _emberMetalDebug, _emberMetalAssign, _emberMetalError, _emberMetalObserver, _emberViewsViewsStatesHas_element) {
   'use strict';
 
@@ -14788,7 +16254,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   });
 
   exports.default = inDOM;
-})(Em._e[69],Em._e[0],Em._e[8],Em._e[21],Em._e[41],Em._e[68]);
+})(Em._e[86],Em._e[17],Em._e[25],Em._e[38],Em._e[58],Em._e[85]);
 (function (exports, _emberMetalAssign, _emberViewsViewsStatesDefault, _emberMetalError) {
   'use strict';
 
@@ -14809,7 +16275,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   });
 
   exports.default = destroying;
-})(Em._e[70],Em._e[8],Em._e[64],Em._e[21]);
+})(Em._e[87],Em._e[25],Em._e[81],Em._e[38]);
 (function (exports, _emberMetalAssign, _emberViewsViewsStatesDefault, _emberViewsViewsStatesPre_render, _emberViewsViewsStatesHas_element, _emberViewsViewsStatesIn_dom, _emberViewsViewsStatesDestroying) {
   'use strict';
 
@@ -14842,7 +16308,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     destroying: _emberViewsViewsStatesDestroying.default
   };
   exports.states = states;
-})(Em._e[71],Em._e[8],Em._e[64],Em._e[65],Em._e[68],Em._e[69],Em._e[70]);
+})(Em._e[88],Em._e[25],Em._e[81],Em._e[82],Em._e[85],Em._e[86],Em._e[87]);
 (function (exports, _emberMetalProperty_get, _emberRuntimeSystemObject, _emberRuntimeMixinsEvented, _emberRuntimeMixinsAction_handler, _emberRuntimeUtils, _emberViewsViewsStates, _require) {
   'use strict';
 
@@ -14956,7 +16422,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = CoreView;
-})(Em._e[72],Em._e[4],Em._e[54],Em._e[55],Em._e[44],Em._e[62],Em._e[71],Em.__loader.require);
+})(Em._e[89],Em._e[21],Em._e[71],Em._e[72],Em._e[61],Em._e[79],Em._e[88],Em.__loader.require);
 (function (exports, _emberMetalDebug, _emberMetalMixin) {
   /**
   @module ember
@@ -15032,7 +16498,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     */
     classNameBindings: EMPTY_ARRAY
   });
-})(Em._e[73],Em._e[0],Em._e[43]);
+})(Em._e[90],Em._e[17],Em._e[60]);
 (function (exports, _emberMetalMixin, _containerOwner) {
   /**
   @module ember
@@ -15106,7 +16572,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       instance.parentView = null;
     }
   });
-})(Em._e[74],Em._e[43],Em._e[46]);
+})(Em._e[91],Em._e[60],Em._e[63]);
 (function (exports, _emberMetalMixin) {
   'use strict';
 
@@ -15124,7 +16590,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
     }
   });
-})(Em._e[75],Em._e[43]);
+})(Em._e[92],Em._e[60]);
 (function (exports, _emberMetalMixin, _emberMetalProperty_get) {
   /**
   @module ember
@@ -15153,7 +16619,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       this._super(hash);
     }
   });
-})(Em._e[76],Em._e[43],Em._e[4]);
+})(Em._e[93],Em._e[60],Em._e[21]);
 (function (exports, _emberMetalMixin) {
   /**
    @module ember
@@ -15182,8 +16648,95 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     */
     ariaRole: null
   });
-})(Em._e[77],Em._e[43]);
-(function (exports, _emberMetalDebug, _emberMetalRun_loop, _emberMetalUtils, _emberMetalMixin, _emberRuntimeSystemCore_object, _emberMetalSymbol, _emberViewsSystemJquery) {
+})(Em._e[94],Em._e[60]);
+(function (exports) {
+  /* globals Element */
+
+  /**
+  @module ember
+  @submodule ember-views
+  */
+
+  'use strict';
+
+  exports.isSimpleClick = isSimpleClick;
+  exports.getViewClientRects = getViewClientRects;
+  exports.getViewBoundingClientRect = getViewBoundingClientRect;
+  exports.matches = matches;
+
+  function isSimpleClick(event) {
+    var modifier = event.shiftKey || event.metaKey || event.altKey || event.ctrlKey;
+    var secondaryClick = event.which > 1; // IE9 may return undefined
+
+    return !modifier && !secondaryClick;
+  }
+
+  var STYLE_WARNING = '' + 'Binding style attributes may introduce cross-site scripting vulnerabilities; ' + 'please ensure that values being bound are properly escaped. For more information, ' + 'including how to disable this warning, see ' + 'http://emberjs.com/deprecations/v1.x/#toc_binding-style-attributes.';
+
+  exports.STYLE_WARNING = STYLE_WARNING;
+  /**
+    @private
+    @method getViewRange
+    @param {Ember.View} view
+  */
+  function getViewRange(view) {
+    var range = document.createRange();
+    range.setStartBefore(view._renderNode.firstNode);
+    range.setEndAfter(view._renderNode.lastNode);
+    return range;
+  }
+
+  /**
+    `getViewClientRects` provides information about the position of the border
+    box edges of a view relative to the viewport.
+  
+    It is only intended to be used by development tools like the Ember Inspector
+    and may not work on older browsers.
+  
+    @private
+    @method getViewClientRects
+    @param {Ember.View} view
+  */
+
+  function getViewClientRects(view) {
+    var range = getViewRange(view);
+    return range.getClientRects();
+  }
+
+  /**
+    `getViewBoundingClientRect` provides information about the position of the
+    bounding border box edges of a view relative to the viewport.
+  
+    It is only intended to be used by development tools like the Ember Inpsector
+    and may not work on older browsers.
+  
+    @private
+    @method getViewBoundingClientRect
+    @param {Ember.View} view
+  */
+
+  function getViewBoundingClientRect(view) {
+    var range = getViewRange(view);
+    return range.getBoundingClientRect();
+  }
+
+  /**
+    Determines if the element matches the specified selector.
+  
+    @private
+    @method matches
+    @param {DOMElement} el
+    @param {String} selector
+  */
+  var elMatches = typeof Element !== 'undefined' && (Element.prototype.matches || Element.prototype.matchesSelector || Element.prototype.mozMatchesSelector || Element.prototype.msMatchesSelector || Element.prototype.oMatchesSelector || Element.prototype.webkitMatchesSelector);
+
+  exports.elMatches = elMatches;
+
+  function matches(el, selector) {
+    return elMatches.call(el, selector);
+  }
+})(Em._e[95]);
+(function (exports, _emberMetalDebug, _emberMetalRun_loop, _emberMetalUtils, _emberMetalMixin, _emberRuntimeSystemCore_object, _emberMetalSymbol, _emberEnvironment, _emberViewsSystemUtils, _emberViewsSystemJquery) {
   'use strict';
 
   var _Mixin$create;
@@ -15307,23 +16860,34 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       @private
     */
     appendTo: function (selector) {
-      var $ = this._environment ? this._environment.options.jQuery : _emberViewsSystemJquery.default;
+      var env = this._environment || _emberEnvironment.environment;
+      var target = undefined;
 
-      if ($) {
-        var target = $(selector);
+      if (env.hasDOM) {
+        target = typeof selector === 'string' ? document.querySelector(selector) : selector;
 
-        _emberMetalDebug.assert('You tried to append to (' + selector + ') but that isn\'t in the DOM', target.length > 0);
-        _emberMetalDebug.assert('You cannot append to an existing Ember.View.', !target.is('.ember-view') && !target.parents().is('.ember-view'));
+        _emberMetalDebug.assert('You tried to append to (' + selector + ') but that isn\'t in the DOM', target);
+        _emberMetalDebug.assert('You cannot append to an existing Ember.View.', !_emberViewsSystemUtils.matches(target, '.ember-view'));
+        _emberMetalDebug.assert('You cannot append to an existing Ember.View.', (function () {
+          var node = target.parentNode;
+          while (node) {
+            if (node.nodeType !== 9 && _emberViewsSystemUtils.matches(node, '.ember-view')) {
+              return false;
+            }
 
-        this.renderer.appendTo(this, target[0]);
+            node = node.parentNode;
+          }
+
+          return true;
+        })());
       } else {
-        var target = selector;
+        target = selector;
 
         _emberMetalDebug.assert('You tried to append to a selector string (' + selector + ') in an environment without jQuery', typeof target !== 'string');
         _emberMetalDebug.assert('You tried to append to a non-Element (' + selector + ') in an environment without jQuery', typeof selector.appendChild === 'function');
-
-        this.renderer.appendTo(this, target);
       }
+
+      this.renderer.appendTo(this, target);
 
       return this;
     },
@@ -15595,7 +17159,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }, _Mixin$create.handleEvent = function (eventName, evt) {
     return this._currentState.handleEvent(this, eventName, evt);
   }, _Mixin$create));
-})(Em._e[78],Em._e[0],Em._e[40],Em._e[11],Em._e[43],Em._e[49],Em._e[13],Em._e[66]);
+})(Em._e[96],Em._e[17],Em._e[57],Em._e[28],Em._e[60],Em._e[66],Em._e[30],Em._e[24],Em._e[95],Em._e[83]);
 (function (exports, _emberMetalMixin, _emberMetalProperty_get, _emberMetalIs_none, _emberMetalDebug, _emberViewsCompatAttrsProxy, _emberMetalUtils) {
   'use strict';
 
@@ -15734,7 +17298,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
     }
   });
-})(Em._e[79],Em._e[43],Em._e[4],Em._e[52],Em._e[0],Em._e[63],Em._e[11]);
+})(Em._e[97],Em._e[60],Em._e[21],Em._e[69],Em._e[17],Em._e[80],Em._e[28]);
 (function (exports, _emberEnvironment, _emberMetalDebug, _emberMetalProperty_get, _emberMetalMixin, _emberMetalComputed) {
   /**
   @module ember
@@ -15900,1448 +17464,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return null;
   }
-})(Em._e[80],Em._e[7],Em._e[0],Em._e[4],Em._e[43],Em._e[30]);
-(function (exports) {
-    "use strict";
-
-    exports.combineTagged = combineTagged;
-    exports.combineSlice = combineSlice;
-    exports.combine = combine;
-    exports.map = map;
-    exports.isModified = isModified;
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var CONSTANT = 0;
-    exports.CONSTANT = CONSTANT;
-    var INITIAL = 1;
-    exports.INITIAL = INITIAL;
-    var VOLATILE = NaN;
-    exports.VOLATILE = VOLATILE;
-
-    var RevisionTag = (function () {
-        function RevisionTag() {
-            _classCallCheck(this, RevisionTag);
-        }
-
-        RevisionTag.prototype.validate = function validate(snapshot) {
-            return this.value() === snapshot;
-        };
-
-        return RevisionTag;
-    })();
-
-    exports.RevisionTag = RevisionTag;
-
-    var $REVISION = INITIAL;
-
-    var DirtyableTag = (function (_RevisionTag) {
-        _inherits(DirtyableTag, _RevisionTag);
-
-        function DirtyableTag() {
-            var revision = arguments.length <= 0 || arguments[0] === undefined ? $REVISION : arguments[0];
-
-            _classCallCheck(this, DirtyableTag);
-
-            _RevisionTag.call(this);
-            this.revision = revision;
-        }
-
-        DirtyableTag.prototype.value = function value() {
-            return this.revision;
-        };
-
-        DirtyableTag.prototype.dirty = function dirty() {
-            this.revision = ++$REVISION;
-        };
-
-        return DirtyableTag;
-    })(RevisionTag);
-
-    exports.DirtyableTag = DirtyableTag;
-
-    function combineTagged(tagged) {
-        var optimized = [];
-        for (var i = 0, l = tagged.length; i < l; i++) {
-            var tag = tagged[i].tag;
-            if (tag === VOLATILE_TAG) return VOLATILE_TAG;
-            if (tag === CONSTANT_TAG) continue;
-            optimized.push(tag);
-        }
-        return _combine(optimized);
-    }
-
-    function combineSlice(slice) {
-        var optimized = [];
-        var node = slice.head();
-        while (node !== null) {
-            var tag = node.tag;
-            if (tag === VOLATILE_TAG) return VOLATILE_TAG;
-            if (tag !== CONSTANT_TAG) optimized.push(tag);
-            node = slice.nextNode(node);
-        }
-        return _combine(optimized);
-    }
-
-    function combine(tags) {
-        var optimized = [];
-        for (var i = 0, l = tags.length; i < l; i++) {
-            var tag = tags[i];
-            if (tag === VOLATILE_TAG) return VOLATILE_TAG;
-            if (tag === CONSTANT_TAG) continue;
-            optimized.push(tag);
-        }
-        return _combine(optimized);
-    }
-
-    function _combine(tags) {
-        switch (tags.length) {
-            case 0:
-                return CONSTANT_TAG;
-            case 1:
-                return tags[0];
-            case 2:
-                return new TagsPair(tags[0], tags[1]);
-            default:
-                return new TagsCombinator(tags);
-        }
-        ;
-    }
-
-    var CachedTag = (function (_RevisionTag2) {
-        _inherits(CachedTag, _RevisionTag2);
-
-        function CachedTag() {
-            _classCallCheck(this, CachedTag);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _RevisionTag2.call.apply(_RevisionTag2, [this].concat(args));
-            this.lastChecked = null;
-            this.lastValue = null;
-        }
-
-        CachedTag.prototype.value = function value() {
-            var lastChecked = this.lastChecked;
-            var lastValue = this.lastValue;
-
-            if (lastChecked !== $REVISION) {
-                this.lastChecked = $REVISION;
-                this.lastValue = lastValue = this.compute();
-            }
-            return this.lastValue;
-        };
-
-        CachedTag.prototype.invalidate = function invalidate() {
-            this.lastChecked = null;
-        };
-
-        return CachedTag;
-    })(RevisionTag);
-
-    exports.CachedTag = CachedTag;
-
-    var TagsPair = (function (_CachedTag) {
-        _inherits(TagsPair, _CachedTag);
-
-        function TagsPair(first, second) {
-            _classCallCheck(this, TagsPair);
-
-            _CachedTag.call(this);
-            this.first = first;
-            this.second = second;
-        }
-
-        TagsPair.prototype.compute = function compute() {
-            return Math.max(this.first.value(), this.second.value());
-        };
-
-        return TagsPair;
-    })(CachedTag);
-
-    var TagsCombinator = (function (_CachedTag2) {
-        _inherits(TagsCombinator, _CachedTag2);
-
-        function TagsCombinator(tags) {
-            _classCallCheck(this, TagsCombinator);
-
-            _CachedTag2.call(this);
-            this.tags = tags;
-        }
-
-        TagsCombinator.prototype.compute = function compute() {
-            var tags = this.tags;
-
-            var max = -1;
-            for (var i = 0; i < tags.length; i++) {
-                var value = tags[i].value();
-                max = Math.max(value, max);
-            }
-            return max;
-        };
-
-        return TagsCombinator;
-    })(CachedTag);
-
-    var UpdatableTag = (function (_CachedTag3) {
-        _inherits(UpdatableTag, _CachedTag3);
-
-        function UpdatableTag(tag) {
-            _classCallCheck(this, UpdatableTag);
-
-            _CachedTag3.call(this);
-            this.tag = tag;
-            this.lastUpdated = INITIAL;
-        }
-
-        //////////
-
-        UpdatableTag.prototype.compute = function compute() {
-            return Math.max(this.lastUpdated, this.tag.value());
-        };
-
-        UpdatableTag.prototype.update = function update(tag) {
-            if (tag !== this.tag) {
-                this.tag = tag;
-                this.lastUpdated = $REVISION;
-                this.invalidate();
-            }
-        };
-
-        return UpdatableTag;
-    })(CachedTag);
-
-    exports.UpdatableTag = UpdatableTag;
-    var CONSTANT_TAG = new ((function (_RevisionTag3) {
-        _inherits(ConstantTag, _RevisionTag3);
-
-        function ConstantTag() {
-            _classCallCheck(this, ConstantTag);
-
-            _RevisionTag3.apply(this, arguments);
-        }
-
-        ConstantTag.prototype.value = function value() {
-            return CONSTANT;
-        };
-
-        return ConstantTag;
-    })(RevisionTag))();
-    exports.CONSTANT_TAG = CONSTANT_TAG;
-    var VOLATILE_TAG = new ((function (_RevisionTag4) {
-        _inherits(VolatileTag, _RevisionTag4);
-
-        function VolatileTag() {
-            _classCallCheck(this, VolatileTag);
-
-            _RevisionTag4.apply(this, arguments);
-        }
-
-        VolatileTag.prototype.value = function value() {
-            return VOLATILE;
-        };
-
-        return VolatileTag;
-    })(RevisionTag))();
-    exports.VOLATILE_TAG = VOLATILE_TAG;
-    var CURRENT_TAG = new ((function (_DirtyableTag) {
-        _inherits(CurrentTag, _DirtyableTag);
-
-        function CurrentTag() {
-            _classCallCheck(this, CurrentTag);
-
-            _DirtyableTag.apply(this, arguments);
-        }
-
-        CurrentTag.prototype.value = function value() {
-            return $REVISION;
-        };
-
-        return CurrentTag;
-    })(DirtyableTag))();
-    exports.CURRENT_TAG = CURRENT_TAG;
-
-    var CachedReference = (function () {
-        function CachedReference() {
-            _classCallCheck(this, CachedReference);
-
-            this.lastRevision = null;
-            this.lastValue = null;
-        }
-
-        CachedReference.prototype.value = function value() {
-            var tag = this.tag;
-            var lastRevision = this.lastRevision;
-            var lastValue = this.lastValue;
-
-            if (!lastRevision || !tag.validate(lastRevision)) {
-                this.lastRevision = tag.value();
-                lastValue = this.lastValue = this.compute();
-            }
-            return lastValue;
-        };
-
-        CachedReference.prototype.invalidate = function invalidate() {
-            this.lastRevision = null;
-        };
-
-        return CachedReference;
-    })();
-
-    exports.CachedReference = CachedReference;
-
-    var MapperReference = (function (_CachedReference) {
-        _inherits(MapperReference, _CachedReference);
-
-        function MapperReference(reference, mapper) {
-            _classCallCheck(this, MapperReference);
-
-            _CachedReference.call(this);
-            this.tag = reference.tag;
-            this.reference = reference;
-            this.mapper = mapper;
-        }
-
-        MapperReference.prototype.compute = function compute() {
-            var reference = this.reference;
-            var mapper = this.mapper;
-
-            return mapper(reference.value());
-        };
-
-        return MapperReference;
-    })(CachedReference);
-
-    function map(reference, mapper) {
-        return new MapperReference(reference, mapper);
-    }
-
-    //////////
-
-    var ReferenceCache = (function () {
-        function ReferenceCache(reference) {
-            _classCallCheck(this, ReferenceCache);
-
-            this.lastValue = null;
-            this.lastRevision = null;
-            this.initialized = false;
-            this.tag = reference.tag;
-            this.reference = reference;
-        }
-
-        ReferenceCache.prototype.peek = function peek() {
-            if (!this.initialized) {
-                return this.initialize();
-            }
-            return this.lastValue;
-        };
-
-        ReferenceCache.prototype.revalidate = function revalidate() {
-            if (!this.initialized) {
-                return this.initialize();
-            }
-            var reference = this.reference;
-            var lastRevision = this.lastRevision;
-
-            var tag = reference.tag;
-            if (tag.validate(lastRevision)) return NOT_MODIFIED;
-            this.lastRevision = tag.value();
-            var lastValue = this.lastValue;
-
-            var value = reference.value();
-            if (value === lastValue) return NOT_MODIFIED;
-            this.lastValue = value;
-            return value;
-        };
-
-        ReferenceCache.prototype.initialize = function initialize() {
-            var reference = this.reference;
-
-            var value = this.lastValue = reference.value();
-            this.lastRevision = reference.tag.value();
-            this.initialized = true;
-            return value;
-        };
-
-        return ReferenceCache;
-    })();
-
-    exports.ReferenceCache = ReferenceCache;
-
-    var NOT_MODIFIED = "adb3b78e-3d22-4e4b-877a-6317c2c5c145";
-
-    function isModified(value) {
-        return value !== NOT_MODIFIED;
-    }
-})(Em._e[82]);
-(function (exports, _glimmerReferenceLibValidators) {
-    "use strict";
-
-    exports.isConst = isConst;
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var CONST_REFERENCE = "503c5a44-e4a9-4bb5-85bc-102d35af6985";
-    exports.CONST_REFERENCE = CONST_REFERENCE;
-
-    var ConstReference = (function () {
-        function ConstReference(inner) {
-            _classCallCheck(this, ConstReference);
-
-            this.tag = _glimmerReferenceLibValidators.CONSTANT_TAG;
-            this["503c5a44-e4a9-4bb5-85bc-102d35af6985"] = true;
-            this.inner = inner;
-        }
-
-        ConstReference.prototype.value = function value() {
-            return this.inner;
-        };
-
-        return ConstReference;
-    })();
-
-    exports.ConstReference = ConstReference;
-
-    function isConst(reference) {
-        return !!reference[CONST_REFERENCE];
-    }
-})(Em._e[83],Em._e[82]);
-(function (exports) {
-    "use strict";
-
-    exports.referenceFromParts = referenceFromParts;
-
-    function referenceFromParts(root, parts) {
-        var reference = root;
-        for (var i = 0; i < parts.length; i++) {
-            reference = reference.get(parts[i]);
-        }
-        return reference;
-    }
-})(Em._e[84]);
-(function (exports) {
-    /*globals console*/
-    "use strict";
-
-    exports.merge = merge;
-    exports.assign = assign;
-    exports.shallowCopy = shallowCopy;
-    exports.keySet = keySet;
-    exports.keyLength = keyLength;
-
-    function merge(options, defaults) {
-        for (var prop in defaults) {
-            if (options.hasOwnProperty(prop)) {
-                continue;
-            }
-            options[prop] = defaults[prop];
-        }
-        return options;
-    }
-
-    function assign(obj) {
-        for (var _len = arguments.length, assignments = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-            assignments[_key - 1] = arguments[_key];
-        }
-
-        return assignments.reduce(function (obj, extensions) {
-            Object.keys(extensions).forEach(function (key) {
-                return obj[key] = extensions[key];
-            });
-            return obj;
-        }, obj);
-    }
-
-    function shallowCopy(obj) {
-        return merge({}, obj);
-    }
-
-    function keySet(obj) {
-        var set = {};
-        for (var prop in obj) {
-            if (obj.hasOwnProperty(prop)) {
-                set[prop] = true;
-            }
-        }
-        return set;
-    }
-
-    function keyLength(obj) {
-        var count = 0;
-        for (var prop in obj) {
-            if (obj.hasOwnProperty(prop)) {
-                count++;
-            }
-        }
-        return count;
-    }
-})(Em._e[85]);
-(function (exports) {
-    // There is a small whitelist of namespaced attributes specially
-    // enumerated in
-    // https://www.w3.org/TR/html/syntax.html#attributes-0
-    //
-    // > When a foreign element has one of the namespaced attributes given by
-    // > the local name and namespace of the first and second cells of a row
-    // > from the following table, it must be written using the name given by
-    // > the third cell from the same row.
-    //
-    // In all other cases, colons are interpreted as a regular character
-    // with no special meaning:
-    //
-    // > No other namespaced attribute can be expressed in the HTML syntax.
-    'use strict';
-
-    exports.getAttrNamespace = getAttrNamespace;
-    var XLINK = 'http://www.w3.org/1999/xlink';
-    var XML = 'http://www.w3.org/XML/1998/namespace';
-    var XMLNS = 'http://www.w3.org/2000/xmlns/';
-    var WHITELIST = {
-        'xlink:actuate': XLINK,
-        'xlink:arcrole': XLINK,
-        'xlink:href': XLINK,
-        'xlink:role': XLINK,
-        'xlink:show': XLINK,
-        'xlink:title': XLINK,
-        'xlink:type': XLINK,
-        'xml:base': XML,
-        'xml:lang': XML,
-        'xml:space': XML,
-        'xmlns': XMLNS,
-        'xmlns:xlink': XMLNS
-    };
-
-    function getAttrNamespace(attrName) {
-        return WHITELIST[attrName] || null;
-    }
-})(Em._e[86]);
-(function (exports) {
-    'use strict';
-
-    exports.intern = intern;
-    exports.opaque = opaque;
-    exports.numberKey = numberKey;
-    exports.LITERAL = LITERAL;
-    exports.symbol = symbol;
-
-    function intern(str) {
-        return str;
-        // let obj = {};
-        // obj[str] = 1;
-        // for (let key in obj) return <InternedString>key;
-    }
-
-    function opaque(value) {
-        return value;
-    }
-
-    function numberKey(num) {
-        return String(num);
-    }
-
-    function LITERAL(str) {
-        return str;
-    }
-
-    var BASE_KEY = intern('__glimmer{+ new Date()}');
-
-    function symbol(debugName) {
-        var number = +new Date();
-        return intern(debugName + ' [id=' + BASE_KEY + Math.floor(Math.random() * number) + ']');
-    }
-})(Em._e[87]);
-(function (exports) {
-    // import Logger from './logger';
-    // let alreadyWarned = false;
-    "use strict";
-
-    exports.debugAssert = debugAssert;
-    exports.prodAssert = prodAssert;
-
-    function debugAssert(test, msg) {
-        // if (!alreadyWarned) {
-        //   alreadyWarned = true;
-        //   Logger.warn("Don't leave debug assertions on in public builds");
-        // }
-        if (!test) {
-            throw new Error(msg || "assertion failure");
-        }
-    }
-
-    function prodAssert() {}
-
-    exports.default = debugAssert;
-})(Em._e[88]);
-(function (exports) {
-    'use strict';
-
-    exports.forEach = forEach;
-    exports.map = map;
-
-    function forEach(array, callback) {
-        var binding = arguments.length <= 2 || arguments[2] === undefined ? undefined : arguments[2];
-
-        var i = undefined,
-            l = undefined;
-        if (binding === undefined) {
-            for (i = 0, l = array.length; i < l; i++) {
-                callback(array[i], i, array);
-            }
-        } else {
-            for (i = 0, l = array.length; i < l; i++) {
-                callback.call(binding, array[i], i, array);
-            }
-        }
-    }
-
-    function map(array, callback) {
-        var output = [];
-        var i = undefined,
-            l = undefined;
-        for (i = 0, l = array.length; i < l; i++) {
-            output.push(callback(array[i], i, array));
-        }
-        return output;
-    }
-
-    var getIdx = undefined;
-    if (Array.prototype.indexOf) {
-        getIdx = function (array, obj, from) {
-            return array.indexOf(obj, from);
-        };
-    } else {
-        getIdx = function (array, obj, from) {
-            if (from === undefined || from === null) {
-                from = 0;
-            } else if (from < 0) {
-                from = Math.max(0, array.length + from);
-            }
-            for (var i = from, l = array.length; i < l; i++) {
-                if (array[i] === obj) {
-                    return i;
-                }
-            }
-            return -1;
-        };
-    }
-    var isArray = Array.isArray || function (array) {
-        return Object.prototype.toString.call(array) === '[object Array]';
-    };
-    exports.isArray = isArray;
-    var indexOfArray = getIdx;
-    exports.indexOfArray = indexOfArray;
-})(Em._e[89]);
-(function (exports, _glimmerUtilLibArrayUtils) {
-  "use strict";
-
-  // The HTML elements in this list are speced by
-  // http://www.w3.org/TR/html-markup/syntax.html#syntax-elements,
-  // and will be forced to close regardless of if they have a
-  // self-closing /> at the end.
-  var voidTagNames = "area base br col command embed hr img input keygen link meta param source track wbr";
-  var voidMap = {};
-  _glimmerUtilLibArrayUtils.forEach(voidTagNames.split(" "), function (tagName) {
-    return voidMap[tagName] = true;
-  });
-  exports.default = voidMap;
-})(Em._e[90],Em._e[89]);
-(function (exports) {
-    "use strict";
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var LogLevel;
-    exports.LogLevel = LogLevel;
-    (function (LogLevel) {
-        LogLevel[LogLevel["Trace"] = 0] = "Trace";
-        LogLevel[LogLevel["Debug"] = 1] = "Debug";
-        LogLevel[LogLevel["Warn"] = 2] = "Warn";
-        LogLevel[LogLevel["Error"] = 3] = "Error";
-    })(LogLevel || (exports.LogLevel = LogLevel = {}));
-
-    var NullConsole = (function () {
-        function NullConsole() {
-            _classCallCheck(this, NullConsole);
-        }
-
-        NullConsole.prototype.log = function log(message) {};
-
-        NullConsole.prototype.warn = function warn(message) {};
-
-        NullConsole.prototype.error = function error(message) {};
-
-        NullConsole.prototype.trace = function trace() {};
-
-        return NullConsole;
-    })();
-
-    var Logger = (function () {
-        function Logger(_ref) {
-            var console = _ref.console;
-            var level = _ref.level;
-
-            _classCallCheck(this, Logger);
-
-            this.f = ALWAYS;
-            this.force = ALWAYS;
-            this.console = console;
-            this.level = level;
-        }
-
-        Logger.prototype.skipped = function skipped(level) {
-            return level < this.level;
-        };
-
-        Logger.prototype.trace = function trace(message) {
-            var _ref2 = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-            var _ref2$stackTrace = _ref2.stackTrace;
-            var stackTrace = _ref2$stackTrace === undefined ? false : _ref2$stackTrace;
-
-            if (this.skipped(LogLevel.Trace)) return;
-            this.console.log(message);
-            if (stackTrace) this.console.trace();
-        };
-
-        Logger.prototype.debug = function debug(message) {
-            var _ref3 = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-            var _ref3$stackTrace = _ref3.stackTrace;
-            var stackTrace = _ref3$stackTrace === undefined ? false : _ref3$stackTrace;
-
-            if (this.skipped(LogLevel.Debug)) return;
-            this.console.log(message);
-            if (stackTrace) this.console.trace();
-        };
-
-        Logger.prototype.warn = function warn(message) {
-            var _ref4 = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-            var _ref4$stackTrace = _ref4.stackTrace;
-            var stackTrace = _ref4$stackTrace === undefined ? false : _ref4$stackTrace;
-
-            if (this.skipped(LogLevel.Warn)) return;
-            this.console.warn(message);
-            if (stackTrace) this.console.trace();
-        };
-
-        Logger.prototype.error = function error(message) {
-            if (this.skipped(LogLevel.Error)) return;
-            this.console.error(message);
-        };
-
-        return Logger;
-    })();
-
-    exports.Logger = Logger;
-
-    var _console = typeof console === 'undefined' ? new NullConsole() : console;
-    var ALWAYS = new Logger({ console: _console, level: LogLevel.Trace });
-    var LOG_LEVEL = LogLevel.Warn;
-    exports.default = new Logger({ console: _console, level: LOG_LEVEL });
-})(Em._e[91]);
-(function (exports) {
-    "use strict";
-
-    exports.initializeGuid = initializeGuid;
-    exports.ensureGuid = ensureGuid;
-    var GUID = 0;
-
-    function initializeGuid(object) {
-        return object._guid = ++GUID;
-    }
-
-    function ensureGuid(object) {
-        return object._guid || initializeGuid(object);
-    }
-})(Em._e[92]);
-(function (exports, _glimmerUtilLibGuid) {
-    'use strict';
-
-    exports.dict = dict;
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var proto = Object.create(null, {
-        // without this, we will always still end up with (new
-        // EmptyObject()).constructor === Object
-        constructor: {
-            value: undefined,
-            enumerable: false,
-            writable: true
-        }
-    });
-    function EmptyObject() {}
-    EmptyObject.prototype = proto;
-
-    function dict() {
-        // let d = Object.create(null);
-        // d.x = 1;
-        // delete d.x;
-        // return d;
-        return new EmptyObject();
-    }
-
-    var DictSet = (function () {
-        function DictSet() {
-            _classCallCheck(this, DictSet);
-
-            this.dict = dict();
-        }
-
-        DictSet.prototype.add = function add(obj) {
-            if (typeof obj === 'string') this.dict[obj] = obj;else this.dict[_glimmerUtilLibGuid.ensureGuid(obj)] = obj;
-            return this;
-        };
-
-        DictSet.prototype.delete = function _delete(obj) {
-            if (typeof obj === 'string') delete this.dict[obj];else if (obj._guid) delete this.dict[obj._guid];
-        };
-
-        DictSet.prototype.forEach = function forEach(callback) {
-            var dict = this.dict;
-
-            Object.keys(dict).forEach(function (key) {
-                return callback(dict[key]);
-            });
-        };
-
-        DictSet.prototype.toArray = function toArray() {
-            return Object.keys(this.dict);
-        };
-
-        return DictSet;
-    })();
-
-    exports.DictSet = DictSet;
-
-    var Stack = (function () {
-        function Stack() {
-            _classCallCheck(this, Stack);
-
-            this.stack = [];
-            this.current = null;
-        }
-
-        Stack.prototype.push = function push(item) {
-            this.current = item;
-            this.stack.push(item);
-        };
-
-        Stack.prototype.pop = function pop() {
-            var item = this.stack.pop();
-            var len = this.stack.length;
-            this.current = len === 0 ? null : this.stack[len - 1];
-            return item;
-        };
-
-        Stack.prototype.isEmpty = function isEmpty() {
-            return this.stack.length === 0;
-        };
-
-        return Stack;
-    })();
-
-    exports.Stack = Stack;
-})(Em._e[93],Em._e[92]);
-(function (exports) {
-    "use strict";
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var ListNode = function ListNode(value) {
-        _classCallCheck(this, ListNode);
-
-        this.next = null;
-        this.prev = null;
-        this.value = value;
-    };
-
-    exports.ListNode = ListNode;
-
-    var LinkedList = (function () {
-        function LinkedList() {
-            _classCallCheck(this, LinkedList);
-
-            this.clear();
-        }
-
-        LinkedList.fromSlice = function fromSlice(slice) {
-            var list = new LinkedList();
-            slice.forEachNode(function (n) {
-                return list.append(n.clone());
-            });
-            return list;
-        };
-
-        LinkedList.prototype.head = function head() {
-            return this._head;
-        };
-
-        LinkedList.prototype.tail = function tail() {
-            return this._tail;
-        };
-
-        LinkedList.prototype.clear = function clear() {
-            this._head = this._tail = null;
-        };
-
-        LinkedList.prototype.isEmpty = function isEmpty() {
-            return this._head === null;
-        };
-
-        LinkedList.prototype.toArray = function toArray() {
-            var out = [];
-            this.forEachNode(function (n) {
-                return out.push(n);
-            });
-            return out;
-        };
-
-        LinkedList.prototype.splice = function splice(start, end, reference) {
-            var before = undefined;
-            if (reference === null) {
-                before = this._tail;
-                this._tail = end;
-            } else {
-                before = reference.prev;
-                end.next = reference;
-                reference.prev = end;
-            }
-            if (before) {
-                before.next = start;
-                start.prev = before;
-            }
-        };
-
-        LinkedList.prototype.spliceList = function spliceList(list, reference) {
-            if (list.isEmpty()) return;
-            this.splice(list.head(), list.tail(), reference);
-        };
-
-        LinkedList.prototype.nextNode = function nextNode(node) {
-            return node.next;
-        };
-
-        LinkedList.prototype.prevNode = function prevNode(node) {
-            return node.prev;
-        };
-
-        LinkedList.prototype.forEachNode = function forEachNode(callback) {
-            var node = this._head;
-            while (node !== null) {
-                callback(node);
-                node = node.next;
-            }
-        };
-
-        LinkedList.prototype.contains = function contains(needle) {
-            var node = this._head;
-            while (node !== null) {
-                if (node === needle) return true;
-                node = node.next;
-            }
-            return false;
-        };
-
-        LinkedList.prototype.insertBefore = function insertBefore(node) {
-            var reference = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
-
-            if (reference === null) return this.append(node);
-            if (reference.prev) reference.prev.next = node;else this._head = node;
-            node.prev = reference.prev;
-            node.next = reference;
-            reference.prev = node;
-            return node;
-        };
-
-        LinkedList.prototype.append = function append(node) {
-            var tail = this._tail;
-            if (tail) {
-                tail.next = node;
-                node.prev = tail;
-                node.next = null;
-            } else {
-                this._head = node;
-            }
-            return this._tail = node;
-        };
-
-        LinkedList.prototype.pop = function pop() {
-            if (this._tail) return this.remove(this._tail);
-            return null;
-        };
-
-        LinkedList.prototype.prepend = function prepend(node) {
-            if (this._head) return this.insertBefore(node, this._head);
-            return this._head = this._tail = node;
-        };
-
-        LinkedList.prototype.remove = function remove(node) {
-            if (node.prev) node.prev.next = node.next;else this._head = node.next;
-            if (node.next) node.next.prev = node.prev;else this._tail = node.prev;
-            return node;
-        };
-
-        return LinkedList;
-    })();
-
-    exports.LinkedList = LinkedList;
-
-    var LinkedListRemover = (function () {
-        function LinkedListRemover(node) {
-            _classCallCheck(this, LinkedListRemover);
-
-            this.node = node;
-        }
-
-        LinkedListRemover.prototype.destroy = function destroy() {
-            var _node = this.node;
-            var prev = _node.prev;
-            var next = _node.next;
-
-            prev.next = next;
-            next.prev = prev;
-        };
-
-        return LinkedListRemover;
-    })();
-
-    var ListSlice = (function () {
-        function ListSlice(head, tail) {
-            _classCallCheck(this, ListSlice);
-
-            this._head = head;
-            this._tail = tail;
-        }
-
-        ListSlice.toList = function toList(slice) {
-            var list = new LinkedList();
-            slice.forEachNode(function (n) {
-                return list.append(n.clone());
-            });
-            return list;
-        };
-
-        ListSlice.prototype.forEachNode = function forEachNode(callback) {
-            var node = this._head;
-            while (node !== null) {
-                callback(node);
-                node = this.nextNode(node);
-            }
-        };
-
-        ListSlice.prototype.contains = function contains(needle) {
-            var node = this._head;
-            while (node !== null) {
-                if (node === needle) return true;
-                node = node.next;
-            }
-            return false;
-        };
-
-        ListSlice.prototype.head = function head() {
-            return this._head;
-        };
-
-        ListSlice.prototype.tail = function tail() {
-            return this._tail;
-        };
-
-        ListSlice.prototype.toArray = function toArray() {
-            var out = [];
-            this.forEachNode(function (n) {
-                return out.push(n);
-            });
-            return out;
-        };
-
-        ListSlice.prototype.nextNode = function nextNode(node) {
-            if (node === this._tail) return null;
-            return node.next;
-        };
-
-        ListSlice.prototype.prevNode = function prevNode(node) {
-            if (node === this._head) return null;
-            return node.prev;
-        };
-
-        ListSlice.prototype.isEmpty = function isEmpty() {
-            return false;
-        };
-
-        return ListSlice;
-    })();
-
-    exports.ListSlice = ListSlice;
-    var EMPTY_SLICE = new ListSlice(null, null);
-    exports.EMPTY_SLICE = EMPTY_SLICE;
-})(Em._e[94]);
-(function (exports, _glimmerUtilLibObjectUtils, _glimmerUtilLibNamespaces, _glimmerUtilLibPlatformUtils, _glimmerUtilLibAssert, _glimmerUtilLibArrayUtils, _glimmerUtilLibVoidTagNames, _glimmerUtilLibLogger, _glimmerUtilLibGuid, _glimmerUtilLibCollections, _glimmerUtilLibListUtils) {
-  /*globals console*/
-  'use strict';
-
-  exports.getAttrNamespace = _glimmerUtilLibNamespaces.getAttrNamespace;
-  exports.LITERAL = _glimmerUtilLibPlatformUtils.LITERAL;
-  exports.InternedString = _glimmerUtilLibPlatformUtils.InternedString;
-  exports.Opaque = _glimmerUtilLibPlatformUtils.Opaque;
-  exports.opaque = _glimmerUtilLibPlatformUtils.opaque;
-  exports.symbol = _glimmerUtilLibPlatformUtils.symbol;
-  exports.intern = _glimmerUtilLibPlatformUtils.intern;
-  exports.numberKey = _glimmerUtilLibPlatformUtils.numberKey;
-  exports.assert = _glimmerUtilLibAssert.default;
-  exports.forEach = _glimmerUtilLibArrayUtils.forEach;
-  exports.map = _glimmerUtilLibArrayUtils.map;
-  exports.isArray = _glimmerUtilLibArrayUtils.isArray;
-  exports.indexOfArray = _glimmerUtilLibArrayUtils.indexOfArray;
-  exports.voidMap = _glimmerUtilLibVoidTagNames.default;
-  exports.LOGGER = _glimmerUtilLibLogger.default;
-  exports.Logger = _glimmerUtilLibLogger.Logger;
-  exports.LogLevel = _glimmerUtilLibLogger.LogLevel;
-
-  /* tslint:enable:no-unused-variable */
-  exports.merge = _glimmerUtilLibObjectUtils.merge;
-  exports.assign = _glimmerUtilLibObjectUtils.assign;
-  exports.ensureGuid = _glimmerUtilLibGuid.ensureGuid;
-  exports.initializeGuid = _glimmerUtilLibGuid.initializeGuid;
-  exports.HasGuid = _glimmerUtilLibGuid.HasGuid;
-  exports.types = _glimmerUtilLibObjectUtils;
-  exports.Stack = _glimmerUtilLibCollections.Stack;
-  exports.Dict = _glimmerUtilLibCollections.Dict;
-  exports.DictWithNumberKeys = _glimmerUtilLibCollections.DictWithNumberKeys;
-  exports.Set = _glimmerUtilLibCollections.Set;
-  exports.DictSet = _glimmerUtilLibCollections.DictSet;
-  exports.dict = _glimmerUtilLibCollections.dict;
-  exports.EMPTY_SLICE = _glimmerUtilLibListUtils.EMPTY_SLICE;
-  exports.LinkedList = _glimmerUtilLibListUtils.LinkedList;
-  exports.LinkedListNode = _glimmerUtilLibListUtils.LinkedListNode;
-  exports.ListNode = _glimmerUtilLibListUtils.ListNode;
-  exports.CloneableListNode = _glimmerUtilLibListUtils.CloneableListNode;
-  exports.ListSlice = _glimmerUtilLibListUtils.ListSlice;
-  exports.Slice = _glimmerUtilLibListUtils.Slice;
-})(Em._e[95],Em._e[85],Em._e[86],Em._e[87],Em._e[88],Em._e[89],Em._e[90],Em._e[91],Em._e[92],Em._e[93],Em._e[94]);
-(function (exports, _glimmerUtil) {
-    "use strict";
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var ListItem = (function (_ListNode) {
-        _inherits(ListItem, _ListNode);
-
-        function ListItem(iterable, result) {
-            _classCallCheck(this, ListItem);
-
-            _ListNode.call(this, iterable.valueReferenceFor(result));
-            this.retained = false;
-            this.seen = false;
-            this.key = result.key;
-            this.iterable = iterable;
-            this.memo = iterable.memoReferenceFor(result);
-        }
-
-        ListItem.prototype.update = function update(item) {
-            this.retained = true;
-            this.iterable.updateValueReference(this.value, item);
-            this.iterable.updateMemoReference(this.memo, item);
-        };
-
-        ListItem.prototype.shouldRemove = function shouldRemove() {
-            return !this.retained;
-        };
-
-        ListItem.prototype.reset = function reset() {
-            this.retained = false;
-            this.seen = false;
-        };
-
-        return ListItem;
-    })(_glimmerUtil.ListNode);
-
-    var IterationArtifacts = (function () {
-        function IterationArtifacts(iterable) {
-            _classCallCheck(this, IterationArtifacts);
-
-            this.map = _glimmerUtil.dict();
-            this.list = new _glimmerUtil.LinkedList();
-            this.tag = iterable.tag;
-            this.iterable = iterable;
-        }
-
-        IterationArtifacts.prototype.isEmpty = function isEmpty() {
-            var iterator = this.iterator = this.iterable.iterate();
-            return iterator.isEmpty();
-        };
-
-        IterationArtifacts.prototype.iterate = function iterate() {
-            var iterator = this.iterator || this.iterable.iterate();
-            this.iterator = null;
-            return iterator;
-        };
-
-        IterationArtifacts.prototype.has = function has(key) {
-            return !!this.map[key];
-        };
-
-        IterationArtifacts.prototype.get = function get(key) {
-            return this.map[key];
-        };
-
-        IterationArtifacts.prototype.wasSeen = function wasSeen(key) {
-            var node = this.map[key];
-            return node && node.seen;
-        };
-
-        IterationArtifacts.prototype.append = function append(item) {
-            var map = this.map;
-            var list = this.list;
-            var iterable = this.iterable;
-
-            var node = map[item.key] = new ListItem(iterable, item);
-            list.append(node);
-            return node;
-        };
-
-        IterationArtifacts.prototype.insertBefore = function insertBefore(item, reference) {
-            var map = this.map;
-            var list = this.list;
-            var iterable = this.iterable;
-
-            var node = map[item.key] = new ListItem(iterable, item);
-            node.retained = true;
-            list.insertBefore(node, reference);
-            return node;
-        };
-
-        IterationArtifacts.prototype.move = function move(item, reference) {
-            var list = this.list;
-
-            item.retained = true;
-            list.remove(item);
-            list.insertBefore(item, reference);
-        };
-
-        IterationArtifacts.prototype.remove = function remove(item) {
-            var list = this.list;
-
-            list.remove(item);
-            delete this.map[item.key];
-        };
-
-        IterationArtifacts.prototype.nextNode = function nextNode(item) {
-            return this.list.nextNode(item);
-        };
-
-        IterationArtifacts.prototype.head = function head() {
-            return this.list.head();
-        };
-
-        return IterationArtifacts;
-    })();
-
-    exports.IterationArtifacts = IterationArtifacts;
-
-    var ReferenceIterator = (function () {
-        // if anyone needs to construct this object with something other than
-        // an iterable, let @wycats know.
-
-        function ReferenceIterator(iterable) {
-            _classCallCheck(this, ReferenceIterator);
-
-            this.iterator = null;
-            var artifacts = new IterationArtifacts(iterable);
-            this.artifacts = artifacts;
-        }
-
-        ReferenceIterator.prototype.next = function next() {
-            var artifacts = this.artifacts;
-
-            var iterator = this.iterator = this.iterator || artifacts.iterate();
-            var item = iterator.next();
-            if (!item) return null;
-            return artifacts.append(item);
-        };
-
-        return ReferenceIterator;
-    })();
-
-    exports.ReferenceIterator = ReferenceIterator;
-
-    var Phase;
-    (function (Phase) {
-        Phase[Phase["Append"] = 0] = "Append";
-        Phase[Phase["Prune"] = 1] = "Prune";
-        Phase[Phase["Done"] = 2] = "Done";
-    })(Phase || (Phase = {}));
-
-    var IteratorSynchronizer = (function () {
-        function IteratorSynchronizer(_ref) {
-            var target = _ref.target;
-            var artifacts = _ref.artifacts;
-
-            _classCallCheck(this, IteratorSynchronizer);
-
-            this.target = target;
-            this.artifacts = artifacts;
-            this.iterator = artifacts.iterate();
-            this.current = artifacts.head();
-        }
-
-        IteratorSynchronizer.prototype.sync = function sync() {
-            var phase = Phase.Append;
-            while (true) {
-                switch (phase) {
-                    case Phase.Append:
-                        phase = this.nextAppend();
-                        break;
-                    case Phase.Prune:
-                        phase = this.nextPrune();
-                        break;
-                    case Phase.Done:
-                        this.nextDone();
-                        return;
-                }
-            }
-        };
-
-        IteratorSynchronizer.prototype.advanceToKey = function advanceToKey(key) {
-            var current = this.current;
-            var artifacts = this.artifacts;
-
-            var seek = current;
-            while (seek && seek.key !== key) {
-                seek.seen = true;
-                seek = artifacts.nextNode(seek);
-            }
-            this.current = seek && artifacts.nextNode(seek);
-        };
-
-        IteratorSynchronizer.prototype.nextAppend = function nextAppend() {
-            var iterator = this.iterator;
-            var current = this.current;
-            var artifacts = this.artifacts;
-
-            var item = iterator.next();
-            if (item === null) {
-                return this.startPrune();
-            }
-            var key = item.key;
-
-            if (current && current.key === key) {
-                this.nextRetain(item);
-            } else if (artifacts.has(key)) {
-                this.nextMove(item);
-            } else {
-                this.nextInsert(item);
-            }
-            return Phase.Append;
-        };
-
-        IteratorSynchronizer.prototype.nextRetain = function nextRetain(item) {
-            var artifacts = this.artifacts;
-            var current = this.current;
-
-            current.update(item);
-            this.current = artifacts.nextNode(current);
-            this.target.retain(item.key, current.value, current.memo);
-        };
-
-        IteratorSynchronizer.prototype.nextMove = function nextMove(item) {
-            var current = this.current;
-            var artifacts = this.artifacts;
-            var target = this.target;
-            var key = item.key;
-
-            var found = artifacts.get(item.key);
-            found.update(item);
-            if (artifacts.wasSeen(item.key)) {
-                artifacts.move(found, current);
-                target.move(found.key, found.value, found.memo, current ? current.key : null);
-            } else {
-                this.advanceToKey(key);
-            }
-        };
-
-        IteratorSynchronizer.prototype.nextInsert = function nextInsert(item) {
-            var artifacts = this.artifacts;
-            var target = this.target;
-            var current = this.current;
-
-            var node = artifacts.insertBefore(item, current);
-            target.insert(node.key, node.value, node.memo, current ? current.key : null);
-        };
-
-        IteratorSynchronizer.prototype.startPrune = function startPrune() {
-            this.current = this.artifacts.head();
-            return Phase.Prune;
-        };
-
-        IteratorSynchronizer.prototype.nextPrune = function nextPrune() {
-            var artifacts = this.artifacts;
-            var target = this.target;
-            var current = this.current;
-
-            if (current === null) {
-                return Phase.Done;
-            }
-            var node = current;
-            this.current = artifacts.nextNode(node);
-            if (node.shouldRemove()) {
-                artifacts.remove(node);
-                target.delete(node.key);
-            } else {
-                node.reset();
-            }
-            return Phase.Prune;
-        };
-
-        IteratorSynchronizer.prototype.nextDone = function nextDone() {
-            this.target.done();
-        };
-
-        return IteratorSynchronizer;
-    })();
-
-    exports.IteratorSynchronizer = IteratorSynchronizer;
-})(Em._e[96],Em._e[95]);
-(function (exports, _glimmerReferenceLibReference, _glimmerReferenceLibConst, _glimmerReferenceLibValidators, _glimmerReferenceLibUtils, _glimmerReferenceLibIterable) {
-  'use strict';
-
-  function _interopExportWildcard(obj, defaults) { var newObj = defaults({}, obj); delete newObj['default']; return newObj; }
-
-  function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-  exports.BasicReference = _glimmerReferenceLibReference.Reference;
-  exports.BasicPathReference = _glimmerReferenceLibReference.PathReference;
-  exports.ConstReference = _glimmerReferenceLibConst.ConstReference;
-  exports.isConst = _glimmerReferenceLibConst.isConst;
-
-  _defaults(exports, _interopExportWildcard(_glimmerReferenceLibValidators, _defaults));
-
-  exports.Reference = _glimmerReferenceLibValidators.VersionedReference;
-  exports.PathReference = _glimmerReferenceLibValidators.VersionedPathReference;
-  exports.referenceFromParts = _glimmerReferenceLibUtils.referenceFromParts;
-  exports.IterationItem = _glimmerReferenceLibIterable.IterationItem;
-  exports.Iterator = _glimmerReferenceLibIterable.Iterator;
-  exports.Iterable = _glimmerReferenceLibIterable.Iterable;
-  exports.OpaqueIterator = _glimmerReferenceLibIterable.OpaqueIterator;
-  exports.OpaqueIterable = _glimmerReferenceLibIterable.OpaqueIterable;
-  exports.AbstractIterator = _glimmerReferenceLibIterable.AbstractIterator;
-  exports.AbstractIterable = _glimmerReferenceLibIterable.AbstractIterable;
-  exports.IterationArtifacts = _glimmerReferenceLibIterable.IterationArtifacts;
-  exports.ReferenceIterator = _glimmerReferenceLibIterable.ReferenceIterator;
-  exports.IteratorSynchronizer = _glimmerReferenceLibIterable.IteratorSynchronizer;
-  exports.IteratorSynchronizerDelegate = _glimmerReferenceLibIterable.IteratorSynchronizerDelegate;
-})(Em._e[97],Em._e[81],Em._e[83],Em._e[82],Em._e[84],Em._e[96]);
+})(Em._e[98],Em._e[24],Em._e[17],Em._e[21],Em._e[60],Em._e[47]);
 (function (exports) {
     "use strict";
 
@@ -17439,7 +17562,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     function isAttribute(value) {
         return value && value[ATTRIBUTE] === true;
     }
-})(Em._e[98]);
+})(Em._e[99]);
 (function (exports) {
     "use strict";
 
@@ -17545,7 +17668,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
         }
         return null;
     }
-})(Em._e[99]);
+})(Em._e[100]);
 (function (exports, _glimmerUtil) {
     'use strict';
 
@@ -17653,7 +17776,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
             }
         }
     }
-})(Em._e[100],Em._e[95]);
+})(Em._e[101],Em._e[14]);
 (function (exports, _glimmerReference) {
     'use strict';
 
@@ -17705,7 +17828,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     exports.NULL_REFERENCE = NULL_REFERENCE;
     var UNDEFINED_REFERENCE = new PrimitiveReference(undefined);
     exports.UNDEFINED_REFERENCE = UNDEFINED_REFERENCE;
-})(Em._e[101],Em._e[97]);
+})(Em._e[102],Em._e[16]);
 (function (exports) {
     "use strict";
 
@@ -17724,7 +17847,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })();
 
     exports.CompiledExpression = CompiledExpression;
-})(Em._e[102]);
+})(Em._e[103]);
 (function (exports, _glimmerRuntimeLibCompiledExpressions, _glimmerReference, _glimmerUtil) {
     'use strict';
 
@@ -17792,7 +17915,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerReference.ConstReference);
 
     exports.ValueReference = ValueReference;
-})(Em._e[103],Em._e[102],Em._e[97],Em._e[95]);
+})(Em._e[104],Em._e[103],Em._e[16],Em._e[14]);
 (function (exports, _glimmerRuntimeLibOpcodes, _glimmerUtil, _glimmerReference, _glimmerRuntimeLibReferences, _glimmerRuntimeLibCompiledExpressionsValue) {
     'use strict';
 
@@ -18389,7 +18512,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerRuntimeLibOpcodes.Opcode);
 
     exports.CommentOpcode = CommentOpcode;
-})(Em._e[104],Em._e[100],Em._e[95],Em._e[97],Em._e[101],Em._e[103]);
+})(Em._e[105],Em._e[101],Em._e[14],Em._e[16],Em._e[102],Em._e[104]);
 (function (exports, _glimmerRuntimeLibBounds, _glimmerUtil, _glimmerRuntimeLibCompiledOpcodesDom) {
     'use strict';
 
@@ -18766,7 +18889,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
         return BlockListTracker;
     })();
-})(Em._e[105],Em._e[99],Em._e[95],Em._e[104]);
+})(Em._e[106],Em._e[100],Em._e[14],Em._e[105]);
 (function (exports, _glimmerRuntimeLibBounds) {
     'use strict';
 
@@ -18948,7 +19071,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
         return NodeUpsert;
     })(Upsert);
-})(Em._e[106],Em._e[99]);
+})(Em._e[107],Em._e[100]);
 (function (exports, _glimmerRuntimeLibUpsert) {
     'use strict';
 
@@ -18996,7 +19119,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
         }
         return value;
     }
-})(Em._e[107],Em._e[106]);
+})(Em._e[108],Em._e[107]);
 (function (exports) {
     /*
      * @method normalizeProperty
@@ -19069,7 +19192,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
         var tag = ATTR_OVERRIDES[tagName.toUpperCase()];
         return tag && tag[propName.toLowerCase()] || false;
     }
-})(Em._e[108]);
+})(Em._e[109]);
 (function (exports, _glimmerRuntimeLibBounds, _glimmerRuntimeLibDomHelper) {
     'use strict';
 
@@ -19146,7 +19269,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
             return DOMHelperWithInnerHTMLFix;
         })(DOMHelperClass);
     }
-})(Em._e[109],Em._e[99],Em._e[112]);
+})(Em._e[110],Em._e[100],Em._e[113]);
 (function (exports, _glimmerRuntimeLibBounds, _glimmerRuntimeLibDomHelper) {
     'use strict';
 
@@ -19217,7 +19340,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
             return DOMHelperWithSVGInnerHTMLFix;
         })(DOMHelperClass);
     }
-})(Em._e[110],Em._e[99],Em._e[112]);
+})(Em._e[111],Em._e[100],Em._e[113]);
 (function (exports) {
     // Patch:    Adjacent text node merging fix
     // Browsers: IE, Edge, Firefox w/o inspector open
@@ -19281,7 +19404,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
             return DOMHelperWithTextNodeMergingFix;
         })(DOMHelperClass);
     }
-})(Em._e[111]);
+})(Em._e[112]);
 (function (exports, _glimmerRuntimeLibBounds, _glimmerRuntimeLibCompatInnerHtmlFix, _glimmerRuntimeLibCompatSvgInnerHtmlFix, _glimmerRuntimeLibCompatTextNodeMergingFix) {
     'use strict';
 
@@ -19450,7 +19573,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     helper = _glimmerRuntimeLibCompatSvgInnerHtmlFix.default(doc, helper, SVG_NAMESPACE);
     exports.default = helper;
     exports.DOMHelper = DOMHelper;
-})(Em._e[112],Em._e[99],Em._e[109],Em._e[110],Em._e[111]);
+})(Em._e[113],Em._e[100],Em._e[110],Em._e[111],Em._e[112]);
 (function (exports) {
     'use strict';
 
@@ -19474,7 +19597,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     };
 
     exports.ComponentDefinition = ComponentDefinition;
-})(Em._e[113]);
+})(Em._e[114]);
 (function (exports, _glimmerRuntimeLibReferences, _glimmerReference) {
     'use strict';
 
@@ -19647,7 +19770,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
         return _class2;
     })(EvaluatedPositionalArgs))();
     exports.EVALUATED_EMPTY_POSITIONAL_ARGS = EVALUATED_EMPTY_POSITIONAL_ARGS;
-})(Em._e[114],Em._e[101],Em._e[97]);
+})(Em._e[115],Em._e[102],Em._e[16]);
 (function (exports, _glimmerRuntimeLibReferences, _glimmerReference, _glimmerUtil) {
     'use strict';
 
@@ -19843,7 +19966,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
         return _class2;
     })(EvaluatedNamedArgs))();
     exports.EVALUATED_EMPTY_NAMED_ARGS = EVALUATED_EMPTY_NAMED_ARGS;
-})(Em._e[115],Em._e[101],Em._e[97],Em._e[95]);
+})(Em._e[116],Em._e[102],Em._e[16],Em._e[14]);
 (function (exports, _glimmerRuntimeLibCompiledExpressionsPositionalArgs, _glimmerRuntimeLibCompiledExpressionsNamedArgs, _glimmerReference, _glimmerUtil) {
     'use strict';
 
@@ -20003,7 +20126,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     exports.EvaluatedPositionalArgs = _glimmerRuntimeLibCompiledExpressionsPositionalArgs.EvaluatedPositionalArgs;
     exports.CompiledNamedArgs = _glimmerRuntimeLibCompiledExpressionsNamedArgs.CompiledNamedArgs;
     exports.EvaluatedNamedArgs = _glimmerRuntimeLibCompiledExpressionsNamedArgs.EvaluatedNamedArgs;
-})(Em._e[116],Em._e[114],Em._e[115],Em._e[97],Em._e[95]);
+})(Em._e[117],Em._e[115],Em._e[116],Em._e[16],Em._e[14]);
 (function (exports, _glimmerRuntimeLibBounds, _glimmerRuntimeLibBuilder, _glimmerUtil, _glimmerReference, _glimmerRuntimeLibCompiledExpressionsArgs, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibVmAppend) {
     'use strict';
 
@@ -20352,7 +20475,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })();
 
     exports.UpdatingVMFrame = UpdatingVMFrame;
-})(Em._e[117],Em._e[99],Em._e[105],Em._e[95],Em._e[97],Em._e[116],Em._e[100],Em._e[147]);
+})(Em._e[118],Em._e[100],Em._e[106],Em._e[14],Em._e[16],Em._e[117],Em._e[101],Em._e[148]);
 (function (exports, _glimmerUtil) {
     'use strict';
 
@@ -20404,7 +20527,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })();
 
     exports.ListRange = ListRange;
-})(Em._e[118],Em._e[95]);
+})(Em._e[119],Em._e[14]);
 (function (exports) {
     'use strict';
 
@@ -20446,7 +20569,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
         Statements.isStaticArg = is('staticArg');
         Statements.isTrustingAttr = is('trustingAttr');
     })(Statements || (exports.Statements = Statements = {}));
-})(Em._e[119]);
+})(Em._e[120]);
 (function (exports, _glimmerRuntimeLibSyntaxCore, _glimmerWireFormat) {
     'use strict';
 
@@ -20481,7 +20604,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     };
 
     ;
-})(Em._e[120],Em._e[132],Em._e[119]);
+})(Em._e[121],Em._e[133],Em._e[120]);
 (function (exports, _glimmerUtil) {
     'use strict';
 
@@ -20603,7 +20726,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })();
 
     exports.default = SymbolTable;
-})(Em._e[121],Em._e[95]);
+})(Em._e[122],Em._e[14]);
 (function (exports, _glimmerRuntimeLibSymbolTable, _glimmerRuntimeLibCompiler) {
     'use strict';
 
@@ -20775,7 +20898,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(TopLevelTemplate);
 
     exports.Layout = Layout;
-})(Em._e[122],Em._e[121],Em._e[136]);
+})(Em._e[123],Em._e[122],Em._e[137]);
 (function (exports, _glimmerRuntimeLibSyntaxStatements, _glimmerRuntimeLibCompiledBlocks, _glimmerUtil) {
     'use strict';
 
@@ -20971,7 +21094,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })();
 
     exports.SyntaxReader = SyntaxReader;
-})(Em._e[123],Em._e[120],Em._e[122],Em._e[95]);
+})(Em._e[124],Em._e[121],Em._e[123],Em._e[14]);
 (function (exports, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibCompiledExpressionsArgs, _glimmerRuntimeLibVm, _glimmerRuntimeLibUtils, _glimmerRuntimeLibReferences, _glimmerReference, _glimmerRuntimeLibCompiledExpressionsValue, _glimmerUtil, _glimmerRuntimeLibScanner) {
     'use strict';
 
@@ -21765,7 +21888,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerRuntimeLibOpcodes.UpdatingOpcode);
 
     exports.DidModifyOpcode = DidModifyOpcode;
-})(Em._e[124],Em._e[100],Em._e[116],Em._e[148],Em._e[118],Em._e[101],Em._e[97],Em._e[103],Em._e[95],Em._e[123]);
+})(Em._e[125],Em._e[101],Em._e[117],Em._e[149],Em._e[119],Em._e[102],Em._e[16],Em._e[104],Em._e[14],Em._e[124]);
 (function (exports, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibCompiledOpcodesVm, _glimmerReference) {
     'use strict';
 
@@ -22036,7 +22159,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerRuntimeLibOpcodes.Opcode);
 
     exports.CloseComponentOpcode = CloseComponentOpcode;
-})(Em._e[125],Em._e[100],Em._e[124],Em._e[97]);
+})(Em._e[126],Em._e[101],Em._e[125],Em._e[16]);
 (function (exports, _glimmerRuntimeLibSyntaxCore, _glimmerWireFormat) {
     'use strict';
 
@@ -22066,7 +22189,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     };
 
     ;
-})(Em._e[126],Em._e[132],Em._e[119]);
+})(Em._e[127],Em._e[133],Em._e[120]);
 (function (exports, _glimmerRuntimeLibCompiledExpressions, _glimmerReference) {
     'use strict';
 
@@ -22198,7 +22321,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerRuntimeLibCompiledExpressions.CompiledExpression);
 
     exports.CompiledSelfRef = CompiledSelfRef;
-})(Em._e[127],Em._e[102],Em._e[97]);
+})(Em._e[128],Em._e[103],Em._e[16]);
 (function (exports, _glimmerRuntimeLibCompiledExpressions, _glimmerRuntimeLibCompiledExpressionsValue) {
     'use strict';
 
@@ -22236,7 +22359,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerRuntimeLibCompiledExpressions.CompiledExpression);
 
     exports.default = CompiledHasBlock;
-})(Em._e[128],Em._e[102],Em._e[103]);
+})(Em._e[129],Em._e[103],Em._e[104]);
 (function (exports, _glimmerRuntimeLibCompiledExpressions, _glimmerRuntimeLibCompiledExpressionsValue) {
     'use strict';
 
@@ -22274,7 +22397,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerRuntimeLibCompiledExpressions.CompiledExpression);
 
     exports.default = CompiledHasBlockParams;
-})(Em._e[129],Em._e[102],Em._e[103]);
+})(Em._e[130],Em._e[103],Em._e[104]);
 (function (exports, _glimmerRuntimeLibCompiledExpressions) {
     'use strict';
 
@@ -22315,7 +22438,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerRuntimeLibCompiledExpressions.CompiledExpression);
 
     exports.default = CompiledHelper;
-})(Em._e[130],Em._e[102]);
+})(Em._e[131],Em._e[103]);
 (function (exports, _glimmerRuntimeLibCompiledOpcodesContent, _glimmerReference) {
     'use strict';
 
@@ -22375,7 +22498,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
         return ConcatReference;
     })(_glimmerReference.CachedReference);
-})(Em._e[131],Em._e[137],Em._e[97]);
+})(Em._e[132],Em._e[138],Em._e[16]);
 (function (exports, _glimmerRuntimeLibSyntax, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibCompiledOpcodesVm, _glimmerRuntimeLibCompiledOpcodesComponent, _glimmerRuntimeLibCompiledOpcodesDom, _glimmerRuntimeLibSyntaxExpressions, _glimmerRuntimeLibCompiledExpressionsArgs, _glimmerRuntimeLibCompiledExpressionsValue, _glimmerRuntimeLibCompiledExpressionsRef, _glimmerRuntimeLibCompiledExpressionsHasBlock, _glimmerRuntimeLibCompiledExpressionsHasBlockParams, _glimmerRuntimeLibCompiledExpressionsHelper, _glimmerRuntimeLibCompiledExpressionsConcat, _glimmerUtil, _glimmerRuntimeLibCompiledOpcodesContent) {
     'use strict';
 
@@ -23700,7 +23823,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })();
 
     exports.Templates = Templates;
-})(Em._e[132],Em._e[98],Em._e[100],Em._e[124],Em._e[125],Em._e[104],Em._e[126],Em._e[116],Em._e[103],Em._e[127],Em._e[128],Em._e[129],Em._e[130],Em._e[131],Em._e[95],Em._e[137]);
+})(Em._e[133],Em._e[99],Em._e[101],Em._e[125],Em._e[126],Em._e[105],Em._e[127],Em._e[117],Em._e[104],Em._e[128],Em._e[129],Em._e[130],Em._e[131],Em._e[132],Em._e[14],Em._e[138]);
 (function (exports, _glimmerRuntimeLibSyntax, _glimmerRuntimeLibCompiledExpressions) {
     'use strict';
 
@@ -23763,7 +23886,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
         return CompiledFunctionExpression;
     })(_glimmerRuntimeLibCompiledExpressions.CompiledExpression);
-})(Em._e[133],Em._e[98],Em._e[102]);
+})(Em._e[134],Em._e[99],Em._e[103]);
 (function (exports, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibCompiledExpressionsArgs, _glimmerUtil, _glimmerReference) {
     'use strict';
 
@@ -23938,7 +24061,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerRuntimeLibOpcodes.Opcode);
 
     exports.NextIterOpcode = NextIterOpcode;
-})(Em._e[134],Em._e[100],Em._e[116],Em._e[95],Em._e[97]);
+})(Em._e[135],Em._e[101],Em._e[117],Em._e[14],Em._e[16]);
 (function (exports, _glimmerRuntimeLibCompiledOpcodesComponent, _glimmerRuntimeLibCompiledOpcodesContent, _glimmerRuntimeLibCompiledOpcodesDom, _glimmerRuntimeLibCompiledOpcodesLists, _glimmerRuntimeLibCompiledOpcodesVm, _glimmerUtil, _glimmerRuntimeLibUtils) {
     'use strict';
 
@@ -24338,7 +24461,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(BasicOpcodeBuilder);
 
     exports.default = OpcodeBuilder;
-})(Em._e[135],Em._e[125],Em._e[137],Em._e[104],Em._e[134],Em._e[124],Em._e[95],Em._e[118]);
+})(Em._e[136],Em._e[126],Em._e[138],Em._e[105],Em._e[135],Em._e[125],Em._e[14],Em._e[119]);
 (function (exports, _glimmerUtil, _glimmerRuntimeLibSyntaxCore, _glimmerRuntimeLibCompiledBlocks, _glimmerRuntimeLibCompiledExpressionsFunction, _glimmerRuntimeLibCompiledOpcodesBuilder) {
     'use strict';
 
@@ -24797,7 +24920,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerUtil.LinkedList);
 
     exports.CompileIntoList = CompileIntoList;
-})(Em._e[136],Em._e[95],Em._e[132],Em._e[122],Em._e[133],Em._e[135]);
+})(Em._e[137],Em._e[14],Em._e[133],Em._e[123],Em._e[134],Em._e[136]);
 (function (exports, _glimmerRuntimeLibUpsert, _glimmerRuntimeLibComponentInterfaces, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibVmUpdate, _glimmerReference, _glimmerUtil, _glimmerRuntimeLibBounds, _glimmerRuntimeLibBuilder, _glimmerRuntimeLibCompiler, _glimmerRuntimeLibCompiledOpcodesBuilder, _glimmerRuntimeLibReferences, _glimmerRuntimeLibSyntaxCore) {
     'use strict';
 
@@ -25393,7 +25516,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
         return GuardedTrustingUpdateOpcode;
     })(GuardedUpdateOpcode);
-})(Em._e[137],Em._e[106],Em._e[113],Em._e[100],Em._e[117],Em._e[97],Em._e[95],Em._e[99],Em._e[105],Em._e[136],Em._e[135],Em._e[101],Em._e[132]);
+})(Em._e[138],Em._e[107],Em._e[114],Em._e[101],Em._e[118],Em._e[16],Em._e[14],Em._e[100],Em._e[106],Em._e[137],Em._e[136],Em._e[102],Em._e[133]);
 (function (exports, _glimmerRuntimeLibDomSanitizedValues, _glimmerRuntimeLibDomProps, _glimmerRuntimeLibDomHelper, _glimmerRuntimeLibCompiledOpcodesContent) {
     'use strict';
 
@@ -25433,9 +25556,6 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     function defaultAttributeChangeLists(tagName, attr) {
         if (_glimmerRuntimeLibDomSanitizedValues.requiresSanitization(tagName, attr)) {
             return SafeHrefAttributeChangeList;
-        }
-        if (isInputValue(tagName, attr)) {
-            return InputValueAttributeChangeList;
         }
         return AttributeChangeList;
     }
@@ -25503,14 +25623,11 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     function isInputValue(tagName, attribute) {
         return tagName === 'INPUT' && attribute === 'value';
     }
-    function normalizedInputValue(value) {
-        return value === null ? '' : value;
-    }
     var InputValuePropertyChangeList = {
         setAttribute: function (dom, element, attr, value) {
             var input = element;
             var currentValue = input.value;
-            var normalizedValue = normalizedInputValue(value);
+            var normalizedValue = _glimmerRuntimeLibCompiledOpcodesContent.normalizeTextValue(value);
             if (currentValue !== normalizedValue) {
                 input.value = normalizedValue;
             }
@@ -25520,15 +25637,6 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
         }
     };
     exports.InputValuePropertyChangeList = InputValuePropertyChangeList;
-    var InputValueAttributeChangeList = {
-        setAttribute: function (dom, element, attr, value) {
-            AttributeChangeList.setAttribute(dom, element, attr, normalizedInputValue(value));
-        },
-        updateAttribute: function (dom, element, attr, value) {
-            this.setAttribute(dom, element, attr, value);
-        }
-    };
-    exports.InputValueAttributeChangeList = InputValueAttributeChangeList;
     var SafeHrefPropertyChangeList = {
         setAttribute: function (dom, element, attr, value) {
             PropertyChangeList.setAttribute(dom, element, attr, _glimmerRuntimeLibDomSanitizedValues.sanitizeAttributeValue(dom, element, attr, value));
@@ -25547,7 +25655,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
         }
     };
     exports.SafeHrefAttributeChangeList = SafeHrefAttributeChangeList;
-})(Em._e[138],Em._e[107],Em._e[108],Em._e[112],Em._e[137]);
+})(Em._e[139],Em._e[108],Em._e[109],Em._e[113],Em._e[138]);
 (function (exports, _glimmerRuntimeLibSyntax) {
     'use strict';
 
@@ -25607,7 +25715,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerRuntimeLibSyntax.Statement);
 
     exports.default = IfSyntax;
-})(Em._e[139],Em._e[98]);
+})(Em._e[140],Em._e[99]);
 (function (exports, _glimmerRuntimeLibSyntax) {
     'use strict';
 
@@ -25667,7 +25775,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerRuntimeLibSyntax.Statement);
 
     exports.default = UnlessSyntax;
-})(Em._e[140],Em._e[98]);
+})(Em._e[141],Em._e[99]);
 (function (exports, _glimmerRuntimeLibSyntax) {
     'use strict';
 
@@ -25727,7 +25835,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerRuntimeLibSyntax.Statement);
 
     exports.default = WithSyntax;
-})(Em._e[141],Em._e[98]);
+})(Em._e[142],Em._e[99]);
 (function (exports, _glimmerRuntimeLibSyntax) {
     'use strict';
 
@@ -25804,7 +25912,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerRuntimeLibSyntax.Statement);
 
     exports.default = EachSyntax;
-})(Em._e[142],Em._e[98]);
+})(Em._e[143],Em._e[99]);
 (function (exports, _glimmerUtil, _glimmerRuntimeLibSyntax, _glimmerRuntimeLibCompiledOpcodesVm) {
     'use strict';
 
@@ -25863,7 +25971,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })(_glimmerRuntimeLibSyntax.Statement);
 
     exports.default = PartialSyntax;
-})(Em._e[143],Em._e[95],Em._e[98],Em._e[124]);
+})(Em._e[144],Em._e[14],Em._e[99],Em._e[125]);
 (function (exports, _glimmerRuntimeLibReferences, _glimmerRuntimeLibDomChangeLists, _glimmerUtil, _glimmerRuntimeLibSyntaxCore, _glimmerRuntimeLibSyntaxBuiltinsIf, _glimmerRuntimeLibSyntaxBuiltinsUnless, _glimmerRuntimeLibSyntaxBuiltinsWith, _glimmerRuntimeLibSyntaxBuiltinsEach, _glimmerRuntimeLibSyntaxBuiltinsPartial) {
     'use strict';
 
@@ -26080,7 +26188,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
             templates: block && block.templates
         };
     }
-})(Em._e[144],Em._e[101],Em._e[138],Em._e[95],Em._e[132],Em._e[139],Em._e[140],Em._e[141],Em._e[142],Em._e[143]);
+})(Em._e[145],Em._e[102],Em._e[139],Em._e[14],Em._e[133],Em._e[140],Em._e[141],Em._e[142],Em._e[143],Em._e[144]);
 (function (exports, _glimmerRuntimeLibBounds, _glimmerRuntimeLibVmUpdate) {
     'use strict';
 
@@ -26140,7 +26248,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })();
 
     exports.default = RenderResult;
-})(Em._e[145],Em._e[99],Em._e[117]);
+})(Em._e[146],Em._e[100],Em._e[118]);
 (function (exports) {
     "use strict";
 
@@ -26277,7 +26385,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })();
 
     exports.FrameStack = FrameStack;
-})(Em._e[146]);
+})(Em._e[147]);
 (function (exports, _glimmerRuntimeLibEnvironment, _glimmerUtil, _glimmerReference, _glimmerRuntimeLibCompiledOpcodesVm, _glimmerRuntimeLibVmUpdate, _glimmerRuntimeLibVmRenderResult, _glimmerRuntimeLibVmFrame) {
     'use strict';
 
@@ -26579,7 +26687,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })();
 
     exports.default = VM;
-})(Em._e[147],Em._e[144],Em._e[95],Em._e[97],Em._e[124],Em._e[117],Em._e[145],Em._e[146]);
+})(Em._e[148],Em._e[145],Em._e[14],Em._e[16],Em._e[125],Em._e[118],Em._e[146],Em._e[147]);
 (function (exports, _glimmerRuntimeLibVmAppend, _glimmerRuntimeLibVmUpdate, _glimmerRuntimeLibVmRenderResult) {
   'use strict';
 
@@ -26588,7 +26696,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.BindDynamicScopeCallback = _glimmerRuntimeLibVmAppend.BindDynamicScopeCallback;
   exports.UpdatingVM = _glimmerRuntimeLibVmUpdate.default;
   exports.RenderResult = _glimmerRuntimeLibVmRenderResult.default;
-})(Em._e[148],Em._e[147],Em._e[117],Em._e[145]);
+})(Em._e[149],Em._e[148],Em._e[118],Em._e[146]);
 (function (exports, _glimmerRuntimeLibBuilder, _glimmerRuntimeLibVm, _glimmerRuntimeLibScanner) {
     'use strict';
 
@@ -26630,7 +26738,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     })();
 
     exports.default = Template;
-})(Em._e[149],Em._e[105],Em._e[148],Em._e[123]);
+})(Em._e[150],Em._e[106],Em._e[149],Em._e[124]);
 (function (exports) {
     "use strict";
 
@@ -26644,7 +26752,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     };
 
     exports.PartialDefinition = PartialDefinition;
-})(Em._e[151]);
+})(Em._e[152]);
 (function (exports, _glimmerRuntimeLibSyntax, _glimmerRuntimeLibTemplate, _glimmerRuntimeLibSymbolTable, _glimmerRuntimeLibReferences, _glimmerRuntimeLibSyntaxCore, _glimmerRuntimeLibCompiler, _glimmerRuntimeLibOpcodeBuilder, _glimmerRuntimeLibCompiledOpcodesBuilder, _glimmerRuntimeLibCompiledBlocks, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibCompiledOpcodesVm, _glimmerRuntimeLibCompiledOpcodesComponent, _glimmerRuntimeLibCompiledOpcodesDom, _glimmerRuntimeLibDomChangeLists, _glimmerRuntimeLibCompiledOpcodesContent, _glimmerRuntimeLibCompiledExpressions, _glimmerRuntimeLibCompiledExpressionsArgs, _glimmerRuntimeLibCompiledExpressionsValue, _glimmerRuntimeLibCompiledExpressionsFunction, _glimmerRuntimeLibCompiledOpcodesLists, _glimmerRuntimeLibVm, _glimmerRuntimeLibUpsert, _glimmerRuntimeLibEnvironment, _glimmerRuntimeLibPartial, _glimmerRuntimeLibComponentInterfaces, _glimmerRuntimeLibModifierInterfaces, _glimmerRuntimeLibDomHelper, _glimmerRuntimeLibBuilder) {
   'use strict';
 
@@ -26727,7 +26835,6 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.PropertyChangeList = _glimmerRuntimeLibDomChangeLists.PropertyChangeList;
   exports.SafeHrefAttributeChangeList = _glimmerRuntimeLibDomChangeLists.SafeHrefAttributeChangeList;
   exports.SafeHrefPropertyChangeList = _glimmerRuntimeLibDomChangeLists.SafeHrefPropertyChangeList;
-  exports.InputValueAttributeChangeList = _glimmerRuntimeLibDomChangeLists.InputValueAttributeChangeList;
   exports.InputValuePropertyChangeList = _glimmerRuntimeLibDomChangeLists.InputValuePropertyChangeList;
   exports.defaultChangeLists = _glimmerRuntimeLibDomChangeLists.defaultChangeLists;
   exports.defaultAttributeChangeLists = _glimmerRuntimeLibDomChangeLists.defaultAttributeChangeLists;
@@ -26770,7 +26877,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.isWhitespace = _glimmerRuntimeLibDomHelper.isWhitespace;
   exports.ElementStack = _glimmerRuntimeLibBuilder.ElementStack;
   exports.ElementOperations = _glimmerRuntimeLibBuilder.ElementOperations;
-})(Em._e[153],Em._e[98],Em._e[149],Em._e[121],Em._e[101],Em._e[132],Em._e[136],Em._e[150],Em._e[135],Em._e[122],Em._e[100],Em._e[124],Em._e[125],Em._e[104],Em._e[138],Em._e[137],Em._e[102],Em._e[116],Em._e[103],Em._e[133],Em._e[134],Em._e[148],Em._e[106],Em._e[144],Em._e[151],Em._e[113],Em._e[152],Em._e[112],Em._e[105]);
+})(Em._e[154],Em._e[99],Em._e[150],Em._e[122],Em._e[102],Em._e[133],Em._e[137],Em._e[151],Em._e[136],Em._e[123],Em._e[101],Em._e[125],Em._e[126],Em._e[105],Em._e[139],Em._e[138],Em._e[103],Em._e[117],Em._e[104],Em._e[134],Em._e[135],Em._e[149],Em._e[107],Em._e[145],Em._e[152],Em._e[114],Em._e[153],Em._e[113],Em._e[106]);
 (function (exports, _emberRuntimeUtils, _emberMetalProperty_get) {
   'use strict';
 
@@ -26791,7 +26898,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return true;
   }
-})(Em._e[154],Em._e[62],Em._e[4]);
+})(Em._e[155],Em._e[79],Em._e[21]);
 (function (exports, _emberMetalSymbol, _emberRuntimeSystemObject, _emberRuntimeSystemCore_object, _glimmerReference) {
   /**
   @module ember
@@ -26896,7 +27003,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = Helper;
-})(Em._e[155],Em._e[13],Em._e[54],Em._e[49],Em._e[97]);
+})(Em._e[156],Em._e[30],Em._e[71],Em._e[66],Em._e[16]);
 (function (exports, _emberMetalProperty_get, _emberMetalIs_none) {
   'use strict';
 
@@ -26961,7 +27068,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return false;
   }
-})(Em._e[156],Em._e[4],Em._e[52]);
+})(Em._e[157],Em._e[21],Em._e[69]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalComputed, _emberMetalIs_empty, _emberMetalIs_none, _emberMetalAlias, _emberMetalExpand_properties) {
   'use strict';
 
@@ -27651,7 +27758,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
     });
   }
-})(Em._e[157],Em._e[0],Em._e[4],Em._e[22],Em._e[30],Em._e[156],Em._e[52],Em._e[45],Em._e[27]);
+})(Em._e[158],Em._e[17],Em._e[21],Em._e[39],Em._e[47],Em._e[157],Em._e[69],Em._e[62],Em._e[44]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalMeta, _emberMetalObserver, _emberMetalProperty_events, _emberRuntimeComputedComputed_macros, _emberMetalProperties, _emberMetalMixin, _emberMetalSymbol) {
   /**
   @module ember
@@ -27725,7 +27832,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     _emberMetalDebug.deprecate('You attempted to set `' + key + '` from `' + this + '`, but object proxying is deprecated. Please use `model.' + key + '` instead.', !this.isController, { id: 'ember-runtime.controller-proxy', until: '3.0.0' });
     return _emberMetalProperty_set.set(content, key, value);
   }, _Mixin$create));
-})(Em._e[158],Em._e[0],Em._e[4],Em._e[22],Em._e[14],Em._e[41],Em._e[20],Em._e[157],Em._e[23],Em._e[43],Em._e[13]);
+})(Em._e[159],Em._e[17],Em._e[21],Em._e[39],Em._e[31],Em._e[58],Em._e[37],Em._e[158],Em._e[40],Em._e[60],Em._e[30]);
 (function (exports, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalTags, _emberMetalTransaction, _emberMetalSymbol, _glimmerReference, _glimmerRuntime, _emberGlimmerUtilsToBool, _emberGlimmerHelper, _emberMetalMeta, _emberMetalWatch_key, _emberMetalFeatures, _emberRuntimeMixinsProxy) {
   'use strict';
 
@@ -27803,8 +27910,8 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       var _lastValue = this._lastValue;
 
       if (!_lastRevision || !tag.validate(_lastRevision)) {
-        this._lastRevision = tag.value();
         _lastValue = this._lastValue = this.compute();
+        this._lastRevision = tag.value();
       }
 
       return _lastValue;
@@ -27907,7 +28014,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       _CachedReference.call(this);
 
       var parentReferenceTag = parentReference.tag;
-      var parentObjectTag = new _glimmerReference.UpdatableTag(_glimmerReference.CURRENT_TAG);
+      var parentObjectTag = new _glimmerReference.UpdatableTag(_glimmerReference.CONSTANT_TAG);
 
       this._parentReference = parentReference;
       this._parentObjectTag = parentObjectTag;
@@ -28028,7 +28135,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
       _GlimmerConditionalReference.call(this, reference);
 
-      this.objectTag = new _glimmerReference.UpdatableTag(_glimmerReference.CURRENT_TAG);
+      this.objectTag = new _glimmerReference.UpdatableTag(_glimmerReference.CONSTANT_TAG);
       this.tag = _glimmerReference.combine([reference.tag, this.objectTag]);
     }
 
@@ -28191,8 +28298,8 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   })();
 
   exports.UnboundReference = UnboundReference;
-})(Em._e[159],Em._e[4],Em._e[22],Em._e[17],Em._e[19],Em._e[13],Em._e[97],Em._e[153],Em._e[154],Em._e[155],Em._e[14],Em._e[24],Em._e[10],Em._e[158]);
-(function (exports, _emberViewsViewsCore_view, _emberGlimmerEmberViewsClassNamesSupport, _emberViewsMixinsChild_views_support, _emberViewsMixinsView_state_support, _emberViewsMixinsInstrumentation_support, _emberViewsMixinsAria_role_support, _emberViewsMixinsView_support, _emberViewsMixinsAction_support, _emberRuntimeMixinsTarget_action_support, _emberMetalSymbol, _emberMetalEmpty_object, _emberMetalProperty_get, _emberMetalProperty_events, _emberViewsCompatAttrsProxy, _emberGlimmerUtilsReferences, _glimmerReference, _emberMetalDebug, _emberMetalMixin, _containerOwner) {
+})(Em._e[160],Em._e[21],Em._e[39],Em._e[34],Em._e[36],Em._e[30],Em._e[16],Em._e[154],Em._e[155],Em._e[156],Em._e[31],Em._e[41],Em._e[27],Em._e[159]);
+(function (exports, _emberViewsViewsCore_view, _emberGlimmerEmberViewsClassNamesSupport, _emberViewsMixinsChild_views_support, _emberViewsMixinsView_state_support, _emberViewsMixinsInstrumentation_support, _emberViewsMixinsAria_role_support, _emberViewsMixinsView_support, _emberViewsMixinsAction_support, _emberRuntimeMixinsTarget_action_support, _emberMetalSymbol, _emberMetalEmpty_object, _emberMetalProperty_get, _emberMetalProperty_events, _emberViewsCompatAttrsProxy, _emberGlimmerUtilsReferences, _glimmerReference, _glimmerRuntime, _emberMetalDebug, _emberMetalMixin, _containerOwner) {
   'use strict';
 
   var _CoreView$extend;
@@ -28281,8 +28388,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     }
     return _emberViewsCompatAttrsProxy.getAttrFor(attrs, key);
   }, _CoreView$extend.readDOMAttr = function (name) {
-    // TODO this is probably not correct
-    return this.element.getAttribute(name);
+    return _glimmerRuntime.readDOMAttr(this.element, name);
   }, _CoreView$extend[_emberGlimmerUtilsReferences.TO_ROOT_REFERENCE] = function () {
     var ref = this[ROOT_REF];
 
@@ -28309,7 +28415,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   });
 
   exports.default = Component;
-})(Em._e[160],Em._e[72],Em._e[73],Em._e[74],Em._e[75],Em._e[76],Em._e[77],Em._e[78],Em._e[79],Em._e[80],Em._e[13],Em._e[1],Em._e[4],Em._e[20],Em._e[63],Em._e[159],Em._e[97],Em._e[0],Em._e[43],Em._e[46]);
+})(Em._e[161],Em._e[89],Em._e[90],Em._e[91],Em._e[92],Em._e[93],Em._e[94],Em._e[96],Em._e[97],Em._e[98],Em._e[30],Em._e[18],Em._e[21],Em._e[37],Em._e[80],Em._e[160],Em._e[16],Em._e[154],Em._e[17],Em._e[60],Em._e[63]);
 (function (exports, _emberMetalProperty_get, _emberMetalProperty_set, _emberGlimmerComponent) {
   'use strict';
 
@@ -28366,75 +28472,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       _emberMetalProperty_set.set(this, 'checked', this.$().prop('checked'));
     }
   });
-})(Em._e[161],Em._e[4],Em._e[22],Em._e[160]);
-(function (exports) {
-  /**
-  @module ember
-  @submodule ember-views
-  */
-
-  'use strict';
-
-  exports.isSimpleClick = isSimpleClick;
-  exports.getViewClientRects = getViewClientRects;
-  exports.getViewBoundingClientRect = getViewBoundingClientRect;
-
-  function isSimpleClick(event) {
-    var modifier = event.shiftKey || event.metaKey || event.altKey || event.ctrlKey;
-    var secondaryClick = event.which > 1; // IE9 may return undefined
-
-    return !modifier && !secondaryClick;
-  }
-
-  var STYLE_WARNING = '' + 'Binding style attributes may introduce cross-site scripting vulnerabilities; ' + 'please ensure that values being bound are properly escaped. For more information, ' + 'including how to disable this warning, see ' + 'http://emberjs.com/deprecations/v1.x/#toc_binding-style-attributes.';
-
-  exports.STYLE_WARNING = STYLE_WARNING;
-  /**
-    @private
-    @method getViewRange
-    @param {Ember.View} view
-  */
-  function getViewRange(view) {
-    var range = document.createRange();
-    range.setStartBefore(view._renderNode.firstNode);
-    range.setEndAfter(view._renderNode.lastNode);
-    return range;
-  }
-
-  /**
-    `getViewClientRects` provides information about the position of the border
-    box edges of a view relative to the viewport.
-  
-    It is only intended to be used by development tools like the Ember Inspector
-    and may not work on older browsers.
-  
-    @private
-    @method getViewClientRects
-    @param {Ember.View} view
-  */
-
-  function getViewClientRects(view) {
-    var range = getViewRange(view);
-    return range.getClientRects();
-  }
-
-  /**
-    `getViewBoundingClientRect` provides information about the position of the
-    bounding border box edges of a view relative to the viewport.
-  
-    It is only intended to be used by development tools like the Ember Inpsector
-    and may not work on older browsers.
-  
-    @private
-    @method getViewBoundingClientRect
-    @param {Ember.View} view
-  */
-
-  function getViewBoundingClientRect(view) {
-    var range = getViewRange(view);
-    return range.getBoundingClientRect();
-  }
-})(Em._e[162]);
+})(Em._e[162],Em._e[21],Em._e[39],Em._e[161]);
 (function (exports, _emberRuntimeSystemObject, _emberRuntimeInject) {
   'use strict';
 
@@ -28482,7 +28520,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   });
 
   exports.default = Service;
-})(Em._e[163],Em._e[54],Em._e[48]);
+})(Em._e[163],Em._e[71],Em._e[65]);
 (function (exports, _emberMetalDebug, _emberMetalMixin) {
   'use strict';
 
@@ -28525,7 +28563,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
     }
   });
-})(Em._e[164],Em._e[0],Em._e[43]);
+})(Em._e[164],Em._e[17],Em._e[60]);
 (function (exports, _emberMetalMixin, _emberMetalAlias, _emberRuntimeMixinsAction_handler, _emberRuntimeMixinsController_content_model_alias_deprecation) {
   'use strict';
 
@@ -28570,7 +28608,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     content: _emberMetalAlias.default('model')
 
   });
-})(Em._e[165],Em._e[43],Em._e[45],Em._e[44],Em._e[164]);
+})(Em._e[165],Em._e[60],Em._e[62],Em._e[61],Em._e[164]);
 (function (exports, _emberMetalDebug, _emberMetalError) {
   'use strict';
 
@@ -28618,7 +28656,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return env.owner.lookup('template:' + underscored) || env.owner.lookup('template:' + name);
   }
-})(Em._e[166],Em._e[0],Em._e[21]);
+})(Em._e[166],Em._e[17],Em._e[38]);
 (function (exports) {
   // STATE within a module is frowned apon, this exists
   // to support Ember.STRINGS but shield ember internals from this legacy global
@@ -28949,7 +28987,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.classify = classify;
   exports.underscore = underscore;
   exports.capitalize = capitalize;
-})(Em._e[168],Em._e[0],Em._e[11],Em._e[62],Em._e[167],Em._e[2]);
+})(Em._e[168],Em._e[17],Em._e[28],Em._e[79],Em._e[167],Em._e[19]);
 (function (exports, _emberMetalFeatures, _emberMetalDebug) {
   /**
   @module ember
@@ -29083,7 +29121,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   function isHTMLSafe(str) {
     return str && typeof str.toHTML === 'function';
   }
-})(Em._e[169],Em._e[10],Em._e[0]);
+})(Em._e[169],Em._e[27],Em._e[17]);
 (function (exports, _emberMetalDebug, _emberRuntimeSystemString, _glimmerReference, _emberGlimmerUtilsReferences, _emberGlimmerUtilsString) {
   'use strict';
 
@@ -29288,7 +29326,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return ColonClassNameBindingReference;
   })(_glimmerReference.CachedReference);
-})(Em._e[170],Em._e[0],Em._e[168],Em._e[97],Em._e[159],Em._e[169]);
+})(Em._e[170],Em._e[17],Em._e[168],Em._e[16],Em._e[160],Em._e[169]);
 (function (exports, _glimmerReference, _emberMetalSymbol, _emberMetalEmpty_object, _emberGlimmerComponent, _emberGlimmerUtilsReferences, _emberViewsCompatAttrsProxy) {
   'use strict';
 
@@ -29454,7 +29492,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return PositionalArgs;
   })();
-})(Em._e[171],Em._e[97],Em._e[13],Em._e[1],Em._e[160],Em._e[159],Em._e[63]);
+})(Em._e[171],Em._e[16],Em._e[30],Em._e[18],Em._e[161],Em._e[160],Em._e[80]);
 (function (exports, _emberMetalEmpty_object) {
   'use strict';
 
@@ -29477,7 +29515,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     delete dict['_dict'];
     return dict;
   }
-})(Em._e[172],Em._e[1]);
+})(Em._e[172],Em._e[18]);
 (function (exports, _emberMetalRun_loop, _emberMetalDebug, _emberMetalMixin) {
   /**
   @module ember
@@ -29617,7 +29655,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return container[containerProperty].apply(container, arguments);
     };
   }
-})(Em._e[173],Em._e[40],Em._e[0],Em._e[43]);
+})(Em._e[173],Em._e[57],Em._e[17],Em._e[60]);
 (function (exports, _emberEnvironment, _emberMetalDebug, _emberMetalDictionary, _containerOwner, _emberRuntimeMixinsContainer_proxy, _emberMetalSymbol) {
   'use strict';
 
@@ -30046,7 +30084,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
     }
   }
-})(Em._e[174],Em._e[7],Em._e[0],Em._e[172],Em._e[46],Em._e[173],Em._e[13]);
+})(Em._e[174],Em._e[24],Em._e[17],Em._e[172],Em._e[63],Em._e[173],Em._e[30]);
 (function (exports, _emberMetalDebug, _emberMetalDictionary, _emberMetalEmpty_object, _emberMetalAssign, _containerContainer, _emberMetalUtils) {
   'use strict';
 
@@ -30857,7 +30895,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return privateNames[fullName] = _emberMetalUtils.intern(type + ':' + rawName + '-' + privateSuffix);
   }
-})(Em._e[175],Em._e[0],Em._e[172],Em._e[1],Em._e[8],Em._e[174],Em._e[11]);
+})(Em._e[175],Em._e[17],Em._e[172],Em._e[18],Em._e[25],Em._e[174],Em._e[28]);
 (function (exports, _glimmerRuntime, _emberGlimmerUtilsReferences, _emberGlimmerUtilsBindings, _emberGlimmerComponent, _emberMetalDebug, _emberGlimmerUtilsProcessArgs, _containerRegistry, _emberMetalAssign, _emberMetalProperty_get) {
   'use strict';
 
@@ -31173,12 +31211,12 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       var argsRevision = bucket.argsRevision;
 
       if (!args.tag.validate(argsRevision)) {
-        bucket.argsRevision = args.tag.value();
-
         var _args$value = args.value();
 
         var attrs = _args$value.attrs;
         var props = _args$value.props;
+
+        bucket.argsRevision = args.tag.value();
 
         var oldAttrs = component.attrs;
         var newAttrs = attrs;
@@ -31263,7 +31301,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   })();
 
   CurlyComponentLayoutCompiler.id = 'curly';
-})(Em._e[176],Em._e[153],Em._e[159],Em._e[170],Em._e[160],Em._e[0],Em._e[171],Em._e[175],Em._e[8],Em._e[4]);
+})(Em._e[176],Em._e[154],Em._e[160],Em._e[170],Em._e[161],Em._e[17],Em._e[171],Em._e[175],Em._e[25],Em._e[21]);
 (function (exports, _emberGlimmerUtilsReferences, _emberGlimmerSyntaxCurlyComponent, _glimmerRuntime, _emberMetalDebug, _emberMetalAssign) {
   'use strict';
 
@@ -31422,7 +31460,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return ClosureComponentReference.create(args, null, env);
     }
   };
-})(Em._e[177],Em._e[159],Em._e[176],Em._e[153],Em._e[0],Em._e[8]);
+})(Em._e[177],Em._e[160],Em._e[176],Em._e[154],Em._e[17],Em._e[25]);
 (function (exports, _glimmerRuntime, _glimmerReference, _emberGlimmerHelpersComponent, _emberMetalDebug) {
   'use strict';
 
@@ -31549,7 +31587,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return DynamicComponentReference;
   })();
-})(Em._e[178],Em._e[153],Em._e[97],Em._e[177],Em._e[0]);
+})(Em._e[178],Em._e[154],Em._e[16],Em._e[177],Em._e[17]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get) {
   'use strict';
 
@@ -31610,7 +31648,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return instance;
   }
-})(Em._e[179],Em._e[0],Em._e[4]);
+})(Em._e[179],Em._e[17],Em._e[21]);
 (function (exports, _glimmerRuntime, _emberMetalUtils, _emberGlimmerUtilsReferences) {
   'use strict';
 
@@ -31893,7 +31931,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.OutletLayoutCompiler = OutletLayoutCompiler;
 
   OutletLayoutCompiler.id = 'outlet';
-})(Em._e[180],Em._e[153],Em._e[11],Em._e[159]);
+})(Em._e[180],Em._e[154],Em._e[28],Em._e[160]);
 (function (exports, _glimmerRuntime, _glimmerReference, _emberMetalDebug, _emberGlimmerUtilsReferences, _emberRoutingSystemGenerate_controller, _emberGlimmerSyntaxOutlet) {
   'use strict';
 
@@ -32081,7 +32119,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return RenderDefinition;
   })(_glimmerRuntime.ComponentDefinition);
-})(Em._e[181],Em._e[153],Em._e[97],Em._e[0],Em._e[159],Em._e[179],Em._e[180]);
+})(Em._e[181],Em._e[154],Em._e[16],Em._e[17],Em._e[160],Em._e[179],Em._e[180]);
 (function (exports) {
   'use strict';
 
@@ -32165,7 +32203,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return ref;
     }
   };
-})(Em._e[183],Em._e[13]);
+})(Em._e[183],Em._e[30]);
 (function (exports, _emberMetalProperty_get, _emberMetalUtils, _emberMetalTags, _emberMetalEmpty_object, _emberRuntimeMixinsArray, _emberRuntimeMixinsProxy, _emberGlimmerUtilsReferences, _emberGlimmerHelpersEachIn, _glimmerReference) {
   'use strict';
 
@@ -32355,7 +32393,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     function Iterable(ref, keyFor) {
       _classCallCheck(this, Iterable);
 
-      var valueTag = this.valueTag = new _glimmerReference.UpdatableTag(_glimmerReference.CURRENT_TAG);
+      var valueTag = this.valueTag = new _glimmerReference.UpdatableTag(_glimmerReference.CONSTANT_TAG);
 
       this.tag = _glimmerReference.combine([ref.tag, valueTag]);
       this.ref = ref;
@@ -32422,7 +32460,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return Iterable;
   })();
-})(Em._e[184],Em._e[4],Em._e[11],Em._e[17],Em._e[1],Em._e[61],Em._e[158],Em._e[159],Em._e[183],Em._e[97]);
+})(Em._e[184],Em._e[21],Em._e[28],Em._e[34],Em._e[18],Em._e[78],Em._e[159],Em._e[160],Em._e[183],Em._e[16]);
 (function (exports, _emberMetalDebug, _emberGlimmerUtilsReferences, _glimmerReference) {
   /**
   @module ember
@@ -32457,7 +32495,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
       _CachedReference.call(this);
 
-      this.branchTag = new _glimmerReference.UpdatableTag(_glimmerReference.CURRENT_TAG);
+      this.branchTag = new _glimmerReference.UpdatableTag(_glimmerReference.CONSTANT_TAG);
       this.tag = _glimmerReference.combine([cond.tag, this.branchTag]);
 
       this.cond = cond;
@@ -32546,7 +32584,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     }
   };
   exports.inlineUnless = inlineUnless;
-})(Em._e[185],Em._e[0],Em._e[159],Em._e[97]);
+})(Em._e[185],Em._e[17],Em._e[160],Em._e[16]);
 (function (exports, _emberGlimmerUtilsReferences, _emberMetalError, _emberMetalSymbol, _emberMetalRun_loop, _emberMetalProperty_get, _emberMetalInstrumentation, _emberMetalIs_none) {
   'use strict';
 
@@ -32602,11 +32640,11 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       var actionType = typeof rawAction;
       var action = rawAction;
 
-      if (_emberMetalIs_none.default(rawAction)) {
-        throw new _emberMetalError.default('Action passed is null or undefined in (action) from ' + target + '.');
-      } else if (rawActionRef[INVOKE]) {
+      if (rawActionRef[INVOKE]) {
         target = rawActionRef;
         action = rawActionRef[INVOKE];
+      } else if (_emberMetalIs_none.default(rawAction)) {
+        throw new _emberMetalError.default('Action passed is null or undefined in (action) from ' + target + '.');
       } else if (actionType === 'string') {
         // on-change={{action 'setName'}}
         var actionName = rawAction;
@@ -32699,7 +32737,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return closureAction;
   }
-})(Em._e[186],Em._e[159],Em._e[21],Em._e[13],Em._e[40],Em._e[4],Em._e[67],Em._e[52]);
+})(Em._e[186],Em._e[160],Em._e[38],Em._e[30],Em._e[57],Em._e[21],Em._e[84],Em._e[69]);
 (function (exports, _emberGlimmerHelper, _glimmerRuntime) {
   'use strict';
 
@@ -32729,7 +32767,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = _emberGlimmerHelper.helper(concat);
-})(Em._e[187],Em._e[155],Em._e[153]);
+})(Em._e[187],Em._e[156],Em._e[154]);
 (function (exports, _emberGlimmerUtilsReferences, _glimmerReference) {
   'use strict';
 
@@ -32818,7 +32856,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       this.lastPath = null;
       this.innerReference = null;
 
-      var innerTag = this.innerTag = new _glimmerReference.UpdatableTag(_glimmerReference.CURRENT_TAG);
+      var innerTag = this.innerTag = new _glimmerReference.UpdatableTag(_glimmerReference.CONSTANT_TAG);
 
       this.tag = _glimmerReference.combine([sourceReference.tag, pathReference.tag, innerTag]);
     }
@@ -32852,7 +32890,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return GetHelperReference;
   })(_emberGlimmerUtilsReferences.CachedReference);
-})(Em._e[188],Em._e[159],Em._e[97]);
+})(Em._e[188],Em._e[160],Em._e[16]);
 (function (exports, _glimmerReference, _emberGlimmerUtilsReferences) {
   'use strict';
 
@@ -32927,7 +32965,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return HashHelperReference;
   })(_emberGlimmerUtilsReferences.CachedReference);
-})(Em._e[189],Em._e[97],Em._e[159]);
+})(Em._e[189],Em._e[16],Em._e[160]);
 (function (exports, _emberGlimmerHelper, _emberRuntimeSystemString) {
   'use strict';
 
@@ -32973,7 +33011,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = _emberGlimmerHelper.helper(locHelper);
-})(Em._e[190],Em._e[155],Em._e[168]);
+})(Em._e[190],Em._e[156],Em._e[168]);
 (function (exports, _emberGlimmerHelper, _emberConsole) {
   'use strict';
 
@@ -32995,7 +33033,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = _emberGlimmerHelper.helper(log);
-})(Em._e[191],Em._e[155],Em._e[31]);
+})(Em._e[191],Em._e[156],Em._e[48]);
 (function (exports, _emberMetalSymbol, _emberMetalDebug, _emberGlimmerUtilsReferences, _emberGlimmerHelpersAction) {
   'use strict';
 
@@ -33098,7 +33136,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return wrappedRef;
     }
   };
-})(Em._e[192],Em._e[13],Em._e[0],Em._e[159],Em._e[186]);
+})(Em._e[192],Em._e[30],Em._e[17],Em._e[160],Em._e[186]);
 (function (exports, _emberGlimmerUtilsReferences, _emberGlimmerHelpersMut) {
   'use strict';
 
@@ -33115,7 +33153,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return wrapped;
     }
   };
-})(Em._e[193],Em._e[159],Em._e[192]);
+})(Em._e[193],Em._e[160],Em._e[192]);
 (function (exports, _emberMetalDebug, _emberGlimmerUtilsReferences) {
   /**
   @module ember
@@ -33160,7 +33198,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return new _emberGlimmerUtilsReferences.UnboundReference(args.positional.at(0));
     }
   };
-})(Em._e[194],Em._e[0],Em._e[159]);
+})(Em._e[194],Em._e[17],Em._e[160]);
 (function (exports, _emberGlimmerUtilsReferences, _emberRuntimeSystemString) {
   'use strict';
 
@@ -33195,7 +33233,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return new _emberGlimmerUtilsReferences.InternalHelperReference(classHelper, args);
     }
   };
-})(Em._e[195],Em._e[159],Em._e[168]);
+})(Em._e[195],Em._e[160],Em._e[168]);
 (function (exports, _emberGlimmerUtilsReferences) {
   'use strict';
 
@@ -33216,7 +33254,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return new _emberGlimmerUtilsReferences.InternalHelperReference(inputTypeHelper, args);
     }
   };
-})(Em._e[196],Em._e[159]);
+})(Em._e[196],Em._e[160]);
 (function (exports, _emberRuntimeSystemObject) {
   'use strict';
 
@@ -33224,7 +33262,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     isQueryParams: true,
     values: null
   });
-})(Em._e[197],Em._e[54]);
+})(Em._e[197],Em._e[71]);
 (function (exports, _emberGlimmerUtilsReferences, _emberMetalDebug, _emberRoutingSystemQuery_params, _emberMetalAssign) {
   'use strict';
 
@@ -33245,7 +33283,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return new _emberGlimmerUtilsReferences.InternalHelperReference(queryParams, args);
     }
   };
-})(Em._e[198],Em._e[159],Em._e[0],Em._e[197],Em._e[8]);
+})(Em._e[198],Em._e[160],Em._e[17],Em._e[197],Em._e[25]);
 (function (exports, _emberGlimmerUtilsReferences, _emberRuntimeSystemString) {
   'use strict';
 
@@ -33296,7 +33334,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return new _emberGlimmerUtilsReferences.InternalHelperReference(normalizeClass, args);
     }
   };
-})(Em._e[199],Em._e[159],Em._e[168]);
+})(Em._e[199],Em._e[160],Em._e[168]);
 (function (exports, _emberGlimmerUtilsReferences, _emberGlimmerUtilsString) {
   'use strict';
 
@@ -33313,7 +33351,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return new _emberGlimmerUtilsReferences.InternalHelperReference(htmlSafe, args);
     }
   };
-})(Em._e[200],Em._e[159],Em._e[169]);
+})(Em._e[200],Em._e[160],Em._e[169]);
 (function (exports) {
   /**
   @module ember
@@ -33335,7 +33373,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   */
   ActionManager.registeredActions = {};
 })(Em._e[201]);
-(function (exports, _emberMetalDebug, _emberMetalRun_loop, _emberMetalUtils, _emberViewsSystemUtils, _emberViewsSystemAction_manager, _emberMetalInstrumentation) {
+(function (exports, _emberMetalDebug, _emberMetalRun_loop, _emberMetalUtils, _emberViewsSystemUtils, _emberViewsSystemAction_manager, _emberMetalInstrumentation, _emberGlimmerHelpersAction) {
   'use strict';
 
   function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
@@ -33475,6 +33513,12 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
           args: args,
           target: target
         };
+        if (typeof actionName[_emberGlimmerHelpersAction.INVOKE] === 'function') {
+          _emberMetalInstrumentation.flaggedInstrument('interaction.ember-action', payload, function () {
+            actionName[_emberGlimmerHelpersAction.INVOKE].apply(actionName, args);
+          });
+          return;
+        }
         if (typeof actionName === 'function') {
           _emberMetalInstrumentation.flaggedInstrument('interaction.ember-action', payload, function () {
             actionName.apply(target, args);
@@ -33515,13 +33559,20 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
       var implicitTarget = undefined;
       var actionName = undefined;
+      var actionNameRef = undefined;
 
       if (positional.length > 1) {
         implicitTarget = positional.at(0);
-        actionName = positional.at(1).value();
-      }
+        actionNameRef = positional.at(1);
 
-      _emberMetalDebug.assert('You specified a quoteless path to the {{action}} helper ' + 'which did not resolve to an action name (a string). ' + 'Perhaps you meant to use a quoted actionName? (e.g. {{action \'save\'}}).', typeof actionName === 'string' || typeof actionName === 'function');
+        if (actionNameRef[_emberGlimmerHelpersAction.INVOKE]) {
+          actionName = actionNameRef;
+        } else {
+          actionName = actionNameRef.value();
+
+          _emberMetalDebug.assert('You specified a quoteless path to the {{action}} helper ' + 'which did not resolve to an action name (a string). ' + 'Perhaps you meant to use a quoted actionName? (e.g. {{action \'save\'}}).', typeof actionName === 'string' || typeof actionName === 'function');
+        }
+      }
 
       var actionArgs = [];
       // The first two arguments are (1) `this` and (2) the action name.
@@ -33544,7 +33595,11 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     ActionModifierManager.prototype.update = function update(modifier, element, args, dom, dynamicScope) {
       var positional = args.positional;
 
-      modifier.actionName = positional.at(1).value();
+      var actionNameRef = positional.at(1);
+
+      if (!actionNameRef[_emberGlimmerHelpersAction.INVOKE]) {
+        modifier.actionName = actionNameRef.value();
+      }
       modifier.eventName = modifier.getEventName();
 
       // Not sure if this is needed? If we mutate the actionState is that good enough?
@@ -33560,7 +33615,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   })();
 
   exports.default = ActionModifierManager;
-})(Em._e[202],Em._e[0],Em._e[40],Em._e[11],Em._e[162],Em._e[201],Em._e[67]);
+})(Em._e[202],Em._e[17],Em._e[57],Em._e[28],Em._e[95],Em._e[201],Em._e[84],Em._e[186]);
 (function (exports, _emberViewsSystemLookup_partial, _glimmerRuntime, _emberMetalCache, _emberMetalDebug, _emberGlimmerSyntaxCurlyComponent, _emberGlimmerSyntaxDynamicComponent, _emberGlimmerSyntaxRender, _emberGlimmerSyntaxOutlet, _emberViewsUtilsLookupComponent, _emberViewsSystemUtils, _emberGlimmerUtilsIterable, _emberGlimmerUtilsReferences, _emberGlimmerHelpersIfUnless, _emberGlimmerHelpersAction, _emberGlimmerHelpersComponent, _emberGlimmerHelpersConcat, _emberGlimmerHelpersGet, _emberGlimmerHelpersHash, _emberGlimmerHelpersLoc, _emberGlimmerHelpersLog, _emberGlimmerHelpersMut, _emberGlimmerHelpersReadonly, _emberGlimmerHelpersUnbound, _emberGlimmerHelpersClass, _emberGlimmerHelpersInputType, _emberGlimmerHelpersQueryParam, _emberGlimmerHelpersEachIn, _emberGlimmerHelpersNormalizeClass, _emberGlimmerHelpersHtmlSafe, _containerOwner, _emberGlimmerModifiersAction) {
   'use strict';
 
@@ -33690,7 +33745,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       });
 
       this._templateCache = new _emberMetalCache.default(1000, function (Template) {
-        return new Template(_this);
+        return Template.create({ env: _this });
       }, function (template) {
         return template.id;
       });
@@ -33949,34 +34004,23 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return _glimmerRuntime.Environment.prototype.attributeFor.call(this, element, attr, reference, isTrusting);
     };
   });
-})(Em._e[203],Em._e[166],Em._e[153],Em._e[2],Em._e[0],Em._e[176],Em._e[178],Em._e[181],Em._e[180],Em._e[182],Em._e[162],Em._e[184],Em._e[159],Em._e[185],Em._e[186],Em._e[177],Em._e[187],Em._e[188],Em._e[189],Em._e[190],Em._e[191],Em._e[192],Em._e[193],Em._e[194],Em._e[195],Em._e[196],Em._e[198],Em._e[183],Em._e[199],Em._e[200],Em._e[46],Em._e[202]);
+})(Em._e[203],Em._e[166],Em._e[154],Em._e[19],Em._e[17],Em._e[176],Em._e[178],Em._e[181],Em._e[180],Em._e[182],Em._e[95],Em._e[184],Em._e[160],Em._e[185],Em._e[186],Em._e[177],Em._e[187],Em._e[188],Em._e[189],Em._e[190],Em._e[191],Em._e[192],Em._e[193],Em._e[194],Em._e[195],Em._e[196],Em._e[198],Em._e[183],Em._e[199],Em._e[200],Em._e[63],Em._e[202]);
 (function (exports, _glimmerRuntime) {
   'use strict';
 
   exports.default = template;
 
-  function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-  function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
   function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-  var templateId = 0;
-
   var Wrapper = (function () {
-    Wrapper.create = function create(options) {
-      return new this(options);
-    };
-
-    function Wrapper(_ref, id) {
-      var env = _ref.env;
-
+    function Wrapper(id, env, spec) {
       _classCallCheck(this, Wrapper);
 
       this.id = id;
+      this.env = env;
+      this.spec = spec;
       this._entryPoint = null;
       this._layout = null;
-      this.env = env;
     }
 
     Wrapper.prototype.asEntryPoint = function asEntryPoint() {
@@ -33986,7 +34030,6 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
         this._entryPoint = _glimmerRuntime.Template.fromSpec(spec, env);
       }
-
       return this._entryPoint;
     };
 
@@ -33997,33 +34040,26 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
         this._layout = _glimmerRuntime.Template.layoutFromSpec(spec, env);
       }
-
       return this._layout;
     };
 
     return Wrapper;
   })();
 
+  var templateId = 0;
+
   function template(json) {
-    var id = templateId++;
+    var id = ++templateId;
+    return {
+      id: id,
+      create: function (_ref) {
+        var env = _ref.env;
 
-    var Factory = (function (_Wrapper) {
-      _inherits(Factory, _Wrapper);
-
-      function Factory(options) {
-        _classCallCheck(this, Factory);
-
-        _Wrapper.call(this, options, id);
-        this.spec = JSON.parse(json);
+        return new Wrapper(id, env, JSON.parse(json));
       }
-
-      return Factory;
-    })(Wrapper);
-    Factory.id = id;
-
-    return Factory;
+    };
   }
-})(Em._e[204],Em._e[153]);
+})(Em._e[204],Em._e[154]);
 (function (exports, _emberGlimmerEnvironment, _emberGlimmerTemplate) {
   'use strict';
 
@@ -34849,7 +34885,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   });
 
   exports.default = LinkComponent;
-})(Em._e[207],Em._e[31],Em._e[0],Em._e[4],Em._e[30],Em._e[157],Em._e[162],Em._e[48],Em._e[163],Em._e[165],Em._e[206],Em._e[160],Em._e[67]);
+})(Em._e[207],Em._e[48],Em._e[17],Em._e[21],Em._e[47],Em._e[158],Em._e[95],Em._e[65],Em._e[163],Em._e[165],Em._e[206],Em._e[161],Em._e[84]);
 (function (exports, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalMixin, _emberRuntimeMixinsTarget_action_support) {
   /**
   @module ember
@@ -35167,7 +35203,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
     }
   }
-})(Em._e[208],Em._e[4],Em._e[22],Em._e[43],Em._e[80]);
+})(Em._e[208],Em._e[21],Em._e[39],Em._e[60],Em._e[98]);
 (function (exports, _emberGlimmerComponent, _emberViewsMixinsText_support) {
   /**
   @module ember
@@ -35203,7 +35239,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     rows: null,
     cols: null
   });
-})(Em._e[209],Em._e[160],Em._e[208]);
+})(Em._e[209],Em._e[161],Em._e[208]);
 (function (exports, _emberMetalComputed, _emberEnvironment, _emberGlimmerComponent, _emberViewsMixinsText_support, _emberMetalEmpty_object) {
   /**
   @module ember
@@ -35336,7 +35372,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     */
     max: null
   });
-})(Em._e[210],Em._e[30],Em._e[7],Em._e[160],Em._e[208],Em._e[1]);
+})(Em._e[210],Em._e[47],Em._e[24],Em._e[161],Em._e[208],Em._e[18]);
 (function (exports, _emberMetalDictionary) {
   'use strict';
 
@@ -35640,7 +35676,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     }
   };
   exports.InteractiveRenderer = InteractiveRenderer;
-})(Em._e[212],Em._e[159],Em._e[40],Em._e[17],Em._e[97],Em._e[211],Em._e[0],Em._e[19],Em._e[10]);
+})(Em._e[212],Em._e[160],Em._e[57],Em._e[34],Em._e[16],Em._e[211],Em._e[17],Em._e[36],Em._e[27]);
 (function (exports, _emberMetalDebug, _emberGlimmerHelper) {
   /**
   @module ember
@@ -35698,7 +35734,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     _emberMetalDebug.deprecate('Using `Ember.HTMLBars.makeBoundHelper` is deprecated. Please refactor to use `Ember.Helper` or `Ember.Helper.helper`.', false, { id: 'ember-htmlbars.make-bound-helper', until: '3.0.0' });
     return _emberGlimmerHelper.helper(fn);
   }
-})(Em._e[213],Em._e[0],Em._e[155]);
+})(Em._e[213],Em._e[17],Em._e[156]);
 (function (exports, _require2, _containerRegistry, _emberGlimmerComponentsText_field, _emberGlimmerComponentsText_area, _emberGlimmerComponentsCheckbox, _emberGlimmerComponentsLinkTo) {
   'use strict';
 
@@ -35752,7 +35788,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     registry.register('component:-checkbox', _emberGlimmerComponentsCheckbox.default);
     registry.register('component:link-to', _emberGlimmerComponentsLinkTo.default);
   }
-})(Em._e[214],Em.__loader.require,Em._e[175],Em._e[210],Em._e[209],Em._e[161],Em._e[207]);
+})(Em._e[214],Em.__loader.require,Em._e[175],Em._e[210],Em._e[209],Em._e[162],Em._e[207]);
 (function (exports, _emberMetalAssign, _glimmerReference, _emberMetalEmpty_object) {
   'use strict';
 
@@ -35955,7 +35991,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   })();
 
   exports.default = OutletView;
-})(Em._e[215],Em._e[8],Em._e[97],Em._e[1]);
+})(Em._e[215],Em._e[25],Em._e[16],Em._e[18]);
 (function (exports, _emberGlimmer) {
   "use strict";
 
@@ -35970,11 +36006,11 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   'use strict';
 
   exports.default = _glimmerRuntime.DOMHelper;
-})(Em._e[218],Em._e[153]);
+})(Em._e[218],Em._e[154]);
 (function (exports) {
   "use strict";
 
-  exports.default = "2.9.0-canary+6ebf1b6f";
+  exports.default = "2.9.0-alpha+6449018e";
 })(Em._e[219]);
 (function (exports) {
   /**
@@ -36148,7 +36184,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   WeakMap.prototype.toString = function () {
     return '[object WeakMap]';
   };
-})(Em._e[221],Em._e[11],Em._e[14]);
+})(Em._e[221],Em._e[28],Em._e[31]);
 (function (exports, _emberMetalUtils, _emberMetalEmpty_object) {
   /**
   @module ember
@@ -36640,7 +36676,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.OrderedSet = OrderedSet;
   exports.Map = Map;
   exports.MapWithDefault = MapWithDefault;
-})(Em._e[222],Em._e[11],Em._e[1]);
+})(Em._e[222],Em._e[28],Em._e[18]);
 (function (exports, _emberMetalDebug, _emberMetalFeatures) {
   'use strict';
 
@@ -36710,7 +36746,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = new Libraries();
-})(Em._e[223],Em._e[0],Em._e[10]);
+})(Em._e[223],Em._e[17],Em._e[27]);
 (function (exports, _emberMetalIs_empty) {
   'use strict';
 
@@ -36744,7 +36780,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   function isBlank(obj) {
     return _emberMetalIs_empty.default(obj) || typeof obj === 'string' && obj.match(/\S/) === null;
   }
-})(Em._e[224],Em._e[156]);
+})(Em._e[224],Em._e[157]);
 (function (exports, _emberMetalIs_blank) {
   'use strict';
 
@@ -36963,7 +36999,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     _emberDebugHandlers.invoke.apply(undefined, ['deprecate'].concat(_slice.call(arguments)));
   }
-})(Em._e[227],Em._e[21],Em._e[31],Em._e[7],Em._e[226]);
+})(Em._e[227],Em._e[38],Em._e[48],Em._e[24],Em._e[226]);
 (function (exports, _emberConsole, _emberMetalDebug, _emberDebugHandlers) {
   'use strict';
 
@@ -37029,7 +37065,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     _emberDebugHandlers.invoke.apply(undefined, ['warn'].concat(_slice.call(arguments)));
   }
-})(Em._e[228],Em._e[31],Em._e[0],Em._e[226]);
+})(Em._e[228],Em._e[48],Em._e[17],Em._e[226]);
 (function (exports, _emberMetalCore, _emberEnvironment, _emberMetalTesting, _emberMetalDebug, _emberMetalFeatures, _emberMetalError, _emberConsole, _emberDebugDeprecate, _emberDebugWarn) {
   'use strict';
 
@@ -37338,7 +37374,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   if (runningNonEmberDebugJS) {
     _emberMetalDebug.warn('Please use `ember.debug.js` instead of `ember.js` for development and debugging.');
   }
-})(Em._e[229],Em._e[56],Em._e[7],Em._e[32],Em._e[0],Em._e[10],Em._e[21],Em._e[31],Em._e[227],Em._e[228]);
+})(Em._e[229],Em._e[73],Em._e[24],Em._e[49],Em._e[17],Em._e[27],Em._e[38],Em._e[48],Em._e[227],Em._e[228]);
 (function (exports, _require, _emberEnvironment, _emberVersion, _emberMetalCore, _emberMetalDebug, _emberMetalFeatures, _emberMetalAssign, _emberMetalMerge, _emberMetalInstrumentation, _emberMetalUtils, _emberMetalMeta, _emberMetalError, _emberMetalCache, _emberConsole, _emberMetalProperty_get, _emberMetalEvents, _emberMetalObserver_set, _emberMetalProperty_events, _emberMetalProperties, _emberMetalProperty_set, _emberMetalWeak_map, _emberMetalMap, _emberMetalGet_properties, _emberMetalSet_properties, _emberMetalWatch_key, _emberMetalChains, _emberMetalWatch_path, _emberMetalWatching, _emberMetalExpand_properties, _emberMetalComputed, _emberMetalAlias, _emberMetalObserver, _emberMetalMixin, _emberMetalBinding, _emberMetalPath_cache, _emberMetalTesting, _emberMetalError_handler, _emberMetalRun_loop, _emberMetalLibraries, _emberMetalIs_none, _emberMetalIs_empty, _emberMetalIs_blank, _emberMetalIs_present, _backburner) {
   /**
   @module ember
@@ -37657,7 +37693,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = _emberMetalCore.default;
-})(Em._e[230],Em.__loader.require,Em._e[7],Em._e[219],Em._e[56],Em._e[0],Em._e[10],Em._e[8],Em._e[220],Em._e[67],Em._e[11],Em._e[14],Em._e[21],Em._e[2],Em._e[31],Em._e[4],Em._e[15],Em._e[18],Em._e[20],Em._e[23],Em._e[22],Em._e[221],Em._e[222],Em._e[50],Em._e[51],Em._e[24],Em._e[26],Em._e[25],Em._e[28],Em._e[27],Em._e[30],Em._e[45],Em._e[41],Em._e[43],Em._e[42],Em._e[3],Em._e[32],Em._e[33],Em._e[40],Em._e[223],Em._e[52],Em._e[156],Em._e[224],Em._e[225],Em._e[39]);
+})(Em._e[230],Em.__loader.require,Em._e[24],Em._e[219],Em._e[73],Em._e[17],Em._e[27],Em._e[25],Em._e[220],Em._e[84],Em._e[28],Em._e[31],Em._e[38],Em._e[19],Em._e[48],Em._e[21],Em._e[32],Em._e[35],Em._e[37],Em._e[40],Em._e[39],Em._e[221],Em._e[222],Em._e[67],Em._e[68],Em._e[41],Em._e[43],Em._e[42],Em._e[45],Em._e[44],Em._e[47],Em._e[62],Em._e[58],Em._e[60],Em._e[59],Em._e[20],Em._e[49],Em._e[50],Em._e[57],Em._e[223],Em._e[69],Em._e[157],Em._e[224],Em._e[225],Em._e[56]);
 (function (exports) {
   /**
     Compares two objects, returning true if they are equal.
@@ -37816,7 +37852,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.Freezable = Freezable;
   var FROZEN_ERROR = 'Frozen object cannot be modified.';
   exports.FROZEN_ERROR = FROZEN_ERROR;
-})(Em._e[232],Em._e[0],Em._e[43],Em._e[4],Em._e[22]);
+})(Em._e[232],Em._e[17],Em._e[60],Em._e[21],Em._e[39]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberMetalMixin, _emberRuntimeMixinsFreezable, _emberMetalError) {
   /**
   @module ember
@@ -37875,7 +37911,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
     }
   });
-})(Em._e[233],Em._e[0],Em._e[4],Em._e[43],Em._e[232],Em._e[21]);
+})(Em._e[233],Em._e[17],Em._e[21],Em._e[60],Em._e[232],Em._e[38]);
 (function (exports, _emberMetalDebug, _emberRuntimeSystemObject, _emberRuntimeMixinsCopyable) {
   'use strict';
 
@@ -37972,7 +38008,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return _copy(obj, deep, deep ? [] : null, deep ? [] : null);
   }
-})(Em._e[234],Em._e[0],Em._e[54],Em._e[233]);
+})(Em._e[234],Em._e[17],Em._e[71],Em._e[233]);
 (function (exports, _emberMetalCore, _emberEnvironment, _emberMetalProperty_get, _emberMetalUtils, _emberMetalMixin, _emberRuntimeSystemObject) {
   /**
   @module ember
@@ -38205,7 +38241,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   _emberMetalMixin.Mixin.prototype.toString = classToString; // ES6TODO: altering imported objects. SBB.
 
   exports.default = Namespace;
-})(Em._e[235],Em._e[56],Em._e[7],Em._e[4],Em._e[11],Em._e[43],Em._e[54]);
+})(Em._e[235],Em._e[73],Em._e[24],Em._e[21],Em._e[28],Em._e[60],Em._e[71]);
 (function (exports, _emberMetalProperty_set, _containerRegistry, _containerContainer, _containerOwner) {
   'use strict';
 
@@ -38216,7 +38252,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.Container = _containerContainer.default;
   exports.getOwner = _containerOwner.getOwner;
   exports.setOwner = _containerOwner.setOwner;
-})(Em._e[236],Em._e[22],Em._e[175],Em._e[174],Em._e[46]);
+})(Em._e[236],Em._e[39],Em._e[175],Em._e[174],Em._e[63]);
 (function (exports, _emberRuntimeMixinsEnumerable, _emberMetalMixin, _emberMetalProperty_events) {
   'use strict';
 
@@ -38329,7 +38365,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return this;
     }
   });
-})(Em._e[237],Em._e[59],Em._e[43],Em._e[20]);
+})(Em._e[237],Em._e[76],Em._e[60],Em._e[37]);
 (function (exports, _emberMetalProperty_get, _emberMetalError, _emberMetalMixin, _emberRuntimeMixinsArray, _emberRuntimeMixinsMutable_enumerable, _emberRuntimeMixinsEnumerable, _emberMetalFeatures) {
   /**
   @module ember
@@ -38695,7 +38731,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return this;
     }
   });
-})(Em._e[238],Em._e[4],Em._e[21],Em._e[43],Em._e[61],Em._e[237],Em._e[59],Em._e[10]);
+})(Em._e[238],Em._e[21],Em._e[38],Em._e[60],Em._e[78],Em._e[237],Em._e[76],Em._e[27]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberRuntimeUtils, _emberMetalComputed, _emberMetalMixin, _emberMetalProperty_events, _emberMetalError, _emberRuntimeSystemObject, _emberRuntimeMixinsMutable_array, _emberRuntimeMixinsEnumerable, _emberMetalAlias, _emberRuntimeMixinsArray) {
   'use strict';
 
@@ -39056,7 +39092,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       this._teardownContent();
     }
   });
-})(Em._e[239],Em._e[0],Em._e[4],Em._e[62],Em._e[30],Em._e[43],Em._e[20],Em._e[21],Em._e[54],Em._e[238],Em._e[59],Em._e[45],Em._e[61]);
+})(Em._e[239],Em._e[17],Em._e[21],Em._e[79],Em._e[47],Em._e[60],Em._e[37],Em._e[38],Em._e[71],Em._e[238],Em._e[76],Em._e[62],Em._e[78]);
 (function (exports, _emberRuntimeSystemObject, _emberRuntimeMixinsProxy) {
   'use strict';
 
@@ -39131,7 +39167,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   */
 
   exports.default = _emberRuntimeSystemObject.default.extend(_emberRuntimeMixinsProxy.default);
-})(Em._e[240],Em._e[54],Em._e[158]);
+})(Em._e[240],Em._e[71],Em._e[159]);
 (function (exports) {
   "use strict";
 
@@ -39313,7 +39349,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   _emberMetalCore.default.A = A;exports.A = A;
   exports.NativeArray = NativeArray;
   exports.default = NativeArray;
-})(Em._e[242],Em._e[56],Em._e[7],Em._e[241],Em._e[4],Em._e[43],Em._e[61],Em._e[238],Em._e[53],Em._e[233],Em._e[232],Em._e[234]);
+})(Em._e[242],Em._e[73],Em._e[24],Em._e[241],Em._e[21],Em._e[60],Em._e[78],Em._e[238],Em._e[70],Em._e[233],Em._e[232],Em._e[234]);
 (function (exports, _emberEnvironment) {
   /*globals CustomEvent */
 
@@ -39389,7 +39425,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       });
     }
   }
-})(Em._e[243],Em._e[7]);
+})(Em._e[243],Em._e[24]);
 (function (exports, _emberMetalProperty_get, _emberMetalSet_properties, _emberMetalComputed, _emberRuntimeComputedComputed_macros, _emberMetalMixin, _emberMetalError) {
   'use strict';
 
@@ -39581,7 +39617,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return promise[name].apply(promise, arguments);
     };
   }
-})(Em._e[244],Em._e[4],Em._e[51],Em._e[30],Em._e[157],Em._e[43],Em._e[21]);
+})(Em._e[244],Em._e[21],Em._e[68],Em._e[47],Em._e[158],Em._e[60],Em._e[38]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberMetalError, _emberMetalComputed, _emberMetalObserver, _emberRuntimeCompare, _emberRuntimeUtils, _emberRuntimeSystemNative_array, _emberMetalIs_none, _emberMetalGet_properties, _emberMetalEmpty_object, _emberMetalUtils, _emberMetalWeak_map) {
   /**
   @module ember
@@ -40386,7 +40422,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return 0;
     }));
   }
-})(Em._e[245],Em._e[0],Em._e[4],Em._e[21],Em._e[30],Em._e[41],Em._e[58],Em._e[62],Em._e[242],Em._e[52],Em._e[50],Em._e[1],Em._e[11],Em._e[221]);
+})(Em._e[245],Em._e[17],Em._e[21],Em._e[38],Em._e[47],Em._e[58],Em._e[75],Em._e[79],Em._e[242],Em._e[69],Em._e[67],Em._e[18],Em._e[28],Em._e[221]);
 (function (exports, _emberMetalDebug, _emberRuntimeSystemObject, _emberRuntimeMixinsController, _emberRuntimeInject, _emberRuntimeMixinsAction_handler) {
   'use strict';
 
@@ -40444,7 +40480,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   _emberRuntimeInject.createInjectionHelper('controller', controllerInjectionHelper);
 
   exports.default = Controller;
-})(Em._e[246],Em._e[0],Em._e[54],Em._e[165],Em._e[48],Em._e[44]);
+})(Em._e[246],Em._e[17],Em._e[71],Em._e[165],Em._e[65],Em._e[61]);
 (function (exports) {
   'use strict';
 
@@ -43138,7 +43174,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = _rsvp;
-})(Em._e[273],Em._e[272],Em._e[40],Em._e[0],Em._e[33]);
+})(Em._e[273],Em._e[272],Em._e[57],Em._e[17],Em._e[50]);
 (function (exports, _emberEnvironment, _emberRuntimeSystemString) {
   /**
   @module ember
@@ -43249,7 +43285,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return _emberRuntimeSystemString.capitalize(this);
     };
   }
-})(Em._e[274],Em._e[7],Em._e[168]);
+})(Em._e[274],Em._e[24],Em._e[168]);
 (function (exports, _emberEnvironment, _emberMetalDebug, _emberMetalComputed, _emberMetalMixin) {
   /**
   @module ember
@@ -43406,7 +43442,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return this;
     };
   }
-})(Em._e[275],Em._e[7],Em._e[0],Em._e[30],Em._e[43]);
+})(Em._e[275],Em._e[24],Em._e[17],Em._e[47],Em._e[60]);
 (function (exports, _emberMetalDebug, _emberMetalMixin) {
   /**
   @module ember
@@ -43660,7 +43696,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return instance[nonDeprecatedProperty].apply(instance, arguments);
     };
   }
-})(Em._e[276],Em._e[0],Em._e[43]);
+})(Em._e[276],Em._e[17],Em._e[60]);
 (function (exports, _emberMetal, _emberRuntimeIsEqual, _emberRuntimeCompare, _emberRuntimeCopy, _emberRuntimeInject, _emberRuntimeSystemNamespace, _emberRuntimeSystemObject, _emberRuntimeSystemContainer, _emberRuntimeSystemArray_proxy, _emberRuntimeSystemObject_proxy, _emberRuntimeSystemCore_object, _emberRuntimeSystemNative_array, _emberRuntimeSystemString, _emberRuntimeSystemLazy_load, _emberRuntimeMixinsArray, _emberRuntimeMixinsComparable, _emberRuntimeMixinsCopyable, _emberRuntimeMixinsEnumerable, _emberRuntimeMixinsFreezable, _emberRuntimeMixinsProxy, _emberRuntimeMixinsObservable, _emberRuntimeMixinsAction_handler, _emberRuntimeMixinsMutable_enumerable, _emberRuntimeMixinsMutable_array, _emberRuntimeMixinsTarget_action_support, _emberRuntimeMixinsEvented, _emberRuntimeMixinsPromise_proxy, _emberMetalFeatures, _emberRuntimeComputedComputed_macros, _emberRuntimeComputedReduce_computed_macros, _emberRuntimeControllersController, _emberRuntimeMixinsController, _emberRuntimeSystemService, _emberRuntimeExtRsvp, _emberRuntimeExtString, _emberRuntimeExtFunction, _emberRuntimeUtils, _emberRuntimeMixinsRegistry_proxy, _emberRuntimeMixinsContainer_proxy, _emberRuntimeString_registry) {
   /**
   @module ember
@@ -43813,7 +43849,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   });
 
   exports.default = _emberMetal.default;
-})(Em._e[277],Em._e[230],Em._e[231],Em._e[58],Em._e[234],Em._e[48],Em._e[235],Em._e[54],Em._e[236],Em._e[239],Em._e[240],Em._e[49],Em._e[242],Em._e[168],Em._e[243],Em._e[61],Em._e[57],Em._e[233],Em._e[59],Em._e[232],Em._e[158],Em._e[53],Em._e[44],Em._e[237],Em._e[238],Em._e[80],Em._e[55],Em._e[244],Em._e[10],Em._e[157],Em._e[245],Em._e[246],Em._e[165],Em._e[163],Em._e[273],Em._e[274],Em._e[275],Em._e[62],Em._e[276],Em._e[173],Em._e[167]);
+})(Em._e[277],Em._e[230],Em._e[231],Em._e[75],Em._e[234],Em._e[65],Em._e[235],Em._e[71],Em._e[236],Em._e[239],Em._e[240],Em._e[66],Em._e[242],Em._e[168],Em._e[243],Em._e[78],Em._e[74],Em._e[233],Em._e[76],Em._e[232],Em._e[159],Em._e[70],Em._e[61],Em._e[237],Em._e[238],Em._e[98],Em._e[72],Em._e[244],Em._e[27],Em._e[158],Em._e[245],Em._e[246],Em._e[165],Em._e[163],Em._e[273],Em._e[274],Em._e[275],Em._e[79],Em._e[276],Em._e[173],Em._e[167]);
 (function (exports, _emberMetalRun_loop) {
   /**
   @module ember
@@ -43827,7 +43863,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   // that should occur after view rendering.
   _emberMetalRun_loop.default._addQueue('render', 'actions');
   _emberMetalRun_loop.default._addQueue('afterRender', 'render');
-})(Em._e[278],Em._e[40]);
+})(Em._e[278],Em._e[57]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalIs_none, _emberMetalRun_loop, _emberRuntimeSystemObject, _emberViewsSystemJquery, _emberViewsSystemAction_manager, _emberMetalAssign, _containerOwner, _emberEnvironment, _emberViewsCompatFallbackViewRegistry) {
   /**
   @module ember
@@ -44111,7 +44147,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return '(EventDispatcher)';
     }
   });
-})(Em._e[279],Em._e[0],Em._e[4],Em._e[22],Em._e[52],Em._e[40],Em._e[54],Em._e[66],Em._e[201],Em._e[8],Em._e[46],Em._e[7],Em._e[211]);
+})(Em._e[279],Em._e[17],Em._e[21],Em._e[39],Em._e[69],Em._e[57],Em._e[71],Em._e[83],Em._e[201],Em._e[25],Em._e[63],Em._e[24],Em._e[211]);
 (function (exports, _emberMetalMixin, _emberRuntimeMixinsTarget_action_support, _emberMetalAlias) {
   'use strict';
 
@@ -44169,7 +44205,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     */
     actionContext: _emberMetalAlias.default('context')
   });
-})(Em._e[280],Em._e[43],Em._e[80],Em._e[45]);
+})(Em._e[280],Em._e[60],Em._e[98],Em._e[62]);
 (function (exports, _emberMetalDebug, _emberRuntimeSystemObject) {
   'use strict';
 
@@ -44188,7 +44224,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return owner.lookup(templateFullName, options);
     }
   });
-})(Em._e[281],Em._e[0],Em._e[54]);
+})(Em._e[281],Em._e[17],Em._e[71]);
 (function (exports, _emberRuntime, _emberViewsSystemJquery, _emberViewsSystemUtils, _emberViewsSystemExt, _emberViewsSystemEvent_dispatcher, _emberViewsMixinsView_target_action_support, _emberViewsComponent_lookup, _emberViewsMixinsText_support) {
   /**
   @module ember
@@ -44225,7 +44261,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   // END EXPORTS
 
   exports.default = _emberRuntime.default;
-})(Em._e[282],Em._e[277],Em._e[66],Em._e[162],Em._e[278],Em._e[279],Em._e[280],Em._e[281],Em._e[208]);
+})(Em._e[282],Em._e[277],Em._e[83],Em._e[95],Em._e[278],Em._e[279],Em._e[280],Em._e[281],Em._e[208]);
 (function (exports, _emberMetalRun_loop) {
   'use strict';
 
@@ -44239,7 +44275,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   // loading state entry if all context promises resolve on the
   // 'actions' queue first.
   _emberMetalRun_loop.default._addQueue('routerTransitions', 'actions');
-})(Em._e[283],Em._e[40]);
+})(Em._e[283],Em._e[57]);
 (function (exports, _emberMetalProperty_get, _emberRuntimeMixinsController) {
   'use strict';
 
@@ -44397,7 +44433,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   });
 
   exports.default = _emberRuntimeMixinsController.default;
-})(Em._e[284],Em._e[4],Em._e[165]);
+})(Em._e[284],Em._e[21],Em._e[165]);
 (function (exports) {
   /**
     @private
@@ -44712,7 +44748,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return _emberRoutingLocationUtil.getHash(this.location);
     }
   };
-})(Em._e[286],Em._e[0],Em._e[7],Em._e[285]);
+})(Em._e[286],Em._e[17],Em._e[24],Em._e[285]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberMetalProperty_set, _emberRuntimeSystemObject) {
   'use strict';
 
@@ -44822,8 +44858,8 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return rootURL + url;
     }
   });
-})(Em._e[287],Em._e[0],Em._e[4],Em._e[22],Em._e[54]);
-(function (exports, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalRun_loop, _emberMetalUtils, _emberRuntimeSystemObject, _emberRoutingLocationApi, _emberViewsSystemJquery) {
+})(Em._e[287],Em._e[17],Em._e[21],Em._e[39],Em._e[71]);
+(function (exports, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalRun_loop, _emberRuntimeSystemObject, _emberRoutingLocationApi) {
   'use strict';
 
   /**
@@ -44846,6 +44882,8 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     init: function () {
       _emberMetalProperty_set.set(this, 'location', _emberMetalProperty_get.get(this, '_location') || window.location);
+
+      this._hashchangeHandler = undefined;
     },
 
     /**
@@ -44919,9 +44957,9 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     onUpdateURL: function (callback) {
       var _this = this;
 
-      var guid = _emberMetalUtils.guidFor(this);
+      this._removeEventListener();
 
-      _emberViewsSystemJquery.default(window).on('hashchange.ember-location-' + guid, function () {
+      this._hashchangeHandler = function () {
         _emberMetalRun_loop.default(function () {
           var path = _this.getURL();
           if (_emberMetalProperty_get.get(_this, 'lastSetURL') === path) {
@@ -44932,7 +44970,9 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
           callback(path);
         });
-      });
+      };
+
+      window.addEventListener('hashchange', this._hashchangeHandler);
     },
 
     /**
@@ -44954,13 +44994,17 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       @method willDestroy
     */
     willDestroy: function () {
-      var guid = _emberMetalUtils.guidFor(this);
+      this._removeEventListener();
+    },
 
-      _emberViewsSystemJquery.default(window).off('hashchange.ember-location-' + guid);
+    _removeEventListener: function () {
+      if (this._hashchangeHandler) {
+        window.removeEventListener('hashchange', this._hashchangeHandler);
+      }
     }
   });
-})(Em._e[288],Em._e[4],Em._e[22],Em._e[40],Em._e[11],Em._e[54],Em._e[286],Em._e[66]);
-(function (exports, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalUtils, _emberRuntimeSystemObject, _emberRoutingLocationApi, _emberViewsSystemJquery) {
+})(Em._e[288],Em._e[21],Em._e[39],Em._e[57],Em._e[71],Em._e[286]);
+(function (exports, _emberMetalProperty_get, _emberMetalProperty_set, _emberRuntimeSystemObject, _emberRoutingLocationApi) {
   'use strict';
 
   /**
@@ -44983,8 +45027,15 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     implementation: 'history',
 
     init: function () {
+      this._super.apply(this, arguments);
+
+      var base = document.querySelector('base');
+      var baseURL = base ? base.getAttribute('href') : '';
+
+      _emberMetalProperty_set.set(this, 'baseURL', baseURL);
       _emberMetalProperty_set.set(this, 'location', _emberMetalProperty_get.get(this, 'location') || window.location);
-      _emberMetalProperty_set.set(this, 'baseURL', _emberViewsSystemJquery.default('base').attr('href') || '');
+
+      this._popstateHandler = undefined;
     },
 
     /**
@@ -45129,9 +45180,9 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     onUpdateURL: function (callback) {
       var _this = this;
 
-      var guid = _emberMetalUtils.guidFor(this);
+      this._removeEventListener();
 
-      _emberViewsSystemJquery.default(window).on('popstate.ember-location-' + guid, function (e) {
+      this._popstateHandler = function () {
         // Ignore initial page load popstate event in Chrome
         if (!popstateFired) {
           popstateFired = true;
@@ -45140,7 +45191,9 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
           }
         }
         callback(_this.getURL());
-      });
+      };
+
+      window.addEventListener('popstate', this._popstateHandler);
     },
 
     /**
@@ -45173,9 +45226,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       @method willDestroy
     */
     willDestroy: function () {
-      var guid = _emberMetalUtils.guidFor(this);
-
-      _emberViewsSystemJquery.default(window).off('popstate.ember-location-' + guid);
+      this._removeEventListener();
     },
 
     /**
@@ -45183,9 +45234,15 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
        Returns normalized location.hash
        @method getHash
     */
-    getHash: _emberRoutingLocationApi.default._getHash
+    getHash: _emberRoutingLocationApi.default._getHash,
+
+    _removeEventListener: function () {
+      if (this._popstateHandler) {
+        window.removeEventListener('popstate', this._popstateHandler);
+      }
+    }
   });
-})(Em._e[289],Em._e[4],Em._e[22],Em._e[11],Em._e[54],Em._e[286],Em._e[66]);
+})(Em._e[289],Em._e[21],Em._e[39],Em._e[71],Em._e[286]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalUtils, _containerOwner, _emberRuntimeSystemObject, _emberEnvironment, _emberRoutingLocationUtil) {
   'use strict';
 
@@ -45467,7 +45524,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return path;
   }
-})(Em._e[290],Em._e[0],Em._e[4],Em._e[22],Em._e[11],Em._e[46],Em._e[54],Em._e[7],Em._e[285]);
+})(Em._e[290],Em._e[17],Em._e[21],Em._e[39],Em._e[28],Em._e[63],Em._e[71],Em._e[24],Em._e[285]);
 (function (exports) {
   /**
   @module ember
@@ -45697,7 +45754,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       };
     })();
   }
-})(Em._e[292],Em._e[0],Em._e[8],Em._e[10]);
+})(Em._e[292],Em._e[17],Em._e[25],Em._e[27]);
 (function (exports, _emberMetalAssign, _emberMetalProperty_get) {
   'use strict';
 
@@ -45874,7 +45931,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       accum[key] = tmp;
     }
   }
-})(Em._e[293],Em._e[8],Em._e[4]);
+})(Em._e[293],Em._e[25],Em._e[21]);
 (function (exports, _emberMetalDebug, _emberMetalTesting, _emberMetalFeatures, _emberMetalError, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalGet_properties, _emberMetalIs_none, _emberMetalComputed, _emberMetalAssign, _emberRuntimeUtils, _emberMetalRun_loop, _emberRuntimeCopy, _emberRuntimeSystemString, _emberRuntimeSystemObject, _emberRuntimeSystemNative_array, _emberRuntimeMixinsEvented, _emberRuntimeMixinsAction_handler, _emberRoutingSystemGenerate_controller, _emberRoutingUtils, _containerOwner, _emberMetalIs_empty, _emberMetalSymbol) {
   'use strict';
 
@@ -47635,7 +47692,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       var name = undefined;
 
       if (typeof _name === 'object' && !options) {
-        name = this.routeName;
+        name = this.templateName || this.routeName;
         options = _name;
       } else {
         name = _name;
@@ -48046,7 +48103,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = Route;
-})(Em._e[294],Em._e[0],Em._e[32],Em._e[10],Em._e[21],Em._e[4],Em._e[22],Em._e[50],Em._e[52],Em._e[30],Em._e[8],Em._e[62],Em._e[40],Em._e[234],Em._e[168],Em._e[54],Em._e[242],Em._e[55],Em._e[44],Em._e[179],Em._e[293],Em._e[46],Em._e[156],Em._e[13]);
+})(Em._e[294],Em._e[17],Em._e[49],Em._e[27],Em._e[38],Em._e[21],Em._e[39],Em._e[67],Em._e[69],Em._e[47],Em._e[25],Em._e[79],Em._e[57],Em._e[234],Em._e[168],Em._e[71],Em._e[242],Em._e[72],Em._e[61],Em._e[179],Em._e[293],Em._e[63],Em._e[157],Em._e[30]);
 (function (exports, _emberMetalIs_empty, _emberRuntimeSystemObject, _emberMetalAssign) {
   'use strict';
 
@@ -48089,7 +48146,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     }
     return true;
   }
-})(Em._e[295],Em._e[156],Em._e[54],Em._e[8]);
+})(Em._e[295],Em._e[157],Em._e[71],Em._e[25]);
 (function (exports) {
   "use strict";
 
@@ -52384,7 +52441,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = EmberRouter;
-})(Em._e[313],Em._e[31],Em._e[0],Em._e[21],Em._e[10],Em._e[4],Em._e[22],Em._e[23],Em._e[1],Em._e[30],Em._e[8],Em._e[40],Em._e[54],Em._e[55],Em._e[294],Em._e[292],Em._e[286],Em._e[293],Em._e[11],Em._e[295],Em._e[46],Em._e[172],Em._e[312],Em._e[302]);
+})(Em._e[313],Em._e[48],Em._e[17],Em._e[38],Em._e[27],Em._e[21],Em._e[39],Em._e[40],Em._e[18],Em._e[47],Em._e[25],Em._e[57],Em._e[71],Em._e[72],Em._e[294],Em._e[292],Em._e[286],Em._e[293],Em._e[28],Em._e[295],Em._e[63],Em._e[172],Em._e[312],Em._e[302]);
 (function (exports, _emberMetalCore, _emberRoutingExtRun_loop, _emberRoutingExtController, _emberRoutingLocationApi, _emberRoutingLocationNone_location, _emberRoutingLocationHash_location, _emberRoutingLocationHistory_location, _emberRoutingLocationAuto_location, _emberRoutingSystemGenerate_controller, _emberRoutingSystemController_for, _emberRoutingSystemDsl, _emberRoutingSystemRouter, _emberRoutingSystemRoute) {
   /**
   @module ember
@@ -52407,7 +52464,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   _emberMetalCore.default.Route = _emberRoutingSystemRoute.default;
 
   exports.default = _emberMetalCore.default;
-})(Em._e[314],Em._e[56],Em._e[283],Em._e[284],Em._e[286],Em._e[287],Em._e[288],Em._e[289],Em._e[290],Em._e[179],Em._e[291],Em._e[292],Em._e[313],Em._e[294]);
+})(Em._e[314],Em._e[73],Em._e[283],Em._e[284],Em._e[286],Em._e[287],Em._e[288],Em._e[289],Em._e[290],Em._e[179],Em._e[291],Em._e[292],Em._e[313],Em._e[294]);
 (function (exports, _emberMetalDebug) {
   /**
   @module ember
@@ -52442,7 +52499,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       _emberMetalDebug.assert('Expected ' + parsedName.fullName + ' to resolve to an ' + expectedType + ' but ' + ('instead it was ' + resolvedType + '.'), !!resolvedType[factoryFlag]);
     }
   }
-})(Em._e[315],Em._e[0]);
+})(Em._e[315],Em._e[17]);
 (function (exports) {
   // STATE within a module is frowned apon, this exists
   // to support Ember.TEMPLATES but shield ember internals from this legacy
@@ -52909,7 +52966,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return type + ':' + dasherizedName;
     }
   });
-})(Em._e[317],Em._e[0],Em._e[4],Em._e[168],Em._e[54],Em._e[235],Em._e[315],Em._e[172],Em._e[316]);
+})(Em._e[317],Em._e[17],Em._e[21],Em._e[168],Em._e[71],Em._e[235],Em._e[315],Em._e[172],Em._e[316]);
 (function (exports, _emberRuntimeSystemObject) {
   'use strict';
 
@@ -52940,7 +52997,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       }
     }
   });
-})(Em._e[318],Em._e[54]);
+})(Em._e[318],Em._e[71]);
 (function (exports, _emberMetalSymbol) {
   /**
   @module ember
@@ -52980,7 +53037,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   function setEngineParent(engine, parent) {
     engine[ENGINE_PARENT] = parent;
   }
-})(Em._e[319],Em._e[13]);
+})(Em._e[319],Em._e[30]);
 (function (exports, _emberRuntimeSystemObject, _emberMetalError, _containerRegistry, _emberRuntimeMixinsContainer_proxy, _emberRuntimeMixinsRegistry_proxy, _emberApplicationSystemEngineParent, _emberMetalDebug, _emberMetalRun_loop, _emberRuntimeExtRsvp, _emberMetalFeatures) {
   /**
   @module ember
@@ -53163,7 +53220,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = EngineInstance;
-})(Em._e[320],Em._e[54],Em._e[21],Em._e[175],Em._e[173],Em._e[276],Em._e[319],Em._e[0],Em._e[40],Em._e[273],Em._e[10]);
+})(Em._e[320],Em._e[71],Em._e[38],Em._e[175],Em._e[173],Em._e[276],Em._e[319],Em._e[17],Em._e[57],Em._e[273],Em._e[27]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalRun_loop, _emberMetalComputed, _emberRuntimeMixinsRegistry_proxy, _emberMetalAssign, _emberEnvironment, _emberRuntimeExtRsvp, _emberViewsSystemJquery, _emberApplicationSystemEngineInstance) {
   /**
   @module ember
@@ -53283,21 +53340,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     },
 
     setupRegistry: function (options) {
-      var registry = this.__registry__;
-
-      registry.register('-environment:main', options.toEnvironment(), { instantiate: false });
-      registry.injection('view', '_environment', '-environment:main');
-      registry.injection('route', '_environment', '-environment:main');
-
-      registry.register('service:-document', options.document, { instantiate: false });
-
-      if (options.isInteractive) {
-        registry.injection('view', 'renderer', 'renderer:-dom');
-        registry.injection('component', 'renderer', 'renderer:-dom');
-      } else {
-        registry.injection('view', 'renderer', 'renderer:-inert');
-        registry.injection('component', 'renderer', 'renderer:-inert');
-      }
+      this.constructor.setupRegistry(this.__registry__, options);
     },
 
     router: _emberMetalComputed.computed(function () {
@@ -53433,6 +53476,32 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
       // getURL returns the set url with the rootURL stripped off
       return router.handleURL(location.getURL()).then(handleResolve, handleReject);
+    }
+  });
+
+  ApplicationInstance.reopenClass({
+    /**
+     @private
+     @method setupRegistry
+     @param {Registry} registry
+     @param {BootOptions} options
+    */
+    setupRegistry: function (registry) {
+      var options = arguments.length <= 1 || arguments[1] === undefined ? new BootOptions() : arguments[1];
+
+      registry.register('-environment:main', options.toEnvironment(), { instantiate: false });
+      registry.injection('view', '_environment', '-environment:main');
+      registry.injection('route', '_environment', '-environment:main');
+
+      registry.register('service:-document', options.document, { instantiate: false });
+
+      if (options.isInteractive) {
+        registry.injection('view', 'renderer', 'renderer:-dom');
+        registry.injection('component', 'renderer', 'renderer:-dom');
+      } else {
+        registry.injection('view', 'renderer', 'renderer:-inert');
+        registry.injection('component', 'renderer', 'renderer:-inert');
+      }
     }
   });
 
@@ -53637,7 +53706,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   });
 
   exports.default = ApplicationInstance;
-})(Em._e[321],Em._e[0],Em._e[4],Em._e[22],Em._e[40],Em._e[30],Em._e[276],Em._e[8],Em._e[7],Em._e[273],Em._e[66],Em._e[320]);
+})(Em._e[321],Em._e[17],Em._e[21],Em._e[39],Em._e[57],Em._e[47],Em._e[276],Em._e[25],Em._e[24],Em._e[273],Em._e[83],Em._e[320]);
 (function (exports) {
   /**
    * DAG Vertex
@@ -53934,7 +54003,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
     return req;
   }
-})(Em._e[325],Em._e[163],Em._e[4],Em._e[157],Em._e[293],Em._e[8]);
+})(Em._e[325],Em._e[163],Em._e[21],Em._e[158],Em._e[293],Em._e[25]);
 (function (exports, _emberMetalCore, _emberRuntimeSystemNative_array, _emberRuntimeUtils, _emberRuntimeSystemString, _emberRuntimeSystemNamespace, _emberRuntimeSystemObject) {
   'use strict';
 
@@ -54035,7 +54104,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return types;
     }
   });
-})(Em._e[326],Em._e[56],Em._e[242],Em._e[62],Em._e[168],Em._e[235],Em._e[54]);
+})(Em._e[326],Em._e[73],Em._e[242],Em._e[79],Em._e[168],Em._e[235],Em._e[71]);
 (function (exports, _emberRuntimeSystemNamespace, _containerRegistry, _emberRuntimeMixinsRegistry_proxy, _dagMap, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalDebug, _emberMetalUtils, _emberMetalEmpty_object, _emberApplicationSystemResolver, _emberApplicationSystemEngineInstance, _emberMetalFeatures, _emberMetalSymbol, _emberRuntimeControllersController, _emberRoutingServicesRouting, _emberExtensionSupportContainer_debug_adapter, _emberViewsComponent_lookup, _require) {
   /**
   @module ember
@@ -54392,12 +54461,17 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
       commonSetupRegistry(registry);
 
-      if (options[GLIMMER]) {
+      if (true) {
         var glimmerSetupRegistry = _require.default('ember-glimmer/setup-registry').setupEngineRegistry;
         glimmerSetupRegistry(registry);
       } else {
-        var htmlbarsSetupRegistry = _require.default('ember-htmlbars/setup-registry').setupEngineRegistry;
-        htmlbarsSetupRegistry(registry);
+        if (options[GLIMMER]) {
+          var glimmerSetupRegistry = _require.default('ember-glimmer/setup-registry').setupEngineRegistry;
+          glimmerSetupRegistry(registry);
+        } else {
+          var htmlbarsSetupRegistry = _require.default('ember-htmlbars/setup-registry').setupEngineRegistry;
+          htmlbarsSetupRegistry(registry);
+        }
       }
 
       return registry;
@@ -54506,8 +54580,8 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = Engine;
-})(Em._e[327],Em._e[235],Em._e[175],Em._e[276],Em._e[324],Em._e[4],Em._e[22],Em._e[0],Em._e[11],Em._e[1],Em._e[317],Em._e[320],Em._e[10],Em._e[13],Em._e[246],Em._e[325],Em._e[326],Em._e[281],Em.__loader.require);
-(function (exports, _emberEnvironment, _emberMetalDebug, _emberMetalLibraries, _emberMetalTesting, _emberMetalProperty_get, _emberRuntimeSystemNamespace, _emberRuntimeSystemLazy_load, _emberMetalRun_loop, _emberViewsSystemEvent_dispatcher, _emberViewsSystemJquery, _emberRoutingSystemRoute, _emberRoutingSystemRouter, _emberRoutingLocationHash_location, _emberRoutingLocationHistory_location, _emberRoutingLocationAuto_location, _emberRoutingLocationNone_location, _emberRoutingSystemCache, _emberApplicationSystemApplicationInstance, _emberRuntimeMixinsRegistry_proxy, _containerRegistry, _emberRuntimeExtRsvp, _emberApplicationSystemEngine, _require) {
+})(Em._e[327],Em._e[235],Em._e[175],Em._e[276],Em._e[324],Em._e[21],Em._e[39],Em._e[17],Em._e[28],Em._e[18],Em._e[317],Em._e[320],Em._e[27],Em._e[30],Em._e[246],Em._e[325],Em._e[326],Em._e[281],Em.__loader.require);
+(function (exports, _emberEnvironment, _emberMetalDebug, _emberMetalLibraries, _emberMetalTesting, _emberMetalProperty_get, _emberRuntimeSystemNamespace, _emberRuntimeSystemLazy_load, _emberMetalRun_loop, _emberViewsSystemEvent_dispatcher, _emberViewsSystemJquery, _emberRoutingSystemRoute, _emberRoutingSystemRouter, _emberRoutingLocationHash_location, _emberRoutingLocationHistory_location, _emberRoutingLocationAuto_location, _emberRoutingLocationNone_location, _emberRoutingSystemCache, _emberApplicationSystemApplicationInstance, _emberRuntimeMixinsRegistry_proxy, _containerRegistry, _emberRuntimeExtRsvp, _emberApplicationSystemEngine, _require, _emberMetalFeatures) {
   /**
   @module ember
   @submodule ember-application
@@ -55403,12 +55477,17 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
       commonSetupRegistry(registry);
 
-      if (options[_emberApplicationSystemEngine.GLIMMER]) {
+      if (true) {
         var glimmerSetupRegistry = _require.default('ember-glimmer/setup-registry').setupApplicationRegistry;
         glimmerSetupRegistry(registry);
       } else {
-        var htmlbarsSetupRegistry = _require.default('ember-htmlbars/setup-registry').setupApplicationRegistry;
-        htmlbarsSetupRegistry(registry);
+        if (options[_emberApplicationSystemEngine.GLIMMER]) {
+          var glimmerSetupRegistry = _require.default('ember-glimmer/setup-registry').setupApplicationRegistry;
+          glimmerSetupRegistry(registry);
+        } else {
+          var htmlbarsSetupRegistry = _require.default('ember-htmlbars/setup-registry').setupApplicationRegistry;
+          htmlbarsSetupRegistry(registry);
+        }
       }
 
       return registry;
@@ -55437,7 +55516,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     if (!librariesRegistered) {
       librariesRegistered = true;
 
-      if (_emberEnvironment.environment.hasDOM) {
+      if (_emberEnvironment.environment.hasDOM && typeof _emberViewsSystemJquery.default === 'function') {
         _emberMetalLibraries.default.registerCoreLibrary('jQuery', _emberViewsSystemJquery.default().jquery);
       }
     }
@@ -55466,7 +55545,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   exports.default = Application;
-})(Em._e[328],Em._e[7],Em._e[0],Em._e[223],Em._e[32],Em._e[4],Em._e[235],Em._e[243],Em._e[40],Em._e[279],Em._e[66],Em._e[294],Em._e[313],Em._e[288],Em._e[289],Em._e[290],Em._e[287],Em._e[318],Em._e[321],Em._e[276],Em._e[175],Em._e[273],Em._e[327],Em.__loader.require);
+})(Em._e[328],Em._e[24],Em._e[17],Em._e[223],Em._e[49],Em._e[21],Em._e[235],Em._e[243],Em._e[57],Em._e[279],Em._e[83],Em._e[294],Em._e[313],Em._e[288],Em._e[289],Em._e[290],Em._e[287],Em._e[318],Em._e[321],Em._e[276],Em._e[175],Em._e[273],Em._e[327],Em.__loader.require,Em._e[27]);
 (function (exports, _require, _emberEnvironment, _emberApplicationSystemApplication) {
   'use strict';
 
@@ -55483,7 +55562,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       bootstrap();
     }
   });
-})(Em._e[329],Em.__loader.require,Em._e[7],Em._e[328]);
+})(Em._e[329],Em.__loader.require,Em._e[24],Em._e[328]);
 (function (exports, _emberMetalCore, _emberMetalFeatures, _emberRuntimeSystemLazy_load, _emberApplicationSystemResolver, _emberApplicationSystemApplication, _emberApplicationSystemApplicationInstance, _emberApplicationSystemEngine, _emberApplicationSystemEngineInstance, _emberApplicationInitializersDomTemplates) {
   'use strict';
 
@@ -55504,7 +55583,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   // is loaded already)
 
   _emberRuntimeSystemLazy_load.runLoadHooks('Ember.Application', _emberApplicationSystemApplication.default);
-})(Em._e[330],Em._e[56],Em._e[10],Em._e[243],Em._e[317],Em._e[328],Em._e[321],Em._e[327],Em._e[320],Em._e[329]);
+})(Em._e[330],Em._e[73],Em._e[27],Em._e[243],Em._e[317],Em._e[328],Em._e[321],Em._e[327],Em._e[320],Em._e[329]);
 (function (exports, _emberMetalProperty_get, _emberMetalRun_loop, _emberRuntimeSystemString, _emberRuntimeSystemNamespace, _emberRuntimeSystemObject, _emberRuntimeSystemNative_array, _emberApplicationSystemApplication, _containerOwner, _emberRuntimeMixinsArray) {
   'use strict';
 
@@ -55986,7 +56065,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return function () {};
     }
   });
-})(Em._e[331],Em._e[4],Em._e[40],Em._e[168],Em._e[235],Em._e[54],Em._e[242],Em._e[328],Em._e[46],Em._e[61]);
+})(Em._e[331],Em._e[21],Em._e[57],Em._e[168],Em._e[235],Em._e[71],Em._e[242],Em._e[328],Em._e[63],Em._e[78]);
 (function (exports, _emberMetalCore, _emberExtensionSupportData_adapter, _emberExtensionSupportContainer_debug_adapter) {
   /**
   @module ember
@@ -55997,7 +56076,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
   _emberMetalCore.default.DataAdapter = _emberExtensionSupportData_adapter.default;
   _emberMetalCore.default.ContainerDebugAdapter = _emberExtensionSupportContainer_debug_adapter.default;
-})(Em._e[332],Em._e[56],Em._e[331],Em._e[326]);
+})(Em._e[332],Em._e[73],Em._e[331],Em._e[326]);
 (function (exports, _emberMetalFeatures, _require) {
   'use strict';
 
@@ -56027,7 +56106,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     }
   })();
   exports.Renderer = Renderer;
-})(Em._e[333],Em._e[10],Em.__loader.require);
+})(Em._e[333],Em._e[27],Em.__loader.require);
 (function (exports, _emberMetalFeatures, _require) {
   'use strict';
 
@@ -56038,7 +56117,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return _require.default('ember-htmlbars/component').default;
     }
   })();
-})(Em._e[334],Em._e[10],Em.__loader.require);
+})(Em._e[334],Em._e[27],Em.__loader.require);
 (function (exports, _emberMetalFeatures, _require) {
   'use strict';
 
@@ -56058,7 +56137,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     }
   })();
   exports.helper = helper;
-})(Em._e[335],Em._e[10],Em.__loader.require);
+})(Em._e[335],Em._e[27],Em.__loader.require);
 (function (exports, _emberMetalFeatures, _require) {
   'use strict';
 
@@ -56069,7 +56148,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return _require.default('ember-htmlbars/components/checkbox').default;
     }
   })();
-})(Em._e[336],Em._e[10],Em.__loader.require);
+})(Em._e[336],Em._e[27],Em.__loader.require);
 (function (exports, _emberMetalFeatures, _require) {
   'use strict';
 
@@ -56080,7 +56159,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return _require.default('ember-htmlbars/components/text_field').default;
     }
   })();
-})(Em._e[337],Em._e[10],Em.__loader.require);
+})(Em._e[337],Em._e[27],Em.__loader.require);
 (function (exports, _emberMetalFeatures, _require) {
   'use strict';
 
@@ -56091,7 +56170,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return _require.default('ember-htmlbars/components/text_area').default;
     }
   })();
-})(Em._e[338],Em._e[10],Em.__loader.require);
+})(Em._e[338],Em._e[27],Em.__loader.require);
 (function (exports, _emberMetalFeatures, _require) {
   'use strict';
 
@@ -56102,7 +56181,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return _require.default('ember-htmlbars/components/link-to').default;
     }
   })();
-})(Em._e[339],Em._e[10],Em.__loader.require);
+})(Em._e[339],Em._e[27],Em.__loader.require);
 (function (exports, _emberMetalFeatures, _require) {
   'use strict';
 
@@ -56124,7 +56203,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   exports.isHTMLSafe = isHTMLSafe;
   var getSafeString = strings.getSafeString;
   exports.getSafeString = getSafeString;
-})(Em._e[340],Em._e[10],Em.__loader.require);
+})(Em._e[340],Em._e[27],Em.__loader.require);
 (function (exports, _emberMetalFeatures, _require) {
   'use strict';
 
@@ -56141,7 +56220,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   var template = true ? glimmerTemplate : htmlbarsTemplate;
 
   exports.default = template;
-})(Em._e[341],Em._e[10],Em.__loader.require);
+})(Em._e[341],Em._e[27],Em.__loader.require);
 (function (exports, _emberMetalFeatures, _require) {
   'use strict';
 
@@ -56152,7 +56231,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       return _require.default('ember-htmlbars/make-bound-helper').default;
     }
   })();
-})(Em._e[342],Em._e[10],Em.__loader.require);
+})(Em._e[342],Em._e[27],Em.__loader.require);
 (function (exports, _emberMetalCore, _emberTemplatesTemplate, _emberTemplatesString, _emberRuntimeSystemString, _emberMetalFeatures, _emberTemplatesMakeBoundHelper) {
   'use strict';
 
@@ -56175,7 +56254,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     _emberRuntimeSystemString.default.isHTMLSafe = _emberTemplatesString.isHTMLSafe;
   }
   EmberHTMLBars.makeBoundHelper = _emberTemplatesMakeBoundHelper.default;
-})(Em._e[343],Em._e[56],Em._e[341],Em._e[340],Em._e[168],Em._e[10],Em._e[342]);
+})(Em._e[343],Em._e[73],Em._e[341],Em._e[340],Em._e[168],Em._e[27],Em._e[342]);
 (function (exports, _emberMetalCore, _emberTemplatesTemplate_registry, _emberTemplatesRenderer, _emberTemplatesComponent, _emberTemplatesHelper, _emberTemplatesComponentsCheckbox, _emberTemplatesComponentsText_field, _emberTemplatesComponentsText_area, _emberTemplatesComponentsLinkTo, _emberTemplatesString, _emberEnvironment, _emberTemplatesCompat) {
   'use strict';
 
@@ -56212,7 +56291,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   });
 
   exports.default = _emberMetalCore.default;
-})(Em._e[344],Em._e[56],Em._e[316],Em._e[333],Em._e[334],Em._e[335],Em._e[336],Em._e[337],Em._e[338],Em._e[339],Em._e[340],Em._e[7],Em._e[343]);
+})(Em._e[344],Em._e[73],Em._e[316],Em._e[333],Em._e[334],Em._e[335],Em._e[336],Em._e[337],Em._e[338],Em._e[339],Em._e[340],Em._e[24],Em._e[343]);
 (function (exports, _require, _emberMetal, _emberRuntime, _emberViews, _emberRouting, _emberApplication, _emberExtensionSupport, _emberTemplates, _emberRuntimeSystemLazy_load) {
   // require the main entry points for each of these packages
   // this is so that the global exports occur properly

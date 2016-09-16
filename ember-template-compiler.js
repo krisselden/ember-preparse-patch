@@ -6,7 +6,7 @@
  *            Portions Copyright 2008-2011 Apple Inc. All rights reserved.
  * @license   Licensed under MIT license
  *            See https://raw.github.com/emberjs/ember.js/master/LICENSE
- * @version   2.9.0-alpha+6449018e
+ * @version   2.8.1
  */
 
 var enifed, requireModule, require, Ember;
@@ -1399,13 +1399,16 @@ enifed('ember-debug/deprecate', ['exports', 'ember-metal/error', 'ember-console'
   
     @method deprecate
     @param {String} message A description of the deprecation.
-    @param {Boolean} test A boolean. If falsy, the deprecation
-      will be displayed.
-    @param {Object} options An object that can be used to pass
-      in a `url` to the transition guide on the emberjs.com website, and a unique
-      `id` for this deprecation. The `id` can be used by Ember debugging tools
-      to change the behavior (raise, log or silence) for that specific deprecation.
-      The `id` should be namespaced by dots, e.g. "view.helper.select".
+    @param {Boolean} test A boolean. If falsy, the deprecation will be displayed.
+    @param {Object} options
+    @param {String} options.id A unique id for this deprecation. The id can be
+      used by Ember debugging tools to change the behavior (raise, log or silence)
+      for that specific deprecation. The id should be namespaced by dots, e.g.
+      "view.helper.select".
+    @param {string} options.until The version of Ember when this deprecation
+      warning will be removed.
+    @param {String} [options.url] An optional url to the transition guide on the
+      emberjs.com website.
     @for Ember
     @public
   */
@@ -2020,47 +2023,21 @@ enifed("ember-environment/utils", ["exports"], function (exports) {
     }
   }
 });
-enifed('ember-glimmer-template-compiler/index', ['exports', 'ember-glimmer-template-compiler/system/compile', 'ember-glimmer-template-compiler/system/precompile', 'ember-glimmer-template-compiler/system/compile-options'], function (exports, _emberGlimmerTemplateCompilerSystemCompile, _emberGlimmerTemplateCompilerSystemPrecompile, _emberGlimmerTemplateCompilerSystemCompileOptions) {
+enifed('ember-htmlbars-template-compiler/index', ['exports', 'ember-htmlbars-template-compiler/system/compile', 'ember-htmlbars-template-compiler/system/precompile', 'ember-htmlbars-template-compiler/system/compile-options'], function (exports, _emberHtmlbarsTemplateCompilerSystemCompile, _emberHtmlbarsTemplateCompilerSystemPrecompile, _emberHtmlbarsTemplateCompilerSystemCompileOptions) {
   'use strict';
 
-  exports.compile = _emberGlimmerTemplateCompilerSystemCompile.default;
-  exports.precompile = _emberGlimmerTemplateCompilerSystemPrecompile.default;
-  exports.defaultCompileOptions = _emberGlimmerTemplateCompilerSystemCompileOptions.default;
-  exports.registerPlugin = _emberGlimmerTemplateCompilerSystemCompileOptions.registerPlugin;
+  exports.compile = _emberHtmlbarsTemplateCompilerSystemCompile.default;
+  exports.precompile = _emberHtmlbarsTemplateCompilerSystemPrecompile.default;
+  exports.defaultCompileOptions = _emberHtmlbarsTemplateCompilerSystemCompileOptions.default;
+  exports.registerPlugin = _emberHtmlbarsTemplateCompilerSystemCompileOptions.registerPlugin;
 });
-enifed('ember-glimmer-template-compiler/plugins/transform-action-syntax', ['exports'], function (exports) {
-  /**
-   @module ember
-   @submodule ember-glimmer
-  */
-
-  /**
-    A Glimmer2 AST transformation that replaces all instances of
-  
-    ```handlebars
-   <button {{action 'foo'}}>
-   <button onblur={{action 'foo'}}>
-   <button onblur={{action (action 'foo') 'bar'}}>
-    ```
-  
-    with
-  
-    ```handlebars
-   <button {{action this 'foo'}}>
-   <button onblur={{action this 'foo'}}>
-   <button onblur={{action this (action this 'foo') 'bar'}}>
-    ```
-  
-    @private
-    @class TransformActionSyntax
-  */
-
+enifed('ember-htmlbars-template-compiler/plugins/transform-closure-component-attrs-into-mut', ['exports'], function (exports) {
   'use strict';
 
-  exports.default = TransformActionSyntax;
+  exports.default = TransformClosureComponentAttrsIntoMut;
 
-  function TransformActionSyntax() {
-    // set later within Glimmer2 to the syntax package
+  function TransformClosureComponentAttrsIntoMut() {
+    // set later within HTMLBars to the syntax package
     this.syntax = null;
   }
 
@@ -2069,25 +2046,13 @@ enifed('ember-glimmer-template-compiler/plugins/transform-action-syntax', ['expo
     @method transform
     @param {AST} ast The AST to be transformed.
   */
-  TransformActionSyntax.prototype.transform = function TransformActionSyntax_transform(ast) {
-    var _syntax = this.syntax;
-    var traverse = _syntax.traverse;
-    var b = _syntax.builders;
+  TransformClosureComponentAttrsIntoMut.prototype.transform = function TransformClosureComponentAttrsIntoMut_transform(ast) {
+    var b = this.syntax.builders;
 
-    traverse(ast, {
-      ElementModifierStatement: function (node) {
-        if (isAction(node)) {
-          insertThisAsFirstParam(node, b);
-        }
-      },
-      MustacheStatement: function (node) {
-        if (isAction(node)) {
-          insertThisAsFirstParam(node, b);
-        }
-      },
+    this.syntax.traverse(ast, {
       SubExpression: function (node) {
-        if (isAction(node)) {
-          insertThisAsFirstParam(node, b);
+        if (isComponentClosure(node)) {
+          mutParameters(b, node);
         }
       }
     });
@@ -2095,284 +2060,135 @@ enifed('ember-glimmer-template-compiler/plugins/transform-action-syntax', ['expo
     return ast;
   };
 
-  function isAction(node) {
-    return node.path.original === 'action';
+  function isComponentClosure(node) {
+    return node.type === 'SubExpression' && node.path.original === 'component';
   }
 
-  function insertThisAsFirstParam(node, builders) {
-    node.params.unshift(builders.path(''));
-  }
-});
-enifed('ember-glimmer-template-compiler/plugins/transform-attrs-into-args', ['exports'], function (exports) {
-  /**
-   @module ember
-   @submodule ember-glimmer
-  */
-
-  /**
-    A Glimmer2 AST transformation that replaces all instances of
-  
-    ```handlebars
-   {{attrs.foo.bar}}
-    ```
-  
-    to
-  
-    ```handlebars
-   {{@foo.bar}}
-    ```
-  
-    as well as `{{#if attrs.foo}}`, `{{deeply (nested attrs.foobar.baz)}}` etc
-  
-    @private
-    @class TransformAttrsToProps
-  */
-
-  'use strict';
-
-  exports.default = TransformAttrsToProps;
-
-  function TransformAttrsToProps() {
-    // set later within Glimmer2 to the syntax package
-    this.syntax = null;
-  }
-
-  /**
-    @private
-    @method transform
-    @param {AST} ast The AST to be transformed.
-  */
-  TransformAttrsToProps.prototype.transform = function TransformAttrsToProps_transform(ast) {
-    var _syntax = this.syntax;
-    var traverse = _syntax.traverse;
-    var b = _syntax.builders;
-
-    traverse(ast, {
-      PathExpression: function (node) {
-        if (node.parts[0] === 'attrs') {
-          var path = b.path(node.original.substr(6));
-          path.original = '@' + path.original;
-          path.data = true;
-          return path;
-        }
-      }
-    });
-
-    return ast;
-  };
-});
-enifed('ember-glimmer-template-compiler/plugins/transform-each-in-into-each', ['exports'], function (exports) {
-  /**
-   @module ember
-   @submodule ember-glimmer
-  */
-
-  /**
-    A Glimmer2 AST transformation that replaces all instances of
-  
-    ```handlebars
-   {{#each-in iterableThing as |key value|}}
-    ```
-  
-    with
-  
-    ```handlebars
-   {{#each (-each-in iterableThing) as |key value|}}
-    ```
-  
-    @private
-    @class TransformHasBlockSyntax
-  */
-
-  'use strict';
-
-  exports.default = TransformEachInIntoEach;
-
-  function TransformEachInIntoEach() {
-    // set later within Glimmer2 to the syntax package
-    this.syntax = null;
-  }
-
-  /**
-    @private
-    @method transform
-    @param {AST} ast The AST to be transformed.
-  */
-  TransformEachInIntoEach.prototype.transform = function TransformEachInIntoEach_transform(ast) {
-    var _syntax = this.syntax;
-    var traverse = _syntax.traverse;
-    var b = _syntax.builders;
-
-    traverse(ast, {
-      BlockStatement: function (node) {
-        if (node.path.original === 'each-in') {
-          node.params[0] = b.sexpr(b.path('-each-in'), [node.params[0]]);
-          return b.block(b.path('each'), node.params, node.hash, node.program, node.inverse, node.loc);
-        }
-      }
-    });
-
-    return ast;
-  };
-});
-enifed('ember-glimmer-template-compiler/plugins/transform-has-block-syntax', ['exports'], function (exports) {
-  /**
-   @module ember
-   @submodule ember-glimmer
-  */
-
-  /**
-    A Glimmer2 AST transformation that replaces all instances of
-  
-    ```handlebars
-   {{hasBlock}}
-    ```
-  
-    with
-  
-    ```handlebars
-   {{has-block}}
-    ```
-  
-    @private
-    @class TransformHasBlockSyntax
-  */
-
-  'use strict';
-
-  exports.default = TransformHasBlockSyntax;
-
-  function TransformHasBlockSyntax() {
-    // set later within Glimmer2 to the syntax package
-    this.syntax = null;
-  }
-
-  var TRANSFORMATIONS = {
-    hasBlock: 'has-block',
-    hasBlockParams: 'has-block-params'
-  };
-
-  /**
-    @private
-    @method transform
-    @param {AST} ast The AST to be transformed.
-  */
-  TransformHasBlockSyntax.prototype.transform = function TransformHasBlockSyntax_transform(ast) {
-    var _syntax = this.syntax;
-    var traverse = _syntax.traverse;
-    var b = _syntax.builders;
-
-    traverse(ast, {
-      PathExpression: function (node) {
-        if (TRANSFORMATIONS[node.original]) {
-          return b.sexpr(b.path(TRANSFORMATIONS[node.original]));
-        }
-      },
-      MustacheStatement: function (node) {
-        if (TRANSFORMATIONS[node.path.original]) {
-          return b.mustache(b.path(TRANSFORMATIONS[node.path.original]), node.params, node.hash, null, node.loc);
-        }
-      },
-      SubExpression: function (node) {
-        if (TRANSFORMATIONS[node.path.original]) {
-          return b.sexpr(b.path(TRANSFORMATIONS[node.path.original]), node.params, node.hash);
-        }
-      }
-    });
-
-    return ast;
-  };
-});
-enifed('ember-glimmer-template-compiler/plugins/transform-input-type-syntax', ['exports'], function (exports) {
-  /**
-   @module ember
-   @submodule ember-glimmer
-  */
-
-  /**
-    A Glimmer2 AST transformation that replaces all instances of
-  
-    ```handlebars
-   {{input type=boundType}}
-    ```
-  
-    with
-  
-    ```handlebars
-   {{input (-input-type boundType) type=boundType}}
-    ```
-  
-    Note that the type parameters is not removed as the -input-type helpers
-    is only used to select the component class. The component still needs
-    the type parameter to function.
-  
-    @private
-    @class TransformInputTypeSyntax
-  */
-
-  'use strict';
-
-  exports.default = TransformInputTypeSyntax;
-
-  function TransformInputTypeSyntax() {
-    // set later within Glimmer2 to the syntax package
-    this.syntax = null;
-  }
-
-  /**
-    @private
-    @method transform
-    @param {AST} ast The AST to be transformed.
-  */
-  TransformInputTypeSyntax.prototype.transform = function TransformInputTypeSyntax_transform(ast) {
-    var _syntax = this.syntax;
-    var traverse = _syntax.traverse;
-    var b = _syntax.builders;
-
-    traverse(ast, {
-      MustacheStatement: function (node) {
-        if (isInput(node)) {
-          insertTypeHelperParameter(node, b);
-        }
-      }
-    });
-
-    return ast;
-  };
-
-  function isInput(node) {
-    return node.path.original === 'input';
-  }
-
-  function insertTypeHelperParameter(node, builders) {
-    var pairs = node.hash.pairs;
-    var pair = null;
-    for (var i = 0; i < pairs.length; i++) {
-      if (pairs[i].key === 'type') {
-        pair = pairs[i];
-        break;
+  function mutParameters(builder, node) {
+    for (var i = 1; i < node.params.length; i++) {
+      if (node.params[i].type === 'PathExpression') {
+        node.params[i] = builder.sexpr(builder.path('@mut'), [node.params[i]]);
       }
     }
-    if (pair && pair.value.type !== 'StringLiteral') {
-      node.params.unshift(builders.sexpr('-input-type', [builders.path(pair.value.original, pair.loc)], null, pair.loc));
+
+    for (var i = 0; i < node.hash.pairs.length; i++) {
+      var pair = node.hash.pairs[i];
+      var value = pair.value;
+
+      if (value.type === 'PathExpression') {
+        pair.value = builder.sexpr(builder.path('@mut'), [pair.value]);
+      }
     }
   }
 });
-enifed('ember-glimmer-template-compiler/system/compile-options', ['exports', 'ember-template-compiler/plugins', 'ember-glimmer-template-compiler/plugins/transform-action-syntax', 'ember-glimmer-template-compiler/plugins/transform-input-type-syntax', 'ember-glimmer-template-compiler/plugins/transform-attrs-into-args', 'ember-glimmer-template-compiler/plugins/transform-each-in-into-each', 'ember-glimmer-template-compiler/plugins/transform-has-block-syntax', 'ember-metal/assign'], function (exports, _emberTemplateCompilerPlugins, _emberGlimmerTemplateCompilerPluginsTransformActionSyntax, _emberGlimmerTemplateCompilerPluginsTransformInputTypeSyntax, _emberGlimmerTemplateCompilerPluginsTransformAttrsIntoArgs, _emberGlimmerTemplateCompilerPluginsTransformEachInIntoEach, _emberGlimmerTemplateCompilerPluginsTransformHasBlockSyntax, _emberMetalAssign) {
+enifed('ember-htmlbars-template-compiler/plugins/transform-component-attrs-into-mut', ['exports'], function (exports) {
   'use strict';
 
-  exports.default = compileOptions;
+  exports.default = TransformComponentAttrsIntoMut;
+
+  function TransformComponentAttrsIntoMut() {
+    // set later within HTMLBars to the syntax package
+    this.syntax = null;
+  }
+
+  /**
+    @private
+    @method transform
+    @param {AST} ast The AST to be transformed.
+  */
+  TransformComponentAttrsIntoMut.prototype.transform = function TransformComponentAttrsIntoMut_transform(ast) {
+    var b = this.syntax.builders;
+    var walker = new this.syntax.Walker();
+
+    walker.visit(ast, function (node) {
+      if (!validate(node)) {
+        return;
+      }
+
+      for (var i = 0; i < node.hash.pairs.length; i++) {
+        var pair = node.hash.pairs[i];
+        var value = pair.value;
+
+        if (value.type === 'PathExpression') {
+          pair.value = b.sexpr(b.path('@mut'), [pair.value]);
+        }
+      }
+    });
+
+    return ast;
+  };
+
+  function validate(node) {
+    return node.type === 'BlockStatement' || node.type === 'MustacheStatement';
+  }
+});
+enifed('ember-htmlbars-template-compiler/plugins/transform-component-curly-to-readonly', ['exports'], function (exports) {
+  'use strict';
+
+  exports.default = TransformComponentCurlyToReadonly;
+
+  function TransformComponentCurlyToReadonly() {
+    // set later within HTMLBars to the syntax package
+    this.syntax = null;
+  }
+
+  /**
+    @private
+    @method transform
+    @param {AST} ast The AST to be transformed.
+  */
+  TransformComponentCurlyToReadonly.prototype.transform = function TransformComponetnCurlyToReadonly_transform(ast) {
+    var b = this.syntax.builders;
+    var walker = new this.syntax.Walker();
+
+    walker.visit(ast, function (node) {
+      if (!validate(node)) {
+        return;
+      }
+
+      for (var i = 0; i < node.attributes.length; i++) {
+        var attr = node.attributes[i];
+
+        if (attr.value.type !== 'MustacheStatement') {
+          return;
+        }
+        if (attr.value.params.length || attr.value.hash.pairs.length) {
+          return;
+        }
+
+        attr.value = b.mustache(b.path('readonly'), [attr.value.path], null, !attr.value.escape);
+      }
+    });
+
+    return ast;
+  };
+
+  function validate(node) {
+    return node.type === 'ComponentNode';
+  }
+});
+enifed('ember-htmlbars-template-compiler/system/compile-options', ['exports', 'ember/version', 'ember-metal/assign', 'ember-template-compiler/plugins', 'ember-htmlbars-template-compiler/plugins/transform-closure-component-attrs-into-mut', 'ember-htmlbars-template-compiler/plugins/transform-component-attrs-into-mut', 'ember-htmlbars-template-compiler/plugins/transform-component-curly-to-readonly'], function (exports, _emberVersion, _emberMetalAssign, _emberTemplateCompilerPlugins, _emberHtmlbarsTemplateCompilerPluginsTransformClosureComponentAttrsIntoMut, _emberHtmlbarsTemplateCompilerPluginsTransformComponentAttrsIntoMut, _emberHtmlbarsTemplateCompilerPluginsTransformComponentCurlyToReadonly) {
+  /**
+  @module ember
+  @submodule ember-htmlbars
+  */
+
+  'use strict';
+
   exports.registerPlugin = registerPlugin;
   exports.removePlugin = removePlugin;
+  exports.default = compileOptions;
   var PLUGINS = [].concat(_emberTemplateCompilerPlugins.default, [
-  // the following are ember-glimmer specific
-  _emberGlimmerTemplateCompilerPluginsTransformActionSyntax.default, _emberGlimmerTemplateCompilerPluginsTransformInputTypeSyntax.default, _emberGlimmerTemplateCompilerPluginsTransformAttrsIntoArgs.default, _emberGlimmerTemplateCompilerPluginsTransformEachInIntoEach.default, _emberGlimmerTemplateCompilerPluginsTransformHasBlockSyntax.default]);
+
+  // the following are ember-htmlbars specific
+  _emberHtmlbarsTemplateCompilerPluginsTransformClosureComponentAttrsIntoMut.default, _emberHtmlbarsTemplateCompilerPluginsTransformComponentAttrsIntoMut.default, _emberHtmlbarsTemplateCompilerPluginsTransformComponentCurlyToReadonly.default]);
 
   exports.PLUGINS = PLUGINS;
   var USER_PLUGINS = [];
 
-  function compileOptions(options) {
-    options = options || {};
+  function mergePlugins() {
+    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
     options = _emberMetalAssign.default({}, options);
     if (!options.plugins) {
       options.plugins = { ast: [].concat(USER_PLUGINS, PLUGINS) };
@@ -2381,6 +2197,7 @@ enifed('ember-glimmer-template-compiler/system/compile-options', ['exports', 'em
       var pluginsToAdd = potententialPugins.filter(function (plugin) {
         return options.plugins.ast.indexOf(plugin) === -1;
       });
+
       options.plugins.ast = options.plugins.ast.slice().concat(pluginsToAdd);
     }
 
@@ -2389,7 +2206,7 @@ enifed('ember-glimmer-template-compiler/system/compile-options', ['exports', 'em
 
   function registerPlugin(type, PluginClass) {
     if (type !== 'ast') {
-      throw new Error('Attempting to register ' + PluginClass + ' as "' + type + '" which is not a valid Glimmer plugin type.');
+      throw new Error('Attempting to register ' + PluginClass + ' as "' + type + '" which is not a valid HTMLBars plugin type.');
     }
 
     if (USER_PLUGINS.indexOf(PluginClass) === -1) {
@@ -2406,25 +2223,57 @@ enifed('ember-glimmer-template-compiler/system/compile-options', ['exports', 'em
       return plugin !== PluginClass;
     });
   }
+
+  /**
+    @private
+    @property compileOptions
+  */
+
+  function compileOptions(_options) {
+    var disableComponentGeneration = true;
+    var options = undefined;
+    // When calling `Ember.Handlebars.compile()` a second argument of `true`
+    // had a special meaning (long since lost), this just gaurds against
+    // `options` being true, and causing an error during compilation.
+    if (_options === true) {
+      options = {};
+    } else {
+      options = _options || {};
+    }
+
+    options.disableComponentGeneration = disableComponentGeneration;
+
+    options = mergePlugins(options);
+
+    options.buildMeta = function buildMeta(program) {
+      return {
+        revision: 'Ember@' + _emberVersion.default,
+        loc: program.loc,
+        moduleName: options.moduleName
+      };
+    };
+
+    return options;
+  }
 });
-enifed('ember-glimmer-template-compiler/system/compile', ['exports', 'require', 'ember-glimmer-template-compiler/system/compile-options'], function (exports, _require, _emberGlimmerTemplateCompilerSystemCompileOptions) {
+enifed('ember-htmlbars-template-compiler/system/compile', ['exports', 'require', 'ember-htmlbars-template-compiler/system/compile-options'], function (exports, _require, _emberHtmlbarsTemplateCompilerSystemCompileOptions) {
   'use strict';
 
-  exports.default = compile;
+  exports.default = compiler;
 
-  var compileSpec = undefined,
+  var compile = undefined,
       template = undefined;
 
-  function compile(string, options) {
-    if (!compileSpec && _require.has('glimmer-compiler')) {
-      compileSpec = _require.default('glimmer-compiler').compileSpec;
+  function compiler(string, options) {
+    if (!template && _require.has('ember-htmlbars')) {
+      template = _require.default('ember-htmlbars').template;
     }
 
-    if (!template && _require.has('ember-glimmer')) {
-      template = _require.default('ember-glimmer').template;
+    if (!compile && _require.has('htmlbars-compiler/compiler')) {
+      compile = _require.default('htmlbars-compiler/compiler').compile;
     }
 
-    if (!compileSpec) {
+    if (!compile) {
       throw new Error('Cannot call `compile` without the template compiler loaded. Please load `ember-template-compiler.js` prior to calling `compile`.');
     }
 
@@ -2432,10 +2281,12 @@ enifed('ember-glimmer-template-compiler/system/compile', ['exports', 'require', 
       throw new Error('Cannot call `compile` with only the template compiler loaded. Please load `ember.debug.js` or `ember.prod.js` prior to calling `compile`.');
     }
 
-    return template(compileSpec(string, _emberGlimmerTemplateCompilerSystemCompileOptions.default(options)));
+    var templateSpec = compile(string, _emberHtmlbarsTemplateCompilerSystemCompileOptions.default(options));
+
+    return template(templateSpec);
   }
 });
-enifed('ember-glimmer-template-compiler/system/precompile', ['exports', 'ember-glimmer-template-compiler/system/compile-options', 'require'], function (exports, _emberGlimmerTemplateCompilerSystemCompileOptions, _require) {
+enifed('ember-htmlbars-template-compiler/system/precompile', ['exports', 'ember-htmlbars-template-compiler/system/compile-options', 'require'], function (exports, _emberHtmlbarsTemplateCompilerSystemCompileOptions, _require) {
   'use strict';
 
   exports.default = precompile;
@@ -2443,15 +2294,15 @@ enifed('ember-glimmer-template-compiler/system/precompile', ['exports', 'ember-g
   var compileSpec = undefined;
 
   function precompile(templateString, options) {
-    if (!compileSpec && _require.has('glimmer-compiler')) {
-      compileSpec = _require.default('glimmer-compiler').compileSpec;
+    if (!compileSpec && _require.has('htmlbars-compiler/compiler')) {
+      compileSpec = _require.default('htmlbars-compiler/compiler').compileSpec;
     }
 
     if (!compileSpec) {
-      throw new Error('Cannot call `compile` without the template compiler loaded. Please load `ember-template-compiler.js` prior to calling `compile`.');
+      throw new Error('Cannot call `compileSpec` without the template compiler loaded. Please load `ember-template-compiler.js` prior to calling `compileSpec`.');
     }
 
-    return JSON.stringify(compileSpec(templateString, _emberGlimmerTemplateCompilerSystemCompileOptions.default(options)));
+    return compileSpec(templateString, _emberHtmlbarsTemplateCompilerSystemCompileOptions.default(options));
   }
 });
 enifed('ember-metal/alias', ['exports', 'ember-metal/debug', 'ember-metal/property_get', 'ember-metal/property_set', 'ember-metal/error', 'ember-metal/properties', 'ember-metal/computed', 'ember-metal/utils', 'ember-metal/meta', 'ember-metal/dependent_keys'], function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberMetalProperty_set, _emberMetalError, _emberMetalProperties, _emberMetalComputed, _emberMetalUtils, _emberMetalMeta, _emberMetalDependent_keys) {
@@ -4325,7 +4176,11 @@ enifed("ember-metal/empty_object", ["exports"], function (exports) {
   EmptyObject.prototype = proto;
   exports.default = EmptyObject;
 });
-enifed("ember-metal/error", ["exports"], function (exports) {
+enifed('ember-metal/error', ['exports'], function (exports) {
+  'use strict';
+
+  exports.default = EmberError;
+  var errorProps = ['description', 'fileName', 'lineNumber', 'message', 'name', 'number', 'stack'];
 
   /**
     A subclass of the JavaScript Error object for use in Ember.
@@ -4336,30 +4191,24 @@ enifed("ember-metal/error", ["exports"], function (exports) {
     @constructor
     @public
   */
-  "use strict";
 
-  exports.default = EmberError;
+  function EmberError() {
+    var tmp = Error.apply(this, arguments);
 
-  function EmberError(message) {
-    if (!(this instanceof EmberError)) {
-      return new EmberError(message);
-    }
-
-    var error = Error.call(this, message);
-
+    // Adds a `stack` property to the given error object that will yield the
+    // stack trace at the time captureStackTrace was called.
+    // When collecting the stack trace all frames above the topmost call
+    // to this function, including that call, will be left out of the
+    // stack trace.
+    // This is useful because we can hide Ember implementation details
+    // that are not very helpful for the user.
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, EmberError);
-    } else {
-      this.stack = error.stack;
     }
-
-    this.description = error.description;
-    this.fileName = error.fileName;
-    this.lineNumber = error.lineNumber;
-    this.message = error.message;
-    this.name = error.name;
-    this.number = error.number;
-    this.code = error.code;
+    // Unfortunately errors are not enumerable in Chrome (at least), so `for prop in tmp` doesn't work.
+    for (var idx = 0; idx < errorProps.length; idx++) {
+      this[errorProps[idx]] = tmp[errorProps[idx]];
+    }
   }
 
   EmberError.prototype = Object.create(Error.prototype);
@@ -4377,7 +4226,7 @@ enifed('ember-metal/error_handler', ['exports', 'ember-console', 'ember-metal/te
     var stack = error.stack;
     var message = error.message;
 
-    if (stack.indexOf(message) === -1) {
+    if (stack && stack.indexOf(message) === -1) {
       stack = message + '\n' + stack;
     }
 
@@ -6384,11 +6233,6 @@ enifed('ember-metal/meta', ['exports', 'ember-metal/features', 'ember-metal/meta
     tag: ownCustomObject
   };
 
-  if (true || false) {
-    members.lastRendered = ownMap;
-    members.lastRenderedFrom = ownMap; // FIXME: not used in production, remove me from prod builds
-  }
-
   var memberNames = Object.keys(members);
   var META_FIELD = '__ember_meta__';
 
@@ -6416,11 +6260,6 @@ enifed('ember-metal/meta', ['exports', 'ember-metal/features', 'ember-metal/meta
     // have detailed knowledge of how each property should really be
     // inherited, and we can optimize it much better than JS runtimes.
     this.parent = parentMeta;
-
-    if (true || false) {
-      this._lastRendered = undefined;
-      this._lastRenderedFrom = undefined; // FIXME: not used in production, remove me from prod builds
-    }
 
     this._initializeListeners();
   }
@@ -7548,7 +7387,7 @@ enifed('ember-metal/mixin', ['exports', 'ember-metal/error', 'ember-metal/debug'
     @private
   */
   MixinPrototype.detect = function (obj) {
-    if (typeof obj !== 'object' || obj === null) {
+    if (!obj) {
       return false;
     }
     if (obj instanceof Mixin) {
@@ -8341,7 +8180,7 @@ enifed('ember-metal/properties', ['exports', 'ember-metal/debug', 'ember-metal/f
     Object.defineProperty(obj, keyName, desc);
   }
 });
-enifed('ember-metal/property_events', ['exports', 'ember-metal/utils', 'ember-metal/meta', 'ember-metal/events', 'ember-metal/tags', 'ember-metal/observer_set', 'ember-metal/symbol', 'ember-metal/features', 'ember-metal/transaction'], function (exports, _emberMetalUtils, _emberMetalMeta, _emberMetalEvents, _emberMetalTags, _emberMetalObserver_set, _emberMetalSymbol, _emberMetalFeatures, _emberMetalTransaction) {
+enifed('ember-metal/property_events', ['exports', 'ember-metal/utils', 'ember-metal/meta', 'ember-metal/events', 'ember-metal/tags', 'ember-metal/observer_set', 'ember-metal/symbol'], function (exports, _emberMetalUtils, _emberMetalMeta, _emberMetalEvents, _emberMetalTags, _emberMetalObserver_set, _emberMetalSymbol) {
   'use strict';
 
   var PROPERTY_DID_CHANGE = _emberMetalSymbol.default('PROPERTY_DID_CHANGE');
@@ -8438,14 +8277,7 @@ enifed('ember-metal/property_events', ['exports', 'ember-metal/utils', 'ember-me
       obj[PROPERTY_DID_CHANGE](keyName);
     }
 
-    if (obj.isDestroying) {
-      return;
-    }
     _emberMetalTags.markObjectAsDirty(m);
-
-    if (true || false) {
-      _emberMetalTransaction.assertNotRendered(obj, keyName, m);
-    }
   }
 
   var WILL_SEEN = undefined,
@@ -9706,7 +9538,7 @@ enifed('ember-metal/tags', ['exports', 'ember-metal/meta', 'require'], function 
       throw new Error('Cannot call tagFor without Glimmer');
     }
 
-    if (typeof object === 'object' && object) {
+    if (object && typeof object === 'object') {
       var meta = _meta || _emberMetalMeta.meta(object);
       return meta.writableTag(makeTag);
     } else {
@@ -9759,108 +9591,6 @@ enifed("ember-metal/testing", ["exports"], function (exports) {
   function setTesting(value) {
     testing = !!value;
   }
-});
-enifed('ember-metal/transaction', ['exports', 'ember-metal/meta', 'ember-metal/debug', 'ember-metal/features'], function (exports, _emberMetalMeta, _emberMetalDebug, _emberMetalFeatures) {
-  'use strict';
-
-  var runInTransaction = undefined,
-      didRender = undefined,
-      assertNotRendered = undefined;
-
-  if (true || false) {
-    _emberMetalDebug.assert('It appears you are trying to use the backtracking rerender feature without the "ember-glimmer" flag turned on. Please make sure that "ember-glimmer" is turned on.', true);
-  }
-
-  var raise = _emberMetalDebug.assert;
-  if (false) {
-    raise = function (message, test) {
-      _emberMetalDebug.deprecate(message, test, { id: 'ember-views.render-double-modify', until: '3.0.0' });
-    };
-  }
-
-  var implication = undefined;
-  if (false) {
-    implication = 'will be removed in Ember 3.0.';
-  } else if (true) {
-    implication = 'is no longer supported. See https://github.com/emberjs/ember.js/issues/13948 for more details.';
-  }
-
-  if (true || false) {
-    (function () {
-      var counter = 0;
-      var inTransaction = false;
-      var shouldReflush = undefined;
-
-      exports.default = runInTransaction = function (callback) {
-        shouldReflush = false;
-        inTransaction = true;
-        callback();
-        inTransaction = false;
-        counter++;
-        return shouldReflush;
-      };
-
-      exports.didRender = didRender = function (object, key, reference) {
-        if (!inTransaction) {
-          return;
-        }
-        var meta = _emberMetalMeta.meta(object);
-        var lastRendered = meta.writableLastRendered();
-        lastRendered[key] = counter;
-
-        _emberMetalDebug.runInDebug(function () {
-          var lastRenderedFrom = meta.writableLastRenderedFrom();
-          lastRenderedFrom[key] = reference;
-        });
-      };
-
-      exports.assertNotRendered = assertNotRendered = function (object, key, _meta) {
-        var meta = _meta || _emberMetalMeta.meta(object);
-        var lastRendered = meta.readableLastRendered();
-
-        if (lastRendered && lastRendered[key] === counter) {
-          raise((function () {
-            var ref = meta.readableLastRenderedFrom();
-            var parts = [];
-            var lastRef = ref[key];
-
-            var label = undefined;
-
-            if (lastRef) {
-              while (lastRef && lastRef._propertyKey && lastRef._parentReference) {
-                parts.unshift(lastRef._propertyKey);
-                lastRef = lastRef._parentReference;
-              }
-
-              label = parts.join();
-            } else {
-              label = 'the same value';
-            }
-
-            return 'You modified ' + parts.join('.') + ' twice in a single render. This was unreliable and slow in Ember 1.x and ' + implication;
-          })(), false);
-
-          shouldReflush = true;
-        }
-      };
-    })();
-  } else {
-    exports.default = runInTransaction = function () {
-      throw new Error('Cannot call runInTransaction without Glimmer');
-    };
-
-    exports.didRender = didRender = function () {
-      throw new Error('Cannot call didRender without Glimmer');
-    };
-
-    exports.assertNotRendered = assertNotRendered = function () {
-      throw new Error('Cannot call assertNotRendered without Glimmer');
-    };
-  }
-
-  exports.default = runInTransaction;
-  exports.didRender = didRender;
-  exports.assertNotRendered = assertNotRendered;
 });
 enifed('ember-metal/utils', ['exports'], function (exports) {
   'no use strict';
@@ -10061,11 +9791,7 @@ enifed('ember-metal/utils', ['exports'], function (exports) {
   */
 
   function guidFor(obj) {
-    var type = typeof obj;
-    var isObject = type === 'object' && obj !== null;
-    var isFunction = type === 'function';
-
-    if ((isObject || isFunction) && obj[GUID_KEY]) {
+    if (obj && obj[GUID_KEY]) {
       return obj[GUID_KEY];
     }
 
@@ -10079,6 +9805,7 @@ enifed('ember-metal/utils', ['exports'], function (exports) {
     }
 
     var ret = undefined;
+    var type = typeof obj;
 
     // Don't allow prototype changes to String etc. to change the guidFor
     switch (type) {
@@ -10845,7 +10572,7 @@ enifed('ember-template-compiler/compat/precompile', ['exports', 'require', 'embe
       compileOptions = undefined;
 
   // Note we don't really want to expose this from main file
-  if (true) {
+  if (false) {
     compileOptions = _require.default('ember-glimmer-template-compiler/system/compile-options').default;
   } else {
     compileOptions = _require.default('ember-htmlbars-template-compiler/system/compile-options').default;
@@ -10876,7 +10603,7 @@ enifed('ember-template-compiler/compiler', ['exports', 'ember-metal/features', '
 
   function pickCompiler() {
     var compiler = undefined;
-    if (true) {
+    if (false) {
       compiler = _require.default('ember-glimmer-template-compiler');
     } else {
       compiler = _require.default('ember-htmlbars-template-compiler');
@@ -11698,7 +11425,7 @@ enifed('ember-templates/component', ['exports', 'ember-metal/features', 'require
   'use strict';
 
   exports.default = (function () {
-    if (true) {
+    if (false) {
       return _require.default('ember-glimmer/component').default;
     } else {
       return _require.default('ember-htmlbars/component').default;
@@ -11709,7 +11436,7 @@ enifed('ember-templates/components/checkbox', ['exports', 'ember-metal/features'
   'use strict';
 
   exports.default = (function () {
-    if (true) {
+    if (false) {
       return _require.default('ember-glimmer/components/checkbox').default;
     } else {
       return _require.default('ember-htmlbars/components/checkbox').default;
@@ -11720,7 +11447,7 @@ enifed('ember-templates/components/link-to', ['exports', 'ember-metal/features',
   'use strict';
 
   exports.default = (function () {
-    if (true) {
+    if (false) {
       return _require.default('ember-glimmer/components/link-to').default;
     } else {
       return _require.default('ember-htmlbars/components/link-to').default;
@@ -11731,7 +11458,7 @@ enifed('ember-templates/components/text_area', ['exports', 'ember-metal/features
   'use strict';
 
   exports.default = (function () {
-    if (true) {
+    if (false) {
       return _require.default('ember-glimmer/components/text_area').default;
     } else {
       return _require.default('ember-htmlbars/components/text_area').default;
@@ -11742,7 +11469,7 @@ enifed('ember-templates/components/text_field', ['exports', 'ember-metal/feature
   'use strict';
 
   exports.default = (function () {
-    if (true) {
+    if (false) {
       return _require.default('ember-glimmer/components/text_field').default;
     } else {
       return _require.default('ember-htmlbars/components/text_field').default;
@@ -11753,7 +11480,7 @@ enifed('ember-templates/helper', ['exports', 'ember-metal/features', 'require'],
   'use strict';
 
   exports.default = (function () {
-    if (true) {
+    if (false) {
       return _require.default('ember-glimmer/helper').default;
     } else {
       return _require.default('ember-htmlbars/helper').default;
@@ -11761,7 +11488,7 @@ enifed('ember-templates/helper', ['exports', 'ember-metal/features', 'require'],
   })();
 
   var helper = (function () {
-    if (true) {
+    if (false) {
       return _require.default('ember-glimmer/helper').helper;
     } else {
       return _require.default('ember-htmlbars/helper').helper;
@@ -11811,7 +11538,7 @@ enifed('ember-templates/make-bound-helper', ['exports', 'ember-metal/features', 
   'use strict';
 
   exports.default = (function () {
-    if (true) {
+    if (false) {
       return _require.default('ember-glimmer/make-bound-helper').default;
     } else {
       return _require.default('ember-htmlbars/make-bound-helper').default;
@@ -11822,7 +11549,7 @@ enifed('ember-templates/renderer', ['exports', 'ember-metal/features', 'require'
   'use strict';
 
   var InteractiveRenderer = (function () {
-    if (true) {
+    if (false) {
       return _require.default('ember-glimmer/renderer').InteractiveRenderer;
     } else {
       return _require.default('ember-htmlbars/renderer').InteractiveRenderer;
@@ -11831,7 +11558,7 @@ enifed('ember-templates/renderer', ['exports', 'ember-metal/features', 'require'
 
   exports.InteractiveRenderer = InteractiveRenderer;
   var InertRenderer = (function () {
-    if (true) {
+    if (false) {
       return _require.default('ember-glimmer/renderer').InertRenderer;
     } else {
       return _require.default('ember-htmlbars/renderer').InertRenderer;
@@ -11840,7 +11567,7 @@ enifed('ember-templates/renderer', ['exports', 'ember-metal/features', 'require'
 
   exports.InertRenderer = InertRenderer;
   var Renderer = (function () {
-    if (true) {
+    if (false) {
       return _require.default('ember-glimmer/renderer').Renderer;
     } else {
       return _require.default('ember-htmlbars/renderer').Renderer;
@@ -11852,7 +11579,7 @@ enifed('ember-templates/string', ['exports', 'ember-metal/features', 'require'],
   'use strict';
 
   var strings = (function () {
-    if (true) {
+    if (false) {
       return _require.default('ember-glimmer/utils/string');
     } else {
       return _require.default('ember-htmlbars/utils/string');
@@ -11883,7 +11610,7 @@ enifed('ember-templates/template', ['exports', 'ember-metal/features', 'require'
     glimmerTemplate = _require.default('ember-glimmer').template;
   }
 
-  var template = true ? glimmerTemplate : htmlbarsTemplate;
+  var template = false ? glimmerTemplate : htmlbarsTemplate;
 
   exports.default = template;
 });
@@ -11925,27 +11652,27 @@ enifed("ember-templates/template_registry", ["exports"], function (exports) {
 enifed("ember/features", ["exports"], function (exports) {
   "use strict";
 
-  exports.default = { "features-stripped-test": false, "ember-routing-route-configured-query-params": false, "ember-libraries-isregistered": false, "ember-application-engines": true, "ember-glimmer": true, "ember-runtime-computed-uniq-by": true, "ember-improved-instrumentation": false, "ember-runtime-enumerable-includes": true, "ember-string-ishtmlsafe": true, "ember-testing-check-waiters": true, "ember-metal-weakmap": false, "ember-glimmer-allow-backtracking-rerender": false, "mandatory-setter": true, "ember-glimmer-detect-backtracking-rerender": true };
+  exports.default = {};
 });
 enifed("ember/version", ["exports"], function (exports) {
   "use strict";
 
-  exports.default = "2.9.0-alpha+6449018e";
+  exports.default = "2.8.1";
 });
-enifed('glimmer-compiler/index', ['exports', 'glimmer-compiler/lib/compiler', 'glimmer-compiler/lib/template-compiler', 'glimmer-compiler/lib/template-visitor'], function (exports, _glimmerCompilerLibCompiler, _glimmerCompilerLibTemplateCompiler, _glimmerCompilerLibTemplateVisitor) {
-  'use strict';
+enifed("htmlbars-compiler", ["exports", "htmlbars-compiler/compiler"], function (exports, _htmlbarsCompilerCompiler) {
+  "use strict";
 
-  exports.TemplateSpec = _glimmerCompilerLibCompiler.TemplateSpec;
-  exports.compileSpec = _glimmerCompilerLibCompiler.compileSpec;
-  exports.TemplateCompiler = _glimmerCompilerLibTemplateCompiler.default;
-  exports.CompileOptions = _glimmerCompilerLibTemplateCompiler.CompileOptions;
-  exports.TemplateVisitor = _glimmerCompilerLibTemplateVisitor.default;
+  exports.compile = _htmlbarsCompilerCompiler.compile;
+  exports.compileSpec = _htmlbarsCompilerCompiler.compileSpec;
+  exports.template = _htmlbarsCompilerCompiler.template;
 });
-
-enifed("glimmer-compiler/lib/compiler", ["exports", "glimmer-syntax", "glimmer-compiler/lib/template-compiler"], function (exports, _glimmerSyntax, _glimmerCompilerLibTemplateCompiler) {
+enifed("htmlbars-compiler/compiler", ["exports", "htmlbars-syntax/parser", "htmlbars-compiler/template-compiler", "htmlbars-runtime/hooks", "htmlbars-runtime/render"], function (exports, _htmlbarsSyntaxParser, _htmlbarsCompilerTemplateCompiler, _htmlbarsRuntimeHooks, _htmlbarsRuntimeRender) {
+  /*jshint evil:true*/
   "use strict";
 
   exports.compileSpec = compileSpec;
+  exports.template = template;
+  exports.compile = compile;
 
   /*
    * Compile a string into a template spec string. The template spec is a string
@@ -11954,13200 +11681,3621 @@ enifed("glimmer-compiler/lib/compiler", ["exports", "glimmer-syntax", "glimmer-c
    *
    * Example usage:
    *
-   *     let templateSpec = compileSpec("Howdy {{name}}");
+   *     var templateSpec = compileSpec("Howdy {{name}}");
    *     // This next step is basically what plain compile does
-   *     let template = new Function("return " + templateSpec)();
+   *     var template = new Function("return " + templateSpec)();
    *
    * @method compileSpec
-   * @param {String} string An Glimmer template string
+   * @param {String} string An HTMLBars template string
    * @return {TemplateSpec} A template spec string
    */
 
   function compileSpec(string, options) {
-    var ast = _glimmerSyntax.preprocess(string, options);
-    var program = _glimmerCompilerLibTemplateCompiler.default.compile(options, ast);
-    return JSON.stringify(program);
+    var ast = _htmlbarsSyntaxParser.preprocess(string, options);
+    var compiler = new _htmlbarsCompilerTemplateCompiler.default(options);
+    var program = compiler.compile(ast);
+    return program;
+  }
+
+  /*
+   * @method template
+   * @param {TemplateSpec} templateSpec A precompiled template
+   * @return {Template} A template spec string
+   */
+
+  function template(templateSpec) {
+    return new Function("return " + templateSpec)();
+  }
+
+  /*
+   * Compile a string into a template rendering function
+   *
+   * Example usage:
+   *
+   *     // Template is the hydration portion of the compiled template
+   *     var template = compile("Howdy {{name}}");
+   *
+   *     // Template accepts three arguments:
+   *     //
+   *     //   1. A context object
+   *     //   2. An env object
+   *     //   3. A contextualElement (optional, document.body is the default)
+   *     //
+   *     // The env object *must* have at least these two properties:
+   *     //
+   *     //   1. `hooks` - Basic hooks for rendering a template
+   *     //   2. `dom` - An instance of DOMHelper
+   *     //
+   *     import {hooks} from 'htmlbars-runtime';
+   *     import {DOMHelper} from 'morph';
+   *     var context = {name: 'whatever'},
+   *         env = {hooks: hooks, dom: new DOMHelper()},
+   *         contextualElement = document.body;
+   *     var domFragment = template(context, env, contextualElement);
+   *
+   * @method compile
+   * @param {String} string An HTMLBars template string
+   * @param {Object} options A set of options to provide to the compiler
+   * @return {Template} A function for rendering the template
+   */
+
+  function compile(string, options) {
+    return _htmlbarsRuntimeHooks.wrap(template(compileSpec(string, options)), _htmlbarsRuntimeRender.default);
   }
 });
-
-enifed("glimmer-compiler/lib/javascript-compiler", ["exports", "glimmer-util"], function (exports, _glimmerUtil) {
-    "use strict";
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var Block = (function () {
-        function Block() {
-            _classCallCheck(this, Block);
-
-            this.statements = [];
-            this.positionals = [];
-        }
-
-        Block.prototype.toJSON = function toJSON() {
-            return {
-                statements: this.statements,
-                locals: this.positionals
-            };
-        };
-
-        Block.prototype.push = function push(statement) {
-            this.statements.push(statement);
-        };
-
-        return Block;
-    })();
-
-    exports.Block = Block;
-
-    var Template = (function (_Block) {
-        _inherits(Template, _Block);
-
-        function Template(meta) {
-            _classCallCheck(this, Template);
-
-            _Block.call(this);
-            this.meta = null;
-            this.yields = new _glimmerUtil.DictSet();
-            this.named = new _glimmerUtil.DictSet();
-            this.blocks = [];
-            this.meta = meta;
-        }
-
-        Template.prototype.toJSON = function toJSON() {
-            return {
-                statements: this.statements,
-                locals: this.positionals,
-                named: this.named.toArray(),
-                yields: this.yields.toArray(),
-                blocks: this.blocks.map(function (b) {
-                    return b.toJSON();
-                }),
-                meta: this.meta
-            };
-        };
-
-        return Template;
-    })(Block);
-
-    exports.Template = Template;
-
-    var JavaScriptCompiler = (function () {
-        function JavaScriptCompiler(opcodes, meta) {
-            _classCallCheck(this, JavaScriptCompiler);
-
-            this.template = null;
-            this.blocks = new _glimmerUtil.Stack();
-            this.values = [];
-            this.opcodes = opcodes;
-            this.template = new Template(meta);
-        }
-
-        JavaScriptCompiler.process = function process(opcodes, meta) {
-            var compiler = new JavaScriptCompiler(opcodes, meta);
-            return compiler.process();
-        };
-
-        JavaScriptCompiler.prototype.process = function process() {
-            var _this = this;
-
-            this.opcodes.forEach(function (_ref) {
-                var opcode = _ref[0];
-
-                var args = _ref.slice(1);
-
-                if (!_this[opcode]) {
-                    throw new Error("unimplemented " + opcode + " on JavaScriptCompiler");
-                }
-                _this[opcode].apply(_this, args);
-            });
-            return this.template;
-        };
-
-        /// Nesting
-
-        JavaScriptCompiler.prototype.startBlock = function startBlock(_ref2) {
-            var program = _ref2[0];
-
-            var block = new Block();
-            block.positionals = program.blockParams;
-            this.blocks.push(block);
-        };
-
-        JavaScriptCompiler.prototype.endBlock = function endBlock() {
-            var template = this.template;
-            var blocks = this.blocks;
-
-            template.blocks.push(blocks.pop());
-        };
-
-        JavaScriptCompiler.prototype.startProgram = function startProgram() {
-            this.blocks.push(this.template);
-        };
-
-        JavaScriptCompiler.prototype.endProgram = function endProgram() {};
-
-        /// Statements
-
-        JavaScriptCompiler.prototype.text = function text(content) {
-            this.push(['text', content]);
-        };
-
-        JavaScriptCompiler.prototype.append = function append(trusted) {
-            this.push(['append', this.popValue(), trusted]);
-        };
-
-        JavaScriptCompiler.prototype.comment = function comment(value) {
-            this.push(['comment', value]);
-        };
-
-        JavaScriptCompiler.prototype.modifier = function modifier(path) {
-            var params = this.popValue();
-            var hash = this.popValue();
-            this.push(['modifier', path, params, hash]);
-        };
-
-        JavaScriptCompiler.prototype.block = function block(path, template, inverse) {
-            var params = this.popValue();
-            var hash = this.popValue();
-            this.push(['block', path, params, hash, template, inverse]);
-        };
-
-        JavaScriptCompiler.prototype.openElement = function openElement(tag, blockParams) {
-            this.push(['openElement', tag, blockParams]);
-        };
-
-        JavaScriptCompiler.prototype.closeElement = function closeElement() {
-            this.push(['closeElement']);
-        };
-
-        JavaScriptCompiler.prototype.staticAttr = function staticAttr(name, namespace) {
-            var value = this.popValue();
-            this.push(['staticAttr', name, value, namespace]);
-        };
-
-        JavaScriptCompiler.prototype.dynamicAttr = function dynamicAttr(name, namespace) {
-            var value = this.popValue();
-            this.push(['dynamicAttr', name, value, namespace]);
-        };
-
-        JavaScriptCompiler.prototype.trustingAttr = function trustingAttr(name, namespace) {
-            var value = this.popValue();
-            this.push(['trustingAttr', name, value, namespace]);
-        };
-
-        JavaScriptCompiler.prototype.staticArg = function staticArg(name) {
-            var value = this.popValue();
-            this.push(['staticArg', name.slice(1), value]);
-        };
-
-        JavaScriptCompiler.prototype.dynamicArg = function dynamicArg(name) {
-            var value = this.popValue();
-            this.push(['dynamicArg', name.slice(1), value]);
-        };
-
-        JavaScriptCompiler.prototype.yield = function _yield(to) {
-            var params = this.popValue();
-            this.push(['yield', to, params]);
-            this.template.yields.add(to);
-        };
-
-        JavaScriptCompiler.prototype.hasBlock = function hasBlock(name) {
-            this.pushValue(['hasBlock', name]);
-            this.template.yields.add(name);
-        };
-
-        JavaScriptCompiler.prototype.hasBlockParams = function hasBlockParams(name) {
-            this.pushValue(['hasBlockParams', name]);
-            this.template.yields.add(name);
-        };
-
-        /// Expressions
-
-        JavaScriptCompiler.prototype.literal = function literal(value) {
-            this.pushValue(value);
-        };
-
-        JavaScriptCompiler.prototype.unknown = function unknown(path) {
-            this.pushValue(['unknown', path]);
-        };
-
-        JavaScriptCompiler.prototype.arg = function arg(path) {
-            this.template.named.add(path[0]);
-            this.pushValue(['arg', path]);
-        };
-
-        JavaScriptCompiler.prototype.selfGet = function selfGet(path) {
-            this.pushValue(['self-get', path]);
-        };
-
-        JavaScriptCompiler.prototype.get = function get(path) {
-            this.pushValue(['get', path]);
-        };
-
-        JavaScriptCompiler.prototype.concat = function concat() {
-            this.pushValue(['concat', this.popValue()]);
-        };
-
-        JavaScriptCompiler.prototype.helper = function helper(path) {
-            var params = this.popValue();
-            var hash = this.popValue();
-            this.pushValue(['helper', path, params, hash]);
-        };
-
-        /// Stack Management Opcodes
-
-        JavaScriptCompiler.prototype.prepareArray = function prepareArray(size) {
-            var values = [];
-            for (var i = 0; i < size; i++) {
-                values.push(this.popValue());
-            }
-            this.pushValue(values);
-        };
-
-        JavaScriptCompiler.prototype.prepareObject = function prepareObject(size) {
-            _glimmerUtil.assert(this.values.length >= size, "Expected " + size + " values on the stack, found " + this.values.length);
-            var object = _glimmerUtil.dict();
-            for (var i = 0; i < size; i++) {
-                object[this.popValue()] = this.popValue();
-            }
-            this.pushValue(object);
-        };
-
-        /// Utilities
-
-        JavaScriptCompiler.prototype.push = function push(args) {
-            while (args[args.length - 1] === null) {
-                args.pop();
-            }
-            this.blocks.current.push(args);
-        };
-
-        JavaScriptCompiler.prototype.pushValue = function pushValue(val) {
-            this.values.push(val);
-        };
-
-        JavaScriptCompiler.prototype.popValue = function popValue() {
-            _glimmerUtil.assert(this.values.length, "No expression found on stack");
-            return this.values.pop();
-        };
-
-        return JavaScriptCompiler;
-    })();
-
-    exports.default = JavaScriptCompiler;
-});
-
-enifed("glimmer-compiler/lib/template-compiler", ["exports", "glimmer-compiler/lib/template-visitor", "glimmer-compiler/lib/javascript-compiler", "glimmer-util", "glimmer-syntax"], function (exports, _glimmerCompilerLibTemplateVisitor, _glimmerCompilerLibJavascriptCompiler, _glimmerUtil, _glimmerSyntax) {
-    "use strict";
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    function isTrustedValue(value) {
-        return value.escaped !== undefined && !value.escaped;
-    }
-
-    var TemplateCompiler = (function () {
-        function TemplateCompiler() {
-            var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-            _classCallCheck(this, TemplateCompiler);
-
-            this.templateId = 0;
-            this.templateIds = [];
-            this.opcodes = [];
-            this.includeMeta = false;
-            this.options = options;
-        }
-
-        TemplateCompiler.compile = function compile(options, ast) {
-            var templateVisitor = new _glimmerCompilerLibTemplateVisitor.default();
-            templateVisitor.visit(ast);
-            var compiler = new TemplateCompiler(options);
-            var opcodes = compiler.process(templateVisitor.actions);
-            var meta = {
-                moduleName: options.moduleName
-            };
-            return _glimmerCompilerLibJavascriptCompiler.default.process(opcodes, meta);
-        };
-
-        TemplateCompiler.prototype.process = function process(actions) {
-            var _this = this;
-
-            actions.forEach(function (_ref) {
-                var name = _ref[0];
-
-                var args = _ref.slice(1);
-
-                if (!_this[name]) {
-                    throw new Error("Unimplemented " + name + " on TemplateCompiler");
-                }
-                _this[name].apply(_this, args);
-            });
-            return this.opcodes;
-        };
-
-        TemplateCompiler.prototype.startProgram = function startProgram(program) {
-            this.opcode('startProgram', program, program);
-        };
-
-        TemplateCompiler.prototype.endProgram = function endProgram() {
-            this.opcode('endProgram', null);
-        };
-
-        TemplateCompiler.prototype.startBlock = function startBlock(program) {
-            this.templateId++;
-            this.opcode('startBlock', program, program);
-        };
-
-        TemplateCompiler.prototype.endBlock = function endBlock() {
-            this.templateIds.push(this.templateId - 1);
-            this.opcode('endBlock', null);
-        };
-
-        TemplateCompiler.prototype.text = function text(_ref2) {
-            var action = _ref2[0];
-
-            this.opcode('text', action, action.chars);
-        };
-
-        TemplateCompiler.prototype.comment = function comment(_ref3) {
-            var action = _ref3[0];
-
-            this.opcode('comment', action, action.value);
-        };
-
-        TemplateCompiler.prototype.openElement = function openElement(_ref4) {
-            var action = _ref4[0];
-
-            this.opcode('openElement', action, action.tag, action.blockParams);
-            for (var i = 0; i < action.attributes.length; i++) {
-                this.attribute([action.attributes[i]]);
-            }
-            for (var i = 0; i < action.modifiers.length; i++) {
-                this.modifier([action.modifiers[i]]);
-            }
-        };
-
-        TemplateCompiler.prototype.closeElement = function closeElement() {
-            this.opcode('closeElement', null);
-        };
-
-        TemplateCompiler.prototype.attribute = function attribute(_ref5) {
-            var action = _ref5[0];
-            var name = action.name;
-            var value = action.value;
-
-            var namespace = _glimmerUtil.getAttrNamespace(name);
-            var isStatic = this.prepareAttributeValue(value);
-            if (name.charAt(0) === '@') {
-                // Arguments
-                if (isStatic) {
-                    this.opcode('staticArg', action, name);
-                } else if (action.value.type === 'MustacheStatement') {
-                    this.opcode('dynamicArg', action, name);
-                } else {
-                    this.opcode('dynamicArg', action, name);
-                }
-            } else {
-                var isTrusting = isTrustedValue(value);
-                if (isStatic) {
-                    this.opcode('staticAttr', action, name, namespace);
-                } else if (isTrusting) {
-                    this.opcode('trustingAttr', action, name, namespace);
-                } else if (action.value.type === 'MustacheStatement') {
-                    this.opcode('dynamicAttr', action, name);
-                } else {
-                    this.opcode('dynamicAttr', action, name, namespace);
-                }
-            }
-        };
-
-        TemplateCompiler.prototype.modifier = function modifier(_ref6) {
-            var action = _ref6[0];
-            var parts = action.path.parts;
-
-            this.prepareHelper(action);
-            this.opcode('modifier', action, parts);
-        };
-
-        TemplateCompiler.prototype.mustache = function mustache(_ref7) {
-            var action = _ref7[0];
-
-            if (isYield(action)) {
-                var to = assertValidYield(action);
-                this.yield(to, action);
-            } else {
-                this.mustacheExpression(action);
-                this.opcode('append', action, !action.escaped);
-            }
-        };
-
-        TemplateCompiler.prototype.block = function block(_ref8) /*, index, count*/{
-            var action = _ref8[0];
-
-            this.prepareHelper(action);
-            var templateId = this.templateIds.pop();
-            var inverseId = action.inverse === null ? null : this.templateIds.pop();
-            this.opcode('block', action, action.path.parts, templateId, inverseId);
-        };
-
-        /// Internal actions, not found in the original processed actions
-
-        TemplateCompiler.prototype.arg = function arg(_ref9) {
-            var path = _ref9[0];
-            var parts = path.parts;
-
-            this.opcode('arg', path, parts);
-        };
-
-        TemplateCompiler.prototype.mustacheExpression = function mustacheExpression(expr) {
-            if (isBuiltInHelper(expr)) {
-                this.builtInHelper(expr);
-            } else if (isLiteral(expr)) {
-                this.opcode('literal', expr, expr.path.value);
-            } else if (isArg(expr)) {
-                this.arg([expr.path]);
-            } else if (_glimmerSyntax.isHelper(expr)) {
-                this.prepareHelper(expr);
-                this.opcode('helper', expr, expr.path.parts);
-            } else if (_glimmerSyntax.isSelfGet(expr)) {
-                this.opcode('selfGet', expr, expr.path.parts);
-            } else {
-                this.opcode('unknown', expr, expr.path.parts);
-            }
-        };
-
-        /// Internal Syntax
-
-        TemplateCompiler.prototype.yield = function _yield(to, action) {
-            this.prepareParams(action.params);
-            this.opcode('yield', action, to);
-        };
-
-        TemplateCompiler.prototype.hasBlock = function hasBlock(name, action) {
-            this.opcode('hasBlock', action, name);
-        };
-
-        TemplateCompiler.prototype.hasBlockParams = function hasBlockParams(name, action) {
-            this.opcode('hasBlockParams', action, name);
-        };
-
-        TemplateCompiler.prototype.builtInHelper = function builtInHelper(expr) {
-            if (isHasBlock(expr)) {
-                var _name = assertValidHasBlock(expr);
-                this.hasBlock(_name, expr);
-            } else if (isHasBlockParams(expr)) {
-                var _name2 = assertValidHasBlockParams(expr);
-                this.hasBlockParams(_name2, expr);
-            }
-        };
-
-        /// Expressions, invoked recursively from prepareParams and prepareHash
-
-        TemplateCompiler.prototype.SubExpression = function SubExpression(expr) {
-            if (isBuiltInHelper(expr)) {
-                this.builtInHelper(expr);
-            } else {
-                this.prepareHelper(expr);
-                this.opcode('helper', expr, expr.path.parts);
-            }
-        };
-
-        TemplateCompiler.prototype.PathExpression = function PathExpression(expr) {
-            if (expr.data) {
-                this.arg([expr]);
-            } else {
-                this.opcode('get', expr, expr.parts);
-            }
-        };
-
-        TemplateCompiler.prototype.StringLiteral = function StringLiteral(action) {
-            this.opcode('literal', null, action.value);
-        };
-
-        TemplateCompiler.prototype.BooleanLiteral = function BooleanLiteral(action) {
-            this.opcode('literal', null, action.value);
-        };
-
-        TemplateCompiler.prototype.NumberLiteral = function NumberLiteral(action) {
-            this.opcode('literal', null, action.value);
-        };
-
-        TemplateCompiler.prototype.NullLiteral = function NullLiteral(action) {
-            this.opcode('literal', null, action.value);
-        };
-
-        TemplateCompiler.prototype.UndefinedLiteral = function UndefinedLiteral(action) {
-            this.opcode('literal', null, action.value);
-        };
-
-        /// Utilities
-
-        TemplateCompiler.prototype.opcode = function opcode(name, action) {
-            for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-                args[_key - 2] = arguments[_key];
-            }
-
-            var opcode = [name].concat(args);
-            if (this.includeMeta && action) {
-                opcode.push(this.meta(action));
-            }
-            this.opcodes.push(opcode);
-        };
-
-        TemplateCompiler.prototype.prepareHelper = function prepareHelper(_ref10) {
-            var params = _ref10.params;
-            var hash = _ref10.hash;
-
-            this.prepareHash(hash);
-            this.prepareParams(params);
-        };
-
-        TemplateCompiler.prototype.preparePath = function preparePath(path) {
-            this.opcode('literal', path, path.parts);
-        };
-
-        TemplateCompiler.prototype.prepareParams = function prepareParams(params) {
-            if (!params.length) {
-                this.opcode('literal', null, null);
-                return;
-            }
-            for (var i = params.length - 1; i >= 0; i--) {
-                var param = params[i];
-                _glimmerUtil.assert(this[param.type], "Unimplemented " + param.type + " on TemplateCompiler");
-                this[param.type](param);
-            }
-            this.opcode('prepareArray', null, params.length);
-        };
-
-        TemplateCompiler.prototype.prepareHash = function prepareHash(hash) {
-            var pairs = hash.pairs;
-            if (!pairs.length) {
-                this.opcode('literal', null, null);
-                return;
-            }
-            for (var i = pairs.length - 1; i >= 0; i--) {
-                var _pairs$i = pairs[i];
-                var key = _pairs$i.key;
-                var value = _pairs$i.value;
-
-                _glimmerUtil.assert(this[value.type], "Unimplemented " + value.type + " on TemplateCompiler");
-                this[value.type](value);
-                this.opcode('literal', null, key);
-            }
-            this.opcode('prepareObject', null, pairs.length);
-        };
-
-        TemplateCompiler.prototype.prepareAttributeValue = function prepareAttributeValue(value) {
-            // returns the static value if the value is static
-            switch (value.type) {
-                case 'TextNode':
-                    this.opcode('literal', value, value.chars);
-                    return true;
-                case 'MustacheStatement':
-                    this.attributeMustache([value]);
-                    return false;
-                case 'ConcatStatement':
-                    this.prepareConcatParts(value.parts);
-                    this.opcode('concat', value);
-                    return false;
-            }
-        };
-
-        TemplateCompiler.prototype.prepareConcatParts = function prepareConcatParts(parts) {
-            for (var i = parts.length - 1; i >= 0; i--) {
-                var part = parts[i];
-                if (part.type === 'MustacheStatement') {
-                    this.attributeMustache([part]);
-                } else if (part.type === 'TextNode') {
-                    this.opcode('literal', null, part.chars);
-                }
-            }
-            this.opcode('prepareArray', null, parts.length);
-        };
-
-        TemplateCompiler.prototype.attributeMustache = function attributeMustache(_ref11) {
-            var action = _ref11[0];
-
-            this.mustacheExpression(action);
-        };
-
-        TemplateCompiler.prototype.meta = function meta(node) {
-            var loc = node.loc;
-            if (!loc) {
-                return [];
-            }
-            var source = loc.source;
-            var start = loc.start;
-            var end = loc.end;
-
-            return ['loc', [source || null, [start.line, start.column], [end.line, end.column]]];
-        };
-
-        return TemplateCompiler;
-    })();
-
-    exports.default = TemplateCompiler;
-
-    function isYield(_ref12) {
-        var path = _ref12.path;
-
-        return path.original === 'yield';
-    }
-    function isArg(_ref13) {
-        var path = _ref13.path;
-
-        return path.data;
-    }
-    function isLiteral(_ref14) {
-        var path = _ref14.path;
-
-        return path.type === 'StringLiteral' || path.type === 'BooleanLiteral' || path.type === 'NumberLiteral' || path.type === 'NullLiteral' || path.type === 'UndefinedLiteral';
-    }
-    function isHasBlock(_ref15) {
-        var path = _ref15.path;
-
-        return path.original === 'has-block';
-    }
-    function isHasBlockParams(_ref16) {
-        var path = _ref16.path;
-
-        return path.original === 'has-block-params';
-    }
-    function isBuiltInHelper(expr) {
-        return isHasBlock(expr) || isHasBlockParams(expr);
-    }
-    function assertValidYield(_ref17) {
-        var hash = _ref17.hash;
-
-        var pairs = hash.pairs;
-        if (pairs.length === 1 && pairs[0].key !== 'to' || pairs.length > 1) {
-            throw new Error("yield only takes a single named argument: 'to'");
-        } else if (pairs.length === 1 && pairs[0].value.type !== 'StringLiteral') {
-            throw new Error("you can only yield to a literal value");
-        } else if (pairs.length === 0) {
-            return 'default';
-        } else {
-            return pairs[0].value.value;
-        }
-    }
-    function assertValidHasBlock(_ref18) {
-        var params = _ref18.params;
-
-        if (params.length === 0) {
-            return 'default';
-        } else if (params.length === 1) {
-            if (params[0].type === 'StringLiteral') {
-                return params[0].value;
-            } else {
-                throw new Error("you can only yield to a literal value");
-            }
-        } else {
-            throw new Error("has-block only takes a single positional argument");
-        }
-    }
-    function assertValidHasBlockParams(_ref19) {
-        var params = _ref19.params;
-
-        if (params.length === 0) {
-            return 'default';
-        } else if (params.length === 1) {
-            if (params[0].type === 'StringLiteral') {
-                return params[0].value;
-            } else {
-                throw new Error("you can only yield to a literal value");
-            }
-        } else {
-            throw new Error("has-block-params only takes a single positional argument");
-        }
-    }
-});
-
-enifed('glimmer-compiler/lib/template-visitor', ['exports'], function (exports) {
-    'use strict';
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var push = Array.prototype.push;
-
-    var Frame = function Frame() {
-        _classCallCheck(this, Frame);
-
-        this.parentNode = null;
-        this.children = null;
-        this.childIndex = null;
-        this.childCount = null;
-        this.childTemplateCount = 0;
-        this.mustacheCount = 0;
-        this.actions = [];
-        this.blankChildTextNodes = null;
-    }
-    /**
-     * Takes in an AST and outputs a list of actions to be consumed
-     * by a compiler. For example, the template
-     *
-     *     foo{{bar}}<div>baz</div>
-     *
-     * produces the actions
-     *
-     *     [['startProgram', [programNode, 0]],
-     *      ['text', [textNode, 0, 3]],
-     *      ['mustache', [mustacheNode, 1, 3]],
-     *      ['openElement', [elementNode, 2, 3, 0]],
-     *      ['text', [textNode, 0, 1]],
-     *      ['closeElement', [elementNode, 2, 3],
-     *      ['endProgram', [programNode]]]
-     *
-     * This visitor walks the AST depth first and backwards. As
-     * a result the bottom-most child template will appear at the
-     * top of the actions list whereas the root template will appear
-     * at the bottom of the list. For example,
-     *
-     *     <div>{{#if}}foo{{else}}bar<b></b>{{/if}}</div>
-     *
-     * produces the actions
-     *
-     *     [['startProgram', [programNode, 0]],
-     *      ['text', [textNode, 0, 2, 0]],
-     *      ['openElement', [elementNode, 1, 2, 0]],
-     *      ['closeElement', [elementNode, 1, 2]],
-     *      ['endProgram', [programNode]],
-     *      ['startProgram', [programNode, 0]],
-     *      ['text', [textNode, 0, 1]],
-     *      ['endProgram', [programNode]],
-     *      ['startProgram', [programNode, 2]],
-     *      ['openElement', [elementNode, 0, 1, 1]],
-     *      ['block', [blockNode, 0, 1]],
-     *      ['closeElement', [elementNode, 0, 1]],
-     *      ['endProgram', [programNode]]]
-     *
-     * The state of the traversal is maintained by a stack of frames.
-     * Whenever a node with children is entered (either a ProgramNode
-     * or an ElementNode) a frame is pushed onto the stack. The frame
-     * contains information about the state of the traversal of that
-     * node. For example,
-     *
-     *   - index of the current child node being visited
-     *   - the number of mustaches contained within its child nodes
-     *   - the list of actions generated by its child nodes
-     */
-    ;
-
-    function TemplateVisitor() {
-        this.frameStack = [];
-        this.actions = [];
-        this.programDepth = -1;
-    }
-    // Traversal methods
-    TemplateVisitor.prototype.visit = function (node) {
-        this[node.type](node);
-    };
-    TemplateVisitor.prototype.Program = function (program) {
-        this.programDepth++;
-        var parentFrame = this.getCurrentFrame();
-        var programFrame = this.pushFrame();
-        var startType = undefined,
-            endType = undefined;
-        if (this.programDepth === 0) {
-            startType = 'startProgram';
-            endType = 'endProgram';
-        } else {
-            startType = 'startBlock';
-            endType = 'endBlock';
-        }
-        programFrame.parentNode = program;
-        programFrame.children = program.body;
-        programFrame.childCount = program.body.length;
-        programFrame.blankChildTextNodes = [];
-        programFrame.actions.push([endType, [program, this.programDepth]]);
-        for (var i = program.body.length - 1; i >= 0; i--) {
-            programFrame.childIndex = i;
-            this.visit(program.body[i]);
-        }
-        programFrame.actions.push([startType, [program, programFrame.childTemplateCount, programFrame.blankChildTextNodes.reverse()]]);
-        this.popFrame();
-        this.programDepth--;
-        // Push the completed template into the global actions list
-        if (parentFrame) {
-            parentFrame.childTemplateCount++;
-        }
-        push.apply(this.actions, programFrame.actions.reverse());
-    };
-    TemplateVisitor.prototype.ElementNode = function (element) {
-        var parentFrame = this.getCurrentFrame();
-        var elementFrame = this.pushFrame();
-        elementFrame.parentNode = element;
-        elementFrame.children = element.children;
-        elementFrame.childCount = element.children.length;
-        elementFrame.mustacheCount += element.modifiers.length;
-        elementFrame.blankChildTextNodes = [];
-        var actionArgs = [element, parentFrame.childIndex, parentFrame.childCount];
-        elementFrame.actions.push(['closeElement', actionArgs]);
-        for (var i = element.attributes.length - 1; i >= 0; i--) {
-            this.visit(element.attributes[i]);
-        }
-        for (var i = element.children.length - 1; i >= 0; i--) {
-            elementFrame.childIndex = i;
-            this.visit(element.children[i]);
-        }
-        elementFrame.actions.push(['openElement', actionArgs.concat([elementFrame.mustacheCount, elementFrame.blankChildTextNodes.reverse()])]);
-        this.popFrame();
-        // Propagate the element's frame state to the parent frame
-        if (elementFrame.mustacheCount > 0) {
-            parentFrame.mustacheCount++;
-        }
-        parentFrame.childTemplateCount += elementFrame.childTemplateCount;
-        push.apply(parentFrame.actions, elementFrame.actions);
-    };
-    TemplateVisitor.prototype.AttrNode = function (attr) {
-        if (attr.value.type !== 'TextNode') {
-            this.getCurrentFrame().mustacheCount++;
-        }
-    };
-    TemplateVisitor.prototype.TextNode = function (text) {
-        var frame = this.getCurrentFrame();
-        if (text.chars === '') {
-            frame.blankChildTextNodes.push(domIndexOf(frame.children, text));
-        }
-        frame.actions.push(['text', [text, frame.childIndex, frame.childCount]]);
-    };
-    TemplateVisitor.prototype.BlockStatement = function (node) {
-        var frame = this.getCurrentFrame();
-        frame.mustacheCount++;
-        frame.actions.push(['block', [node, frame.childIndex, frame.childCount]]);
-        if (node.inverse) {
-            this.visit(node.inverse);
-        }
-        if (node.program) {
-            this.visit(node.program);
-        }
-    };
-    TemplateVisitor.prototype.PartialStatement = function (node) {
-        var frame = this.getCurrentFrame();
-        frame.mustacheCount++;
-        frame.actions.push(['mustache', [node, frame.childIndex, frame.childCount]]);
-    };
-    TemplateVisitor.prototype.CommentStatement = function (text) {
-        var frame = this.getCurrentFrame();
-        frame.actions.push(['comment', [text, frame.childIndex, frame.childCount]]);
-    };
-    TemplateVisitor.prototype.MustacheStatement = function (mustache) {
-        var frame = this.getCurrentFrame();
-        frame.mustacheCount++;
-        frame.actions.push(['mustache', [mustache, frame.childIndex, frame.childCount]]);
-    };
-    // Frame helpers
-    TemplateVisitor.prototype.getCurrentFrame = function () {
-        return this.frameStack[this.frameStack.length - 1];
-    };
-    TemplateVisitor.prototype.pushFrame = function () {
-        var frame = new Frame();
-        this.frameStack.push(frame);
-        return frame;
-    };
-    TemplateVisitor.prototype.popFrame = function () {
-        return this.frameStack.pop();
-    };
-    exports.default = TemplateVisitor;
-
-    // Returns the index of `domNode` in the `nodes` array, skipping
-    // over any nodes which do not represent DOM nodes.
-    function domIndexOf(nodes, domNode) {
-        var index = -1;
-        for (var i = 0; i < nodes.length; i++) {
-            var node = nodes[i];
-            if (node.type !== 'TextNode' && node.type !== 'ElementNode') {
-                continue;
-            } else {
-                index++;
-            }
-            if (node === domNode) {
-                return index;
-            }
-        }
-        return -1;
-    }
-});
-
-enifed("glimmer-compiler/lib/utils", ["exports"], function (exports) {
-    "use strict";
-
-    exports.processOpcodes = processOpcodes;
-
-    function processOpcodes(compiler, opcodes) {
-        for (var i = 0, l = opcodes.length; i < l; i++) {
-            var method = opcodes[i][0];
-            var params = opcodes[i][1];
-            if (params) {
-                compiler[method].apply(compiler, params);
-            } else {
-                compiler[method].call(compiler);
-            }
-        }
-    }
-});
-
-enifed('glimmer-reference/index', ['exports', 'glimmer-reference/lib/reference', 'glimmer-reference/lib/const', 'glimmer-reference/lib/validators', 'glimmer-reference/lib/utils', 'glimmer-reference/lib/iterable'], function (exports, _glimmerReferenceLibReference, _glimmerReferenceLibConst, _glimmerReferenceLibValidators, _glimmerReferenceLibUtils, _glimmerReferenceLibIterable) {
-  'use strict';
-
-  function _interopExportWildcard(obj, defaults) { var newObj = defaults({}, obj); delete newObj['default']; return newObj; }
-
-  function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-  exports.BasicReference = _glimmerReferenceLibReference.Reference;
-  exports.BasicPathReference = _glimmerReferenceLibReference.PathReference;
-  exports.ConstReference = _glimmerReferenceLibConst.ConstReference;
-  exports.isConst = _glimmerReferenceLibConst.isConst;
-
-  _defaults(exports, _interopExportWildcard(_glimmerReferenceLibValidators, _defaults));
-
-  exports.Reference = _glimmerReferenceLibValidators.VersionedReference;
-  exports.PathReference = _glimmerReferenceLibValidators.VersionedPathReference;
-  exports.referenceFromParts = _glimmerReferenceLibUtils.referenceFromParts;
-  exports.IterationItem = _glimmerReferenceLibIterable.IterationItem;
-  exports.Iterator = _glimmerReferenceLibIterable.Iterator;
-  exports.Iterable = _glimmerReferenceLibIterable.Iterable;
-  exports.OpaqueIterator = _glimmerReferenceLibIterable.OpaqueIterator;
-  exports.OpaqueIterable = _glimmerReferenceLibIterable.OpaqueIterable;
-  exports.AbstractIterator = _glimmerReferenceLibIterable.AbstractIterator;
-  exports.AbstractIterable = _glimmerReferenceLibIterable.AbstractIterable;
-  exports.IterationArtifacts = _glimmerReferenceLibIterable.IterationArtifacts;
-  exports.ReferenceIterator = _glimmerReferenceLibIterable.ReferenceIterator;
-  exports.IteratorSynchronizer = _glimmerReferenceLibIterable.IteratorSynchronizer;
-  exports.IteratorSynchronizerDelegate = _glimmerReferenceLibIterable.IteratorSynchronizerDelegate;
-});
-
-enifed("glimmer-reference/lib/const", ["exports", "glimmer-reference/lib/validators"], function (exports, _glimmerReferenceLibValidators) {
-    "use strict";
-
-    exports.isConst = isConst;
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var CONST_REFERENCE = "503c5a44-e4a9-4bb5-85bc-102d35af6985";
-    exports.CONST_REFERENCE = CONST_REFERENCE;
-
-    var ConstReference = (function () {
-        function ConstReference(inner) {
-            _classCallCheck(this, ConstReference);
-
-            this.tag = _glimmerReferenceLibValidators.CONSTANT_TAG;
-            this["503c5a44-e4a9-4bb5-85bc-102d35af6985"] = true;
-            this.inner = inner;
-        }
-
-        ConstReference.prototype.value = function value() {
-            return this.inner;
-        };
-
-        return ConstReference;
-    })();
-
-    exports.ConstReference = ConstReference;
-
-    function isConst(reference) {
-        return !!reference[CONST_REFERENCE];
-    }
-});
-
-enifed("glimmer-reference/lib/iterable", ["exports", "glimmer-util"], function (exports, _glimmerUtil) {
-    "use strict";
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var ListItem = (function (_ListNode) {
-        _inherits(ListItem, _ListNode);
-
-        function ListItem(iterable, result) {
-            _classCallCheck(this, ListItem);
-
-            _ListNode.call(this, iterable.valueReferenceFor(result));
-            this.retained = false;
-            this.seen = false;
-            this.key = result.key;
-            this.iterable = iterable;
-            this.memo = iterable.memoReferenceFor(result);
-        }
-
-        ListItem.prototype.update = function update(item) {
-            this.retained = true;
-            this.iterable.updateValueReference(this.value, item);
-            this.iterable.updateMemoReference(this.memo, item);
-        };
-
-        ListItem.prototype.shouldRemove = function shouldRemove() {
-            return !this.retained;
-        };
-
-        ListItem.prototype.reset = function reset() {
-            this.retained = false;
-            this.seen = false;
-        };
-
-        return ListItem;
-    })(_glimmerUtil.ListNode);
-
-    var IterationArtifacts = (function () {
-        function IterationArtifacts(iterable) {
-            _classCallCheck(this, IterationArtifacts);
-
-            this.map = _glimmerUtil.dict();
-            this.list = new _glimmerUtil.LinkedList();
-            this.tag = iterable.tag;
-            this.iterable = iterable;
-        }
-
-        IterationArtifacts.prototype.isEmpty = function isEmpty() {
-            var iterator = this.iterator = this.iterable.iterate();
-            return iterator.isEmpty();
-        };
-
-        IterationArtifacts.prototype.iterate = function iterate() {
-            var iterator = this.iterator || this.iterable.iterate();
-            this.iterator = null;
-            return iterator;
-        };
-
-        IterationArtifacts.prototype.has = function has(key) {
-            return !!this.map[key];
-        };
-
-        IterationArtifacts.prototype.get = function get(key) {
-            return this.map[key];
-        };
-
-        IterationArtifacts.prototype.wasSeen = function wasSeen(key) {
-            var node = this.map[key];
-            return node && node.seen;
-        };
-
-        IterationArtifacts.prototype.append = function append(item) {
-            var map = this.map;
-            var list = this.list;
-            var iterable = this.iterable;
-
-            var node = map[item.key] = new ListItem(iterable, item);
-            list.append(node);
-            return node;
-        };
-
-        IterationArtifacts.prototype.insertBefore = function insertBefore(item, reference) {
-            var map = this.map;
-            var list = this.list;
-            var iterable = this.iterable;
-
-            var node = map[item.key] = new ListItem(iterable, item);
-            node.retained = true;
-            list.insertBefore(node, reference);
-            return node;
-        };
-
-        IterationArtifacts.prototype.move = function move(item, reference) {
-            var list = this.list;
-
-            item.retained = true;
-            list.remove(item);
-            list.insertBefore(item, reference);
-        };
-
-        IterationArtifacts.prototype.remove = function remove(item) {
-            var list = this.list;
-
-            list.remove(item);
-            delete this.map[item.key];
-        };
-
-        IterationArtifacts.prototype.nextNode = function nextNode(item) {
-            return this.list.nextNode(item);
-        };
-
-        IterationArtifacts.prototype.head = function head() {
-            return this.list.head();
-        };
-
-        return IterationArtifacts;
-    })();
-
-    exports.IterationArtifacts = IterationArtifacts;
-
-    var ReferenceIterator = (function () {
-        // if anyone needs to construct this object with something other than
-        // an iterable, let @wycats know.
-
-        function ReferenceIterator(iterable) {
-            _classCallCheck(this, ReferenceIterator);
-
-            this.iterator = null;
-            var artifacts = new IterationArtifacts(iterable);
-            this.artifacts = artifacts;
-        }
-
-        ReferenceIterator.prototype.next = function next() {
-            var artifacts = this.artifacts;
-
-            var iterator = this.iterator = this.iterator || artifacts.iterate();
-            var item = iterator.next();
-            if (!item) return null;
-            return artifacts.append(item);
-        };
-
-        return ReferenceIterator;
-    })();
-
-    exports.ReferenceIterator = ReferenceIterator;
-
-    var Phase;
-    (function (Phase) {
-        Phase[Phase["Append"] = 0] = "Append";
-        Phase[Phase["Prune"] = 1] = "Prune";
-        Phase[Phase["Done"] = 2] = "Done";
-    })(Phase || (Phase = {}));
-
-    var IteratorSynchronizer = (function () {
-        function IteratorSynchronizer(_ref) {
-            var target = _ref.target;
-            var artifacts = _ref.artifacts;
-
-            _classCallCheck(this, IteratorSynchronizer);
-
-            this.target = target;
-            this.artifacts = artifacts;
-            this.iterator = artifacts.iterate();
-            this.current = artifacts.head();
-        }
-
-        IteratorSynchronizer.prototype.sync = function sync() {
-            var phase = Phase.Append;
-            while (true) {
-                switch (phase) {
-                    case Phase.Append:
-                        phase = this.nextAppend();
-                        break;
-                    case Phase.Prune:
-                        phase = this.nextPrune();
-                        break;
-                    case Phase.Done:
-                        this.nextDone();
-                        return;
-                }
-            }
-        };
-
-        IteratorSynchronizer.prototype.advanceToKey = function advanceToKey(key) {
-            var current = this.current;
-            var artifacts = this.artifacts;
-
-            var seek = current;
-            while (seek && seek.key !== key) {
-                seek.seen = true;
-                seek = artifacts.nextNode(seek);
-            }
-            this.current = seek && artifacts.nextNode(seek);
-        };
-
-        IteratorSynchronizer.prototype.nextAppend = function nextAppend() {
-            var iterator = this.iterator;
-            var current = this.current;
-            var artifacts = this.artifacts;
-
-            var item = iterator.next();
-            if (item === null) {
-                return this.startPrune();
-            }
-            var key = item.key;
-
-            if (current && current.key === key) {
-                this.nextRetain(item);
-            } else if (artifacts.has(key)) {
-                this.nextMove(item);
-            } else {
-                this.nextInsert(item);
-            }
-            return Phase.Append;
-        };
-
-        IteratorSynchronizer.prototype.nextRetain = function nextRetain(item) {
-            var artifacts = this.artifacts;
-            var current = this.current;
-
-            current.update(item);
-            this.current = artifacts.nextNode(current);
-            this.target.retain(item.key, current.value, current.memo);
-        };
-
-        IteratorSynchronizer.prototype.nextMove = function nextMove(item) {
-            var current = this.current;
-            var artifacts = this.artifacts;
-            var target = this.target;
-            var key = item.key;
-
-            var found = artifacts.get(item.key);
-            found.update(item);
-            if (artifacts.wasSeen(item.key)) {
-                artifacts.move(found, current);
-                target.move(found.key, found.value, found.memo, current ? current.key : null);
-            } else {
-                this.advanceToKey(key);
-            }
-        };
-
-        IteratorSynchronizer.prototype.nextInsert = function nextInsert(item) {
-            var artifacts = this.artifacts;
-            var target = this.target;
-            var current = this.current;
-
-            var node = artifacts.insertBefore(item, current);
-            target.insert(node.key, node.value, node.memo, current ? current.key : null);
-        };
-
-        IteratorSynchronizer.prototype.startPrune = function startPrune() {
-            this.current = this.artifacts.head();
-            return Phase.Prune;
-        };
-
-        IteratorSynchronizer.prototype.nextPrune = function nextPrune() {
-            var artifacts = this.artifacts;
-            var target = this.target;
-            var current = this.current;
-
-            if (current === null) {
-                return Phase.Done;
-            }
-            var node = current;
-            this.current = artifacts.nextNode(node);
-            if (node.shouldRemove()) {
-                artifacts.remove(node);
-                target.delete(node.key);
-            } else {
-                node.reset();
-            }
-            return Phase.Prune;
-        };
-
-        IteratorSynchronizer.prototype.nextDone = function nextDone() {
-            this.target.done();
-        };
-
-        return IteratorSynchronizer;
-    })();
-
-    exports.IteratorSynchronizer = IteratorSynchronizer;
-});
-
-enifed("glimmer-reference/lib/reference", ["exports"], function (exports) {
-  "use strict";
-});
-
-enifed("glimmer-reference/lib/utils", ["exports"], function (exports) {
-    "use strict";
-
-    exports.referenceFromParts = referenceFromParts;
-
-    function referenceFromParts(root, parts) {
-        var reference = root;
-        for (var i = 0; i < parts.length; i++) {
-            reference = reference.get(parts[i]);
-        }
-        return reference;
-    }
-});
-
-enifed("glimmer-reference/lib/validators", ["exports"], function (exports) {
-    "use strict";
-
-    exports.combineTagged = combineTagged;
-    exports.combineSlice = combineSlice;
-    exports.combine = combine;
-    exports.map = map;
-    exports.isModified = isModified;
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var CONSTANT = 0;
-    exports.CONSTANT = CONSTANT;
-    var INITIAL = 1;
-    exports.INITIAL = INITIAL;
-    var VOLATILE = NaN;
-    exports.VOLATILE = VOLATILE;
-
-    var RevisionTag = (function () {
-        function RevisionTag() {
-            _classCallCheck(this, RevisionTag);
-        }
-
-        RevisionTag.prototype.validate = function validate(snapshot) {
-            return this.value() === snapshot;
-        };
-
-        return RevisionTag;
-    })();
-
-    exports.RevisionTag = RevisionTag;
-
-    var $REVISION = INITIAL;
-
-    var DirtyableTag = (function (_RevisionTag) {
-        _inherits(DirtyableTag, _RevisionTag);
-
-        function DirtyableTag() {
-            var revision = arguments.length <= 0 || arguments[0] === undefined ? $REVISION : arguments[0];
-
-            _classCallCheck(this, DirtyableTag);
-
-            _RevisionTag.call(this);
-            this.revision = revision;
-        }
-
-        DirtyableTag.prototype.value = function value() {
-            return this.revision;
-        };
-
-        DirtyableTag.prototype.dirty = function dirty() {
-            this.revision = ++$REVISION;
-        };
-
-        return DirtyableTag;
-    })(RevisionTag);
-
-    exports.DirtyableTag = DirtyableTag;
-
-    function combineTagged(tagged) {
-        var optimized = [];
-        for (var i = 0, l = tagged.length; i < l; i++) {
-            var tag = tagged[i].tag;
-            if (tag === VOLATILE_TAG) return VOLATILE_TAG;
-            if (tag === CONSTANT_TAG) continue;
-            optimized.push(tag);
-        }
-        return _combine(optimized);
-    }
-
-    function combineSlice(slice) {
-        var optimized = [];
-        var node = slice.head();
-        while (node !== null) {
-            var tag = node.tag;
-            if (tag === VOLATILE_TAG) return VOLATILE_TAG;
-            if (tag !== CONSTANT_TAG) optimized.push(tag);
-            node = slice.nextNode(node);
-        }
-        return _combine(optimized);
-    }
-
-    function combine(tags) {
-        var optimized = [];
-        for (var i = 0, l = tags.length; i < l; i++) {
-            var tag = tags[i];
-            if (tag === VOLATILE_TAG) return VOLATILE_TAG;
-            if (tag === CONSTANT_TAG) continue;
-            optimized.push(tag);
-        }
-        return _combine(optimized);
-    }
-
-    function _combine(tags) {
-        switch (tags.length) {
-            case 0:
-                return CONSTANT_TAG;
-            case 1:
-                return tags[0];
-            case 2:
-                return new TagsPair(tags[0], tags[1]);
-            default:
-                return new TagsCombinator(tags);
-        }
-        ;
-    }
-
-    var CachedTag = (function (_RevisionTag2) {
-        _inherits(CachedTag, _RevisionTag2);
-
-        function CachedTag() {
-            _classCallCheck(this, CachedTag);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _RevisionTag2.call.apply(_RevisionTag2, [this].concat(args));
-            this.lastChecked = null;
-            this.lastValue = null;
-        }
-
-        CachedTag.prototype.value = function value() {
-            var lastChecked = this.lastChecked;
-            var lastValue = this.lastValue;
-
-            if (lastChecked !== $REVISION) {
-                this.lastChecked = $REVISION;
-                this.lastValue = lastValue = this.compute();
-            }
-            return this.lastValue;
-        };
-
-        CachedTag.prototype.invalidate = function invalidate() {
-            this.lastChecked = null;
-        };
-
-        return CachedTag;
-    })(RevisionTag);
-
-    exports.CachedTag = CachedTag;
-
-    var TagsPair = (function (_CachedTag) {
-        _inherits(TagsPair, _CachedTag);
-
-        function TagsPair(first, second) {
-            _classCallCheck(this, TagsPair);
-
-            _CachedTag.call(this);
-            this.first = first;
-            this.second = second;
-        }
-
-        TagsPair.prototype.compute = function compute() {
-            return Math.max(this.first.value(), this.second.value());
-        };
-
-        return TagsPair;
-    })(CachedTag);
-
-    var TagsCombinator = (function (_CachedTag2) {
-        _inherits(TagsCombinator, _CachedTag2);
-
-        function TagsCombinator(tags) {
-            _classCallCheck(this, TagsCombinator);
-
-            _CachedTag2.call(this);
-            this.tags = tags;
-        }
-
-        TagsCombinator.prototype.compute = function compute() {
-            var tags = this.tags;
-
-            var max = -1;
-            for (var i = 0; i < tags.length; i++) {
-                var value = tags[i].value();
-                max = Math.max(value, max);
-            }
-            return max;
-        };
-
-        return TagsCombinator;
-    })(CachedTag);
-
-    var UpdatableTag = (function (_CachedTag3) {
-        _inherits(UpdatableTag, _CachedTag3);
-
-        function UpdatableTag(tag) {
-            _classCallCheck(this, UpdatableTag);
-
-            _CachedTag3.call(this);
-            this.tag = tag;
-            this.lastUpdated = INITIAL;
-        }
-
-        //////////
-
-        UpdatableTag.prototype.compute = function compute() {
-            return Math.max(this.lastUpdated, this.tag.value());
-        };
-
-        UpdatableTag.prototype.update = function update(tag) {
-            if (tag !== this.tag) {
-                this.tag = tag;
-                this.lastUpdated = $REVISION;
-                this.invalidate();
-            }
-        };
-
-        return UpdatableTag;
-    })(CachedTag);
-
-    exports.UpdatableTag = UpdatableTag;
-    var CONSTANT_TAG = new ((function (_RevisionTag3) {
-        _inherits(ConstantTag, _RevisionTag3);
-
-        function ConstantTag() {
-            _classCallCheck(this, ConstantTag);
-
-            _RevisionTag3.apply(this, arguments);
-        }
-
-        ConstantTag.prototype.value = function value() {
-            return CONSTANT;
-        };
-
-        return ConstantTag;
-    })(RevisionTag))();
-    exports.CONSTANT_TAG = CONSTANT_TAG;
-    var VOLATILE_TAG = new ((function (_RevisionTag4) {
-        _inherits(VolatileTag, _RevisionTag4);
-
-        function VolatileTag() {
-            _classCallCheck(this, VolatileTag);
-
-            _RevisionTag4.apply(this, arguments);
-        }
-
-        VolatileTag.prototype.value = function value() {
-            return VOLATILE;
-        };
-
-        return VolatileTag;
-    })(RevisionTag))();
-    exports.VOLATILE_TAG = VOLATILE_TAG;
-    var CURRENT_TAG = new ((function (_DirtyableTag) {
-        _inherits(CurrentTag, _DirtyableTag);
-
-        function CurrentTag() {
-            _classCallCheck(this, CurrentTag);
-
-            _DirtyableTag.apply(this, arguments);
-        }
-
-        CurrentTag.prototype.value = function value() {
-            return $REVISION;
-        };
-
-        return CurrentTag;
-    })(DirtyableTag))();
-    exports.CURRENT_TAG = CURRENT_TAG;
-
-    var CachedReference = (function () {
-        function CachedReference() {
-            _classCallCheck(this, CachedReference);
-
-            this.lastRevision = null;
-            this.lastValue = null;
-        }
-
-        CachedReference.prototype.value = function value() {
-            var tag = this.tag;
-            var lastRevision = this.lastRevision;
-            var lastValue = this.lastValue;
-
-            if (!lastRevision || !tag.validate(lastRevision)) {
-                lastValue = this.lastValue = this.compute();
-                this.lastRevision = tag.value();
-            }
-            return lastValue;
-        };
-
-        CachedReference.prototype.invalidate = function invalidate() {
-            this.lastRevision = null;
-        };
-
-        return CachedReference;
-    })();
-
-    exports.CachedReference = CachedReference;
-
-    var MapperReference = (function (_CachedReference) {
-        _inherits(MapperReference, _CachedReference);
-
-        function MapperReference(reference, mapper) {
-            _classCallCheck(this, MapperReference);
-
-            _CachedReference.call(this);
-            this.tag = reference.tag;
-            this.reference = reference;
-            this.mapper = mapper;
-        }
-
-        MapperReference.prototype.compute = function compute() {
-            var reference = this.reference;
-            var mapper = this.mapper;
-
-            return mapper(reference.value());
-        };
-
-        return MapperReference;
-    })(CachedReference);
-
-    function map(reference, mapper) {
-        return new MapperReference(reference, mapper);
-    }
-
-    //////////
-
-    var ReferenceCache = (function () {
-        function ReferenceCache(reference) {
-            _classCallCheck(this, ReferenceCache);
-
-            this.lastValue = null;
-            this.lastRevision = null;
-            this.initialized = false;
-            this.tag = reference.tag;
-            this.reference = reference;
-        }
-
-        ReferenceCache.prototype.peek = function peek() {
-            if (!this.initialized) {
-                return this.initialize();
-            }
-            return this.lastValue;
-        };
-
-        ReferenceCache.prototype.revalidate = function revalidate() {
-            if (!this.initialized) {
-                return this.initialize();
-            }
-            var reference = this.reference;
-            var lastRevision = this.lastRevision;
-
-            var tag = reference.tag;
-            if (tag.validate(lastRevision)) return NOT_MODIFIED;
-            this.lastRevision = tag.value();
-            var lastValue = this.lastValue;
-
-            var value = reference.value();
-            if (value === lastValue) return NOT_MODIFIED;
-            this.lastValue = value;
-            return value;
-        };
-
-        ReferenceCache.prototype.initialize = function initialize() {
-            var reference = this.reference;
-
-            var value = this.lastValue = reference.value();
-            this.lastRevision = reference.tag.value();
-            this.initialized = true;
-            return value;
-        };
-
-        return ReferenceCache;
-    })();
-
-    exports.ReferenceCache = ReferenceCache;
-
-    var NOT_MODIFIED = "adb3b78e-3d22-4e4b-877a-6317c2c5c145";
-
-    function isModified(value) {
-        return value !== NOT_MODIFIED;
-    }
-});
-
-enifed('glimmer-runtime/index', ['exports', 'glimmer-runtime/lib/syntax', 'glimmer-runtime/lib/template', 'glimmer-runtime/lib/symbol-table', 'glimmer-runtime/lib/references', 'glimmer-runtime/lib/syntax/core', 'glimmer-runtime/lib/compiler', 'glimmer-runtime/lib/opcode-builder', 'glimmer-runtime/lib/compiled/opcodes/builder', 'glimmer-runtime/lib/compiled/blocks', 'glimmer-runtime/lib/opcodes', 'glimmer-runtime/lib/compiled/opcodes/vm', 'glimmer-runtime/lib/compiled/opcodes/component', 'glimmer-runtime/lib/compiled/opcodes/dom', 'glimmer-runtime/lib/dom/change-lists', 'glimmer-runtime/lib/compiled/opcodes/content', 'glimmer-runtime/lib/compiled/expressions', 'glimmer-runtime/lib/compiled/expressions/args', 'glimmer-runtime/lib/compiled/expressions/value', 'glimmer-runtime/lib/compiled/expressions/function', 'glimmer-runtime/lib/compiled/opcodes/lists', 'glimmer-runtime/lib/vm', 'glimmer-runtime/lib/upsert', 'glimmer-runtime/lib/environment', 'glimmer-runtime/lib/partial', 'glimmer-runtime/lib/component/interfaces', 'glimmer-runtime/lib/modifier/interfaces', 'glimmer-runtime/lib/dom/helper', 'glimmer-runtime/lib/builder'], function (exports, _glimmerRuntimeLibSyntax, _glimmerRuntimeLibTemplate, _glimmerRuntimeLibSymbolTable, _glimmerRuntimeLibReferences, _glimmerRuntimeLibSyntaxCore, _glimmerRuntimeLibCompiler, _glimmerRuntimeLibOpcodeBuilder, _glimmerRuntimeLibCompiledOpcodesBuilder, _glimmerRuntimeLibCompiledBlocks, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibCompiledOpcodesVm, _glimmerRuntimeLibCompiledOpcodesComponent, _glimmerRuntimeLibCompiledOpcodesDom, _glimmerRuntimeLibDomChangeLists, _glimmerRuntimeLibCompiledOpcodesContent, _glimmerRuntimeLibCompiledExpressions, _glimmerRuntimeLibCompiledExpressionsArgs, _glimmerRuntimeLibCompiledExpressionsValue, _glimmerRuntimeLibCompiledExpressionsFunction, _glimmerRuntimeLibCompiledOpcodesLists, _glimmerRuntimeLibVm, _glimmerRuntimeLibUpsert, _glimmerRuntimeLibEnvironment, _glimmerRuntimeLibPartial, _glimmerRuntimeLibComponentInterfaces, _glimmerRuntimeLibModifierInterfaces, _glimmerRuntimeLibDomHelper, _glimmerRuntimeLibBuilder) {
-  'use strict';
-
-  exports.ATTRIBUTE_SYNTAX = _glimmerRuntimeLibSyntax.ATTRIBUTE;
-  exports.StatementSyntax = _glimmerRuntimeLibSyntax.Statement;
-  exports.ExpressionSyntax = _glimmerRuntimeLibSyntax.Expression;
-  exports.AttributeSyntax = _glimmerRuntimeLibSyntax.Attribute;
-  exports.StatementCompilationBuffer = _glimmerRuntimeLibSyntax.StatementCompilationBuffer;
-  exports.SymbolLookup = _glimmerRuntimeLibSyntax.SymbolLookup;
-  exports.CompileInto = _glimmerRuntimeLibSyntax.CompileInto;
-  exports.isAttribute = _glimmerRuntimeLibSyntax.isAttribute;
-  exports.Template = _glimmerRuntimeLibTemplate.default;
-  exports.SymbolTable = _glimmerRuntimeLibSymbolTable.default;
-  exports.ConditionalReference = _glimmerRuntimeLibReferences.ConditionalReference;
-  exports.NULL_REFERENCE = _glimmerRuntimeLibReferences.NULL_REFERENCE;
-  exports.UNDEFINED_REFERENCE = _glimmerRuntimeLibReferences.UNDEFINED_REFERENCE;
-  exports.Templates = _glimmerRuntimeLibSyntaxCore.Templates;
-  exports.OptimizedAppend = _glimmerRuntimeLibSyntaxCore.OptimizedAppend;
-  exports.UnoptimizedAppend = _glimmerRuntimeLibSyntaxCore.UnoptimizedAppend;
-  exports.Unknown = _glimmerRuntimeLibSyntaxCore.Unknown;
-  exports.StaticAttr = _glimmerRuntimeLibSyntaxCore.StaticAttr;
-  exports.DynamicAttr = _glimmerRuntimeLibSyntaxCore.DynamicAttr;
-  exports.ArgsSyntax = _glimmerRuntimeLibSyntaxCore.Args;
-  exports.NamedArgsSyntax = _glimmerRuntimeLibSyntaxCore.NamedArgs;
-  exports.PositionalArgsSyntax = _glimmerRuntimeLibSyntaxCore.PositionalArgs;
-  exports.RefSyntax = _glimmerRuntimeLibSyntaxCore.Ref;
-  exports.GetNamedParameterSyntax = _glimmerRuntimeLibSyntaxCore.GetArgument;
-  exports.GetSyntax = _glimmerRuntimeLibSyntaxCore.Get;
-  exports.ValueSyntax = _glimmerRuntimeLibSyntaxCore.Value;
-  exports.OpenElement = _glimmerRuntimeLibSyntaxCore.OpenElement;
-  exports.HelperSyntax = _glimmerRuntimeLibSyntaxCore.Helper;
-  exports.BlockSyntax = _glimmerRuntimeLibSyntaxCore.Block;
-  exports.OpenPrimitiveElementSyntax = _glimmerRuntimeLibSyntaxCore.OpenPrimitiveElement;
-  exports.CloseElementSyntax = _glimmerRuntimeLibSyntaxCore.CloseElement;
-  exports.Compiler = _glimmerRuntimeLibCompiler.default;
-  exports.Compilable = _glimmerRuntimeLibCompiler.Compilable;
-  exports.CompileIntoList = _glimmerRuntimeLibCompiler.CompileIntoList;
-  exports.compileLayout = _glimmerRuntimeLibCompiler.compileLayout;
-  exports.OpcodeBuilder = _glimmerRuntimeLibOpcodeBuilder.default;
-  exports.DynamicComponentOptions = _glimmerRuntimeLibOpcodeBuilder.DynamicComponentOptions;
-  exports.StaticComponentOptions = _glimmerRuntimeLibOpcodeBuilder.StaticComponentOptions;
-  exports.OpcodeBuilderDSL = _glimmerRuntimeLibCompiledOpcodesBuilder.default;
-  exports.Block = _glimmerRuntimeLibCompiledBlocks.Block;
-  exports.BlockOptions = _glimmerRuntimeLibCompiledBlocks.BlockOptions;
-  exports.CompiledBlock = _glimmerRuntimeLibCompiledBlocks.CompiledBlock;
-  exports.Layout = _glimmerRuntimeLibCompiledBlocks.Layout;
-  exports.LayoutOptions = _glimmerRuntimeLibCompiledBlocks.LayoutOptions;
-  exports.InlineBlock = _glimmerRuntimeLibCompiledBlocks.InlineBlock;
-  exports.InlineBlockOptions = _glimmerRuntimeLibCompiledBlocks.InlineBlockOptions;
-  exports.EntryPoint = _glimmerRuntimeLibCompiledBlocks.EntryPoint;
-  exports.Opcode = _glimmerRuntimeLibOpcodes.Opcode;
-  exports.OpSeq = _glimmerRuntimeLibOpcodes.OpSeq;
-  exports.OpSeqBuilder = _glimmerRuntimeLibOpcodes.OpSeqBuilder;
-  exports.inspectOpcodes = _glimmerRuntimeLibOpcodes.inspect;
-  exports.PushChildScopeOpcode = _glimmerRuntimeLibCompiledOpcodesVm.PushChildScopeOpcode;
-  exports.PopScopeOpcode = _glimmerRuntimeLibCompiledOpcodesVm.PopScopeOpcode;
-  exports.PushDynamicScopeOpcode = _glimmerRuntimeLibCompiledOpcodesVm.PushDynamicScopeOpcode;
-  exports.PopDynamicScopeOpcode = _glimmerRuntimeLibCompiledOpcodesVm.PopDynamicScopeOpcode;
-  exports.PutValueOpcode = _glimmerRuntimeLibCompiledOpcodesVm.PutValueOpcode;
-  exports.PutNullOpcode = _glimmerRuntimeLibCompiledOpcodesVm.PutNullOpcode;
-  exports.PutArgsOpcode = _glimmerRuntimeLibCompiledOpcodesVm.PutArgsOpcode;
-  exports.LabelOpcode = _glimmerRuntimeLibCompiledOpcodesVm.LabelOpcode;
-  exports.EnterOpcode = _glimmerRuntimeLibCompiledOpcodesVm.EnterOpcode;
-  exports.ExitOpcode = _glimmerRuntimeLibCompiledOpcodesVm.ExitOpcode;
-  exports.EvaluateOpcode = _glimmerRuntimeLibCompiledOpcodesVm.EvaluateOpcode;
-  exports.TestOpcode = _glimmerRuntimeLibCompiledOpcodesVm.TestOpcode;
-  exports.JumpOpcode = _glimmerRuntimeLibCompiledOpcodesVm.JumpOpcode;
-  exports.JumpIfOpcode = _glimmerRuntimeLibCompiledOpcodesVm.JumpIfOpcode;
-  exports.JumpUnlessOpcode = _glimmerRuntimeLibCompiledOpcodesVm.JumpUnlessOpcode;
-  exports.BindNamedArgsOpcode = _glimmerRuntimeLibCompiledOpcodesVm.BindNamedArgsOpcode;
-  exports.BindDynamicScopeOpcode = _glimmerRuntimeLibCompiledOpcodesVm.BindDynamicScopeOpcode;
-  exports.OpenComponentOptions = _glimmerRuntimeLibCompiledOpcodesComponent.OpenComponentOptions;
-  exports.OpenComponentOpcode = _glimmerRuntimeLibCompiledOpcodesComponent.OpenComponentOpcode;
-  exports.CloseComponentOpcode = _glimmerRuntimeLibCompiledOpcodesComponent.CloseComponentOpcode;
-  exports.ShadowAttributesOpcode = _glimmerRuntimeLibCompiledOpcodesComponent.ShadowAttributesOpcode;
-  exports.OpenPrimitiveElementOpcode = _glimmerRuntimeLibCompiledOpcodesDom.OpenPrimitiveElementOpcode;
-  exports.CloseElementOpcode = _glimmerRuntimeLibCompiledOpcodesDom.CloseElementOpcode;
-  exports.IChangeList = _glimmerRuntimeLibDomChangeLists.IChangeList;
-  exports.AttributeChangeList = _glimmerRuntimeLibDomChangeLists.AttributeChangeList;
-  exports.PropertyChangeList = _glimmerRuntimeLibDomChangeLists.PropertyChangeList;
-  exports.SafeHrefAttributeChangeList = _glimmerRuntimeLibDomChangeLists.SafeHrefAttributeChangeList;
-  exports.SafeHrefPropertyChangeList = _glimmerRuntimeLibDomChangeLists.SafeHrefPropertyChangeList;
-  exports.InputValuePropertyChangeList = _glimmerRuntimeLibDomChangeLists.InputValuePropertyChangeList;
-  exports.defaultChangeLists = _glimmerRuntimeLibDomChangeLists.defaultChangeLists;
-  exports.defaultAttributeChangeLists = _glimmerRuntimeLibDomChangeLists.defaultAttributeChangeLists;
-  exports.defaultPropertyChangeLists = _glimmerRuntimeLibDomChangeLists.defaultPropertyChangeLists;
-  exports.readDOMAttr = _glimmerRuntimeLibDomChangeLists.readDOMAttr;
-  exports.normalizeTextValue = _glimmerRuntimeLibCompiledOpcodesContent.normalizeTextValue;
-  exports.CompiledExpression = _glimmerRuntimeLibCompiledExpressions.CompiledExpression;
-  exports.CompiledArgs = _glimmerRuntimeLibCompiledExpressionsArgs.CompiledArgs;
-  exports.CompiledNamedArgs = _glimmerRuntimeLibCompiledExpressionsArgs.CompiledNamedArgs;
-  exports.CompiledPositionalArgs = _glimmerRuntimeLibCompiledExpressionsArgs.CompiledPositionalArgs;
-  exports.EvaluatedArgs = _glimmerRuntimeLibCompiledExpressionsArgs.EvaluatedArgs;
-  exports.EvaluatedNamedArgs = _glimmerRuntimeLibCompiledExpressionsArgs.EvaluatedNamedArgs;
-  exports.EvaluatedPositionalArgs = _glimmerRuntimeLibCompiledExpressionsArgs.EvaluatedPositionalArgs;
-  exports.ValueReference = _glimmerRuntimeLibCompiledExpressionsValue.ValueReference;
-  exports.FunctionExpression = _glimmerRuntimeLibCompiledExpressionsFunction.FunctionExpression;
-  exports.EnterListOpcode = _glimmerRuntimeLibCompiledOpcodesLists.EnterListOpcode;
-  exports.ExitListOpcode = _glimmerRuntimeLibCompiledOpcodesLists.ExitListOpcode;
-  exports.EnterWithKeyOpcode = _glimmerRuntimeLibCompiledOpcodesLists.EnterWithKeyOpcode;
-  exports.NextIterOpcode = _glimmerRuntimeLibCompiledOpcodesLists.NextIterOpcode;
-  exports.VM = _glimmerRuntimeLibVm.PublicVM;
-  exports.UpdatingVM = _glimmerRuntimeLibVm.UpdatingVM;
-  exports.RenderResult = _glimmerRuntimeLibVm.RenderResult;
-  exports.SafeString = _glimmerRuntimeLibUpsert.SafeString;
-  exports.isSafeString = _glimmerRuntimeLibUpsert.isSafeString;
-  exports.Scope = _glimmerRuntimeLibEnvironment.Scope;
-  exports.Environment = _glimmerRuntimeLibEnvironment.default;
-  exports.Helper = _glimmerRuntimeLibEnvironment.Helper;
-  exports.ParsedStatement = _glimmerRuntimeLibEnvironment.ParsedStatement;
-  exports.DynamicScope = _glimmerRuntimeLibEnvironment.DynamicScope;
-  exports.PartialDefinition = _glimmerRuntimeLibPartial.PartialDefinition;
-  exports.Component = _glimmerRuntimeLibComponentInterfaces.Component;
-  exports.ComponentClass = _glimmerRuntimeLibComponentInterfaces.ComponentClass;
-  exports.ComponentManager = _glimmerRuntimeLibComponentInterfaces.ComponentManager;
-  exports.ComponentDefinition = _glimmerRuntimeLibComponentInterfaces.ComponentDefinition;
-  exports.ComponentLayoutBuilder = _glimmerRuntimeLibComponentInterfaces.ComponentLayoutBuilder;
-  exports.ComponentAttrsBuilder = _glimmerRuntimeLibComponentInterfaces.ComponentAttrsBuilder;
-  exports.ModifierManager = _glimmerRuntimeLibModifierInterfaces.ModifierManager;
-  exports.DOMHelper = _glimmerRuntimeLibDomHelper.default;
-  exports.IDOMHelper = _glimmerRuntimeLibDomHelper.DOMHelper;
-  exports.isWhitespace = _glimmerRuntimeLibDomHelper.isWhitespace;
-  exports.ElementStack = _glimmerRuntimeLibBuilder.ElementStack;
-  exports.ElementOperations = _glimmerRuntimeLibBuilder.ElementOperations;
-});
-
-enifed("glimmer-runtime/lib/bounds", ["exports"], function (exports) {
-    "use strict";
-
-    exports.bounds = bounds;
-    exports.single = single;
-    exports.move = move;
-    exports.clear = clear;
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var Cursor = function Cursor(element, nextSibling) {
-        _classCallCheck(this, Cursor);
-
-        this.element = element;
-        this.nextSibling = nextSibling;
-    };
-
-    exports.Cursor = Cursor;
-
-    var ConcreteBounds = (function () {
-        function ConcreteBounds(parent, first, last) {
-            _classCallCheck(this, ConcreteBounds);
-
-            this.parentNode = parent;
-            this.first = first;
-            this.last = last;
-        }
-
-        ConcreteBounds.prototype.parentElement = function parentElement() {
-            return this.parentNode;
-        };
-
-        ConcreteBounds.prototype.firstNode = function firstNode() {
-            return this.first;
-        };
-
-        ConcreteBounds.prototype.lastNode = function lastNode() {
-            return this.last;
-        };
-
-        return ConcreteBounds;
-    })();
-
-    exports.ConcreteBounds = ConcreteBounds;
-
-    var SingleNodeBounds = (function () {
-        function SingleNodeBounds(parentNode, node) {
-            _classCallCheck(this, SingleNodeBounds);
-
-            this.parentNode = parentNode;
-            this.node = node;
-        }
-
-        SingleNodeBounds.prototype.parentElement = function parentElement() {
-            return this.parentNode;
-        };
-
-        SingleNodeBounds.prototype.firstNode = function firstNode() {
-            return this.node;
-        };
-
-        SingleNodeBounds.prototype.lastNode = function lastNode() {
-            return this.node;
-        };
-
-        return SingleNodeBounds;
-    })();
-
-    exports.SingleNodeBounds = SingleNodeBounds;
-
-    function bounds(parent, first, last) {
-        return new ConcreteBounds(parent, first, last);
-    }
-
-    function single(parent, node) {
-        return new SingleNodeBounds(parent, node);
-    }
-
-    function move(bounds, reference) {
-        var parent = bounds.parentElement();
-        var first = bounds.firstNode();
-        var last = bounds.lastNode();
-        var node = first;
-        while (node) {
-            var next = node.nextSibling;
-            parent.insertBefore(node, reference);
-            if (node === last) return next;
-            node = next;
-        }
-        return null;
-    }
-
-    function clear(bounds) {
-        var parent = bounds.parentElement();
-        var first = bounds.firstNode();
-        var last = bounds.lastNode();
-        var node = first;
-        while (node) {
-            var next = node.nextSibling;
-            parent.removeChild(node);
-            if (node === last) return next;
-            node = next;
-        }
-        return null;
-    }
-});
-
-enifed('glimmer-runtime/lib/builder', ['exports', 'glimmer-runtime/lib/bounds', 'glimmer-util', 'glimmer-runtime/lib/compiled/opcodes/dom'], function (exports, _glimmerRuntimeLibBounds, _glimmerUtil, _glimmerRuntimeLibCompiledOpcodesDom) {
-    'use strict';
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var First = (function () {
-        function First(node) {
-            _classCallCheck(this, First);
-
-            this.node = node;
-        }
-
-        First.prototype.firstNode = function firstNode() {
-            return this.node;
-        };
-
-        return First;
-    })();
-
-    var Last = (function () {
-        function Last(node) {
-            _classCallCheck(this, Last);
-
-            this.node = node;
-        }
-
-        Last.prototype.lastNode = function lastNode() {
-            return this.node;
-        };
-
-        return Last;
-    })();
-
-    var BlockStackElement = function BlockStackElement() {
-        _classCallCheck(this, BlockStackElement);
-
-        this.firstNode = null;
-        this.lastNode = null;
-    };
-
-    var GroupedElementOperations = (function () {
-        function GroupedElementOperations(element, env) {
-            _classCallCheck(this, GroupedElementOperations);
-
-            this.env = env;
-            this.element = element;
-            var group = this.group = [];
-            this.groups = [group];
-        }
-
-        GroupedElementOperations.prototype.startGroup = function startGroup() {
-            var group = this.group = [];
-            this.groups.push(group);
-        };
-
-        GroupedElementOperations.prototype.addAttribute = function addAttribute(name, reference, isTrusting) {
-            var attributeManager = this.env.attributeFor(this.element, name, reference, isTrusting);
-            var attribute = new _glimmerRuntimeLibCompiledOpcodesDom.Attribute(this.element, attributeManager, name, reference);
-            this.group.push(attribute);
-        };
-
-        GroupedElementOperations.prototype.addAttributeNS = function addAttributeNS(namespace, name, reference, isTrusting) {
-            var attributeManager = this.env.attributeFor(this.element, name, reference, isTrusting, namespace);
-            var nsAttribute = new _glimmerRuntimeLibCompiledOpcodesDom.Attribute(this.element, attributeManager, name, reference, namespace);
-            this.group.push(nsAttribute);
-        };
-
-        return GroupedElementOperations;
-    })();
-
-    var Fragment = (function () {
-        function Fragment(bounds) {
-            _classCallCheck(this, Fragment);
-
-            this.bounds = bounds;
-        }
-
-        Fragment.prototype.parentElement = function parentElement() {
-            return this.bounds.parentElement();
-        };
-
-        Fragment.prototype.firstNode = function firstNode() {
-            return this.bounds.firstNode();
-        };
-
-        Fragment.prototype.lastNode = function lastNode() {
-            return this.bounds.lastNode();
-        };
-
-        Fragment.prototype.update = function update(bounds) {
-            this.bounds = bounds;
-        };
-
-        return Fragment;
-    })();
-
-    exports.Fragment = Fragment;
-
-    var ElementStack = (function () {
-        function ElementStack(env, parentNode, nextSibling) {
-            _classCallCheck(this, ElementStack);
-
-            this.elementOperations = null;
-            this.elementStack = new _glimmerUtil.Stack();
-            this.nextSiblingStack = new _glimmerUtil.Stack();
-            this.elementOperationsStack = new _glimmerUtil.Stack();
-            this.blockStack = new _glimmerUtil.Stack();
-            this.env = env;
-            this.dom = env.getDOM();
-            this.element = parentNode;
-            this.nextSibling = nextSibling;
-            this.elementStack.push(this.element);
-            this.nextSiblingStack.push(this.nextSibling);
-        }
-
-        ElementStack.forInitialRender = function forInitialRender(env, parentNode, nextSibling) {
-            return new ElementStack(env, parentNode, nextSibling);
-        };
-
-        ElementStack.resume = function resume(env, tracker, nextSibling) {
-            var parentNode = tracker.parentElement();
-            var stack = new ElementStack(env, parentNode, nextSibling);
-            stack.pushBlockTracker(tracker);
-            return stack;
-        };
-
-        ElementStack.prototype.block = function block() {
-            return this.blockStack.current;
-        };
-
-        ElementStack.prototype.pushElement = function pushElement(tag) {
-            var element = this.dom.createElement(tag, this.element);
-            var elementOperations = new GroupedElementOperations(element, this.env);
-            this.elementOperations = elementOperations;
-            this.element = element;
-            this.nextSibling = null;
-            this.elementStack.push(element);
-            this.elementOperationsStack.push(elementOperations);
-            this.nextSiblingStack.push(null);
-            return element;
-        };
-
-        ElementStack.prototype.popElement = function popElement() {
-            var elementStack = this.elementStack;
-            var nextSiblingStack = this.nextSiblingStack;
-            var elementOperationsStack = this.elementOperationsStack;
-
-            var topElement = elementStack.pop();
-            nextSiblingStack.pop();
-            elementOperationsStack.pop();
-            this.element = elementStack.current;
-            this.nextSibling = nextSiblingStack.current;
-            this.elementOperations = elementOperationsStack.current;
-            return topElement;
-        };
-
-        ElementStack.prototype.pushBlock = function pushBlock() {
-            var tracker = new BlockTracker(this.element);
-            this.pushBlockTracker(tracker);
-            return tracker;
-        };
-
-        ElementStack.prototype.pushBlockTracker = function pushBlockTracker(tracker) {
-            var current = this.blockStack.current;
-            if (current !== null) {
-                current.newDestroyable(tracker);
-                current.newBounds(tracker);
-            }
-            this.blockStack.push(tracker);
-            return tracker;
-        };
-
-        ElementStack.prototype.pushBlockList = function pushBlockList(list) {
-            var tracker = new BlockListTracker(this.element, list);
-            var current = this.blockStack.current;
-            if (current !== null) {
-                current.newDestroyable(tracker);
-                current.newBounds(tracker);
-            }
-            this.blockStack.push(tracker);
-            return tracker;
-        };
-
-        ElementStack.prototype.popBlock = function popBlock() {
-            this.blockStack.current.finalize(this);
-            return this.blockStack.pop();
-        };
-
-        ElementStack.prototype.openElement = function openElement(tag) {
-            var element = this.pushElement(tag);
-            this.blockStack.current.openElement(element);
-            return element;
-        };
-
-        ElementStack.prototype.newDestroyable = function newDestroyable(d) {
-            this.blockStack.current.newDestroyable(d);
-        };
-
-        ElementStack.prototype.newBounds = function newBounds(bounds) {
-            this.blockStack.current.newBounds(bounds);
-        };
-
-        ElementStack.prototype.appendText = function appendText(string) {
-            var dom = this.dom;
-
-            var text = dom.createTextNode(string);
-            dom.insertBefore(this.element, text, this.nextSibling);
-            this.blockStack.current.newNode(text);
-            return text;
-        };
-
-        ElementStack.prototype.appendComment = function appendComment(string) {
-            var dom = this.dom;
-
-            var comment = dom.createComment(string);
-            dom.insertBefore(this.element, comment, this.nextSibling);
-            this.blockStack.current.newNode(comment);
-            return comment;
-        };
-
-        ElementStack.prototype.setAttribute = function setAttribute(name, reference, isTrusting) {
-            this.elementOperations.addAttribute(name, reference, isTrusting);
-        };
-
-        ElementStack.prototype.setAttributeNS = function setAttributeNS(namespace, name, reference, isTrusting) {
-            this.elementOperations.addAttributeNS(namespace, name, reference, isTrusting);
-        };
-
-        ElementStack.prototype.closeElement = function closeElement() {
-            this.blockStack.current.closeElement();
-            var child = this.popElement();
-            this.dom.insertBefore(this.element, child, this.nextSibling);
-        };
-
-        return ElementStack;
-    })();
-
-    exports.ElementStack = ElementStack;
-
-    var BlockTracker = (function () {
-        function BlockTracker(parent) {
-            _classCallCheck(this, BlockTracker);
-
-            this.first = null;
-            this.last = null;
-            this.destroyables = null;
-            this.nesting = 0;
-            this.parent = parent;
-        }
-
-        BlockTracker.prototype.destroy = function destroy() {
-            var destroyables = this.destroyables;
-
-            if (destroyables && destroyables.length) {
-                for (var i = 0; i < destroyables.length; i++) {
-                    destroyables[i].destroy();
-                }
-            }
-        };
-
-        BlockTracker.prototype.parentElement = function parentElement() {
-            return this.parent;
-        };
-
-        BlockTracker.prototype.firstNode = function firstNode() {
-            return this.first && this.first.firstNode();
-        };
-
-        BlockTracker.prototype.lastNode = function lastNode() {
-            return this.last && this.last.lastNode();
-        };
-
-        BlockTracker.prototype.openElement = function openElement(element) {
-            this.newNode(element);
-            this.nesting++;
-        };
-
-        BlockTracker.prototype.closeElement = function closeElement() {
-            this.nesting--;
-        };
-
-        BlockTracker.prototype.newNode = function newNode(node) {
-            if (this.nesting !== 0) return;
-            if (!this.first) {
-                this.first = new First(node);
-            }
-            this.last = new Last(node);
-        };
-
-        BlockTracker.prototype.newBounds = function newBounds(bounds) {
-            if (this.nesting !== 0) return;
-            if (!this.first) {
-                this.first = bounds;
-            }
-            this.last = bounds;
-        };
-
-        BlockTracker.prototype.newDestroyable = function newDestroyable(d) {
-            this.destroyables = this.destroyables || [];
-            this.destroyables.push(d);
-        };
-
-        BlockTracker.prototype.finalize = function finalize(stack) {
-            if (!this.first) {
-                stack.appendComment('');
-            }
-        };
-
-        BlockTracker.prototype.reset = function reset(env) {
-            var destroyables = this.destroyables;
-
-            if (destroyables && destroyables.length) {
-                for (var i = 0; i < destroyables.length; i++) {
-                    env.didDestroy(destroyables[i]);
-                }
-            }
-            var nextSibling = _glimmerRuntimeLibBounds.clear(this);
-            this.destroyables = null;
-            this.first = null;
-            this.last = null;
-            return nextSibling;
-        };
-
-        return BlockTracker;
-    })();
-
-    exports.BlockTracker = BlockTracker;
-
-    var BlockListTracker = (function () {
-        function BlockListTracker(parent, boundList) {
-            _classCallCheck(this, BlockListTracker);
-
-            this.parent = parent;
-            this.boundList = boundList;
-        }
-
-        BlockListTracker.prototype.destroy = function destroy() {
-            this.boundList.forEachNode(function (node) {
-                return node.destroy();
-            });
-        };
-
-        BlockListTracker.prototype.parentElement = function parentElement() {
-            return this.parent;
-        };
-
-        BlockListTracker.prototype.firstNode = function firstNode() {
-            return this.boundList.head().firstNode();
-        };
-
-        BlockListTracker.prototype.lastNode = function lastNode() {
-            return this.boundList.tail().lastNode();
-        };
-
-        BlockListTracker.prototype.openElement = function openElement(element) {
-            _glimmerUtil.assert(false, 'Cannot openElement directly inside a block list');
-        };
-
-        BlockListTracker.prototype.closeElement = function closeElement() {
-            _glimmerUtil.assert(false, 'Cannot closeElement directly inside a block list');
-        };
-
-        BlockListTracker.prototype.newNode = function newNode(node) {
-            _glimmerUtil.assert(false, 'Cannot create a new node directly inside a block list');
-        };
-
-        BlockListTracker.prototype.newBounds = function newBounds(bounds) {};
-
-        BlockListTracker.prototype.newDestroyable = function newDestroyable(d) {};
-
-        BlockListTracker.prototype.finalize = function finalize(stack) {};
-
-        BlockListTracker.prototype.reset = function reset() {};
-
-        return BlockListTracker;
-    })();
-});
-
-enifed('glimmer-runtime/lib/compat/inner-html-fix', ['exports', 'glimmer-runtime/lib/bounds', 'glimmer-runtime/lib/dom/helper'], function (exports, _glimmerRuntimeLibBounds, _glimmerRuntimeLibDomHelper) {
-    'use strict';
-
-    exports.default = applyInnerHTMLFix;
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    // Patch:    innerHTML Fix
-    // Browsers: IE9
-    // Reason:   IE9 don't allow us to set innerHTML on col, colgroup, frameset,
-    //           html, style, table, tbody, tfoot, thead, title, tr.
-    // Fix:      Wrap the innerHTML we are about to set in its parents, apply the
-    //           wrapped innerHTML on a div, then move the unwrapped nodes into the
-    //           target position.
-
-    function applyInnerHTMLFix(document, DOMHelperClass) {
-        if (!document) return DOMHelperClass;
-        var table = document.createElement('table');
-        try {
-            table.innerHTML = '<tbody></tbody>';
-        } catch (e) {} finally {
-            if (table.childNodes.length !== 0) {
-                // It worked as expected, no fix required
-                return DOMHelperClass;
-            }
-        }
-        table = null;
-        var innerHTMLWrapper = {
-            colgroup: { depth: 2, before: '<table><colgroup>', after: '</colgroup></table>' },
-            table: { depth: 1, before: '<table>', after: '</table>' },
-            tbody: { depth: 2, before: '<table><tbody>', after: '</tbody></table>' },
-            tfoot: { depth: 2, before: '<table><tfoot>', after: '</tfoot></table>' },
-            thead: { depth: 2, before: '<table><thead>', after: '</thead></table>' },
-            tr: { depth: 3, before: '<table><tbody><tr>', after: '</tr></tbody></table>' }
-        };
-        var div = document.createElement('div');
-        return (function (_DOMHelperClass) {
-            _inherits(DOMHelperWithInnerHTMLFix, _DOMHelperClass);
-
-            function DOMHelperWithInnerHTMLFix() {
-                _classCallCheck(this, DOMHelperWithInnerHTMLFix);
-
-                _DOMHelperClass.apply(this, arguments);
-            }
-
-            DOMHelperWithInnerHTMLFix.prototype.insertHTMLBefore = function insertHTMLBefore(parent, nextSibling, html) {
-                if (html === null || html === '') {
-                    return _DOMHelperClass.prototype.insertHTMLBefore.call(this, parent, nextSibling, html);
-                }
-                var parentTag = parent.tagName.toLowerCase();
-                var wrapper = innerHTMLWrapper[parentTag];
-                if (wrapper === undefined) {
-                    return _DOMHelperClass.prototype.insertHTMLBefore.call(this, parent, nextSibling, html);
-                }
-                var wrappedHtml = wrapper.before + html + wrapper.after;
-                div.innerHTML = wrappedHtml;
-                var parentNode = div;
-                for (var i = 0; i < wrapper.depth; i++) {
-                    parentNode = parentNode.childNodes[0];
-                }
-
-                var _moveNodesBefore = _glimmerRuntimeLibDomHelper.moveNodesBefore(parentNode, parent, nextSibling);
-
-                var first = _moveNodesBefore[0];
-                var last = _moveNodesBefore[1];
-
-                return new _glimmerRuntimeLibBounds.ConcreteBounds(parent, first, last);
-            };
-
-            return DOMHelperWithInnerHTMLFix;
-        })(DOMHelperClass);
-    }
-});
-
-enifed('glimmer-runtime/lib/compat/svg-inner-html-fix', ['exports', 'glimmer-runtime/lib/bounds', 'glimmer-runtime/lib/dom/helper'], function (exports, _glimmerRuntimeLibBounds, _glimmerRuntimeLibDomHelper) {
-    'use strict';
-
-    exports.default = applyInnerHTMLFix;
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
-    // Patch:    insertAdjacentHTML on SVG Fix
-    // Browsers: Safari, IE, Edge, Firefox ~33-34
-    // Reason:   insertAdjacentHTML does not exist on SVG elements in Safari. It is
-    //           present but throws an exception on IE and Edge. Old versions of
-    //           Firefox create nodes in the incorrect namespace.
-    // Fix:      Since IE and Edge silently fail to create SVG nodes using
-    //           innerHTML, and because Firefox may create nodes in the incorrect
-    //           namespace using innerHTML on SVG elements, an HTML-string wrapping
-    //           approach is used. A pre/post SVG tag is added to the string, then
-    //           that whole string is added to a div. The created nodes are plucked
-    //           out and applied to the target location on DOM.
-
-    function applyInnerHTMLFix(document, DOMHelperClass, svgNamespace) {
-        if (!document) return DOMHelperClass;
-        var svg = document.createElementNS(svgNamespace, 'svg');
-        try {
-            svg['insertAdjacentHTML']('beforeEnd', '<circle></circle>');
-        } catch (e) {} finally {
-            // FF: Old versions will create a node in the wrong namespace
-            if (svg.childNodes.length === 1 && svg.firstChild.namespaceURI === SVG_NAMESPACE) {
-                // The test worked as expected, no fix required
-                return DOMHelperClass;
-            }
-            svg = null;
-        }
-        var div = document.createElement('div');
-        return (function (_DOMHelperClass) {
-            _inherits(DOMHelperWithSVGInnerHTMLFix, _DOMHelperClass);
-
-            function DOMHelperWithSVGInnerHTMLFix() {
-                _classCallCheck(this, DOMHelperWithSVGInnerHTMLFix);
-
-                _DOMHelperClass.apply(this, arguments);
-            }
-
-            DOMHelperWithSVGInnerHTMLFix.prototype.insertHTMLBefore = function insertHTMLBefore(parent, nextSibling, html) {
-                if (html === null || html === '') {
-                    return _DOMHelperClass.prototype.insertHTMLBefore.call(this, parent, nextSibling, html);
-                }
-                if (parent.namespaceURI !== svgNamespace) {
-                    return _DOMHelperClass.prototype.insertHTMLBefore.call(this, parent, nextSibling, html);
-                }
-                // IE, Edge: also do not correctly support using `innerHTML` on SVG
-                // namespaced elements. So here a wrapper is used.
-                var wrappedHtml = '<svg>' + html + '</svg>';
-                div.innerHTML = wrappedHtml;
-
-                var _moveNodesBefore = _glimmerRuntimeLibDomHelper.moveNodesBefore(div.firstChild, parent, nextSibling);
-
-                var first = _moveNodesBefore[0];
-                var last = _moveNodesBefore[1];
-
-                return new _glimmerRuntimeLibBounds.ConcreteBounds(parent, first, last);
-            };
-
-            return DOMHelperWithSVGInnerHTMLFix;
-        })(DOMHelperClass);
-    }
-});
-
-enifed('glimmer-runtime/lib/compat/text-node-merging-fix', ['exports'], function (exports) {
-    // Patch:    Adjacent text node merging fix
-    // Browsers: IE, Edge, Firefox w/o inspector open
-    // Reason:   These browsers will merge adjacent text nodes. For exmaple given
-    //           <div>Hello</div> with div.insertAdjacentHTML(' world') browsers
-    //           with proper behavior will populate div.childNodes with two items.
-    //           These browsers will populate it with one merged node instead.
-    // Fix:      Add these nodes to a wrapper element, then iterate the childNodes
-    //           of that wrapper and move the nodes to their target location. Note
-    //           that potential SVG bugs will have been handled before this fix.
-    //           Note that this fix must only apply to the previous text node, as
-    //           the base implementation of `insertHTMLBefore` already handles
-    //           following text nodes correctly.
-    'use strict';
-
-    exports.default = applyTextNodeMergingFix;
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function applyTextNodeMergingFix(document, DOMHelperClass) {
-        if (!document) return DOMHelperClass;
-        var mergingTextDiv = document.createElement('div');
-        mergingTextDiv.innerHTML = 'first';
-        mergingTextDiv.insertAdjacentHTML('beforeEnd', 'second');
-        if (mergingTextDiv.childNodes.length === 2) {
-            // It worked as expected, no fix required
-            return DOMHelperClass;
-        }
-        mergingTextDiv = null;
-        return (function (_DOMHelperClass) {
-            _inherits(DOMHelperWithTextNodeMergingFix, _DOMHelperClass);
-
-            function DOMHelperWithTextNodeMergingFix(document) {
-                _classCallCheck(this, DOMHelperWithTextNodeMergingFix);
-
-                _DOMHelperClass.call(this, document);
-                this.uselessComment = this.createComment('');
-            }
-
-            DOMHelperWithTextNodeMergingFix.prototype.insertHTMLBefore = function insertHTMLBefore(parent, nextSibling, html) {
-                if (html === null) {
-                    return _DOMHelperClass.prototype.insertHTMLBefore.call(this, parent, nextSibling, html);
-                }
-                var didSetUselessComment = false;
-                var nextPrevious = nextSibling ? nextSibling.previousSibling : parent.lastChild;
-                if (nextPrevious && nextPrevious instanceof Text) {
-                    didSetUselessComment = true;
-                    parent.insertBefore(this.uselessComment, nextSibling);
-                }
-                var bounds = _DOMHelperClass.prototype.insertHTMLBefore.call(this, parent, nextSibling, html);
-                if (didSetUselessComment) {
-                    parent.removeChild(this.uselessComment);
-                }
-                return bounds;
-            };
-
-            return DOMHelperWithTextNodeMergingFix;
-        })(DOMHelperClass);
-    }
-});
-
-enifed('glimmer-runtime/lib/compiled/blocks', ['exports', 'glimmer-runtime/lib/symbol-table', 'glimmer-runtime/lib/compiler'], function (exports, _glimmerRuntimeLibSymbolTable, _glimmerRuntimeLibCompiler) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var CompiledBlock = function CompiledBlock(ops, symbols) {
-        _classCallCheck(this, CompiledBlock);
-
-        this.ops = ops;
-        this.symbols = symbols;
-    };
-
-    exports.CompiledBlock = CompiledBlock;
-
-    var Block = function Block(options) {
-        _classCallCheck(this, Block);
-
-        this.compiled = null;
-        this.symbolTable = options.symbolTable || null;
-        this.children = options.children;
-        this.program = options.program;
-        this.meta = options.meta;
-    };
-
-    exports.Block = Block;
-
-    var InlineBlock = (function (_Block) {
-        _inherits(InlineBlock, _Block);
-
-        function InlineBlock(options) {
-            _classCallCheck(this, InlineBlock);
-
-            _Block.call(this, options);
-            this.locals = options.locals;
-        }
-
-        InlineBlock.prototype.hasPositionalParameters = function hasPositionalParameters() {
-            return !!this.locals.length;
-        };
-
-        InlineBlock.prototype.compile = function compile(env) {
-            var compiled = this.compiled;
-            if (compiled) return compiled;
-            var ops = new _glimmerRuntimeLibCompiler.InlineBlockCompiler(this, env).compile();
-            return this.compiled = new CompiledBlock(ops, this.symbolTable.size);
-        };
-
-        return InlineBlock;
-    })(Block);
-
-    exports.InlineBlock = InlineBlock;
-
-    var PartialBlock = (function (_InlineBlock) {
-        _inherits(PartialBlock, _InlineBlock);
-
-        function PartialBlock() {
-            _classCallCheck(this, PartialBlock);
-
-            _InlineBlock.apply(this, arguments);
-        }
-
-        PartialBlock.prototype.initBlocks = function initBlocks() {
-            var _this = this;
-
-            var blocks = arguments.length <= 0 || arguments[0] === undefined ? this['children'] : arguments[0];
-            var parentTable = arguments.length <= 1 || arguments[1] === undefined ? this['symbolTable'] : arguments[1];
-
-            blocks.forEach(function (block) {
-                var table = _glimmerRuntimeLibSymbolTable.default.initForBlock({ parent: parentTable, block: block });
-                _this.initBlocks(block['children'], table);
-            });
-            return this;
-        };
-
-        return PartialBlock;
-    })(InlineBlock);
-
-    exports.PartialBlock = PartialBlock;
-
-    var TopLevelTemplate = (function (_Block2) {
-        _inherits(TopLevelTemplate, _Block2);
-
-        function TopLevelTemplate() {
-            _classCallCheck(this, TopLevelTemplate);
-
-            _Block2.apply(this, arguments);
-        }
-
-        TopLevelTemplate.prototype.initBlocks = function initBlocks() {
-            var _this2 = this;
-
-            var blocks = arguments.length <= 0 || arguments[0] === undefined ? this['children'] : arguments[0];
-            var parentTable = arguments.length <= 1 || arguments[1] === undefined ? this['symbolTable'] : arguments[1];
-
-            blocks.forEach(function (block) {
-                var table = _glimmerRuntimeLibSymbolTable.default.initForBlock({ parent: parentTable, block: block });
-                _this2.initBlocks(block['children'], table);
-            });
-            return this;
-        };
-
-        return TopLevelTemplate;
-    })(Block);
-
-    exports.TopLevelTemplate = TopLevelTemplate;
-
-    var EntryPoint = (function (_TopLevelTemplate) {
-        _inherits(EntryPoint, _TopLevelTemplate);
-
-        function EntryPoint() {
-            _classCallCheck(this, EntryPoint);
-
-            _TopLevelTemplate.apply(this, arguments);
-        }
-
-        EntryPoint.create = function create(options) {
-            var top = new EntryPoint(options);
-            _glimmerRuntimeLibSymbolTable.default.initForEntryPoint(top);
-            return top;
-        };
-
-        EntryPoint.prototype.compile = function compile(env) {
-            var compiled = this.compiled;
-            if (compiled) return compiled;
-            var ops = new _glimmerRuntimeLibCompiler.EntryPointCompiler(this, env).compile();
-            return this.compiled = new CompiledBlock(ops, this.symbolTable.size);
-        };
-
-        return EntryPoint;
-    })(TopLevelTemplate);
-
-    exports.EntryPoint = EntryPoint;
-
-    var Layout = (function (_TopLevelTemplate2) {
-        _inherits(Layout, _TopLevelTemplate2);
-
-        function Layout(options) {
-            _classCallCheck(this, Layout);
-
-            _TopLevelTemplate2.call(this, options);
-            var named = options.named;
-            var yields = options.yields;
-
-            // positional params in Ember may want this
-            // this.locals = locals;
-            this.named = named;
-            this.yields = yields;
-        }
-
-        Layout.create = function create(options) {
-            var layout = new Layout(options);
-            _glimmerRuntimeLibSymbolTable.default.initForLayout(layout);
-            return layout;
-        };
-
-        Layout.prototype.hasNamedParameters = function hasNamedParameters() {
-            return !!this.named.length;
-        };
-
-        Layout.prototype.hasYields = function hasYields() {
-            return !!this.yields.length;
-        };
-
-        return Layout;
-    })(TopLevelTemplate);
-
-    exports.Layout = Layout;
-});
-
-enifed("glimmer-runtime/lib/compiled/expressions", ["exports"], function (exports) {
-    "use strict";
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var CompiledExpression = (function () {
-        function CompiledExpression() {
-            _classCallCheck(this, CompiledExpression);
-        }
-
-        CompiledExpression.prototype.toJSON = function toJSON() {
-            return "UNIMPL: " + this.type.toUpperCase();
-        };
-
-        return CompiledExpression;
-    })();
-
-    exports.CompiledExpression = CompiledExpression;
-});
-
-enifed('glimmer-runtime/lib/compiled/expressions/args', ['exports', 'glimmer-runtime/lib/compiled/expressions/positional-args', 'glimmer-runtime/lib/compiled/expressions/named-args', 'glimmer-reference', 'glimmer-util'], function (exports, _glimmerRuntimeLibCompiledExpressionsPositionalArgs, _glimmerRuntimeLibCompiledExpressionsNamedArgs, _glimmerReference, _glimmerUtil) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var CompiledArgs = (function () {
-        function CompiledArgs() {
-            _classCallCheck(this, CompiledArgs);
-        }
-
-        CompiledArgs.create = function create(_ref) {
-            var positional = _ref.positional;
-            var named = _ref.named;
-
-            if (positional === _glimmerRuntimeLibCompiledExpressionsPositionalArgs.COMPILED_EMPTY_POSITIONAL_ARGS && named === _glimmerRuntimeLibCompiledExpressionsNamedArgs.COMPILED_EMPTY_NAMED_ARGS) {
-                return COMPILED_EMPTY_ARGS;
-            } else {
-                return new CompiledNonEmptyArgs({ positional: positional, named: named });
-            }
-        };
-
-        CompiledArgs.empty = function empty() {
-            return COMPILED_EMPTY_ARGS;
-        };
-
-        return CompiledArgs;
-    })();
-
-    exports.CompiledArgs = CompiledArgs;
-
-    var CompiledNonEmptyArgs = (function (_CompiledArgs) {
-        _inherits(CompiledNonEmptyArgs, _CompiledArgs);
-
-        function CompiledNonEmptyArgs(_ref2) {
-            var positional = _ref2.positional;
-            var named = _ref2.named;
-
-            _classCallCheck(this, CompiledNonEmptyArgs);
-
-            _CompiledArgs.call(this);
-            this.type = "args";
-            this.positional = positional;
-            this.named = named;
-        }
-
-        CompiledNonEmptyArgs.prototype.evaluate = function evaluate(vm) {
-            return EvaluatedArgs.create({
-                positional: this.positional.evaluate(vm),
-                named: this.named.evaluate(vm)
-            });
-        };
-
-        return CompiledNonEmptyArgs;
-    })(CompiledArgs);
-
-    var COMPILED_EMPTY_ARGS = new ((function (_CompiledArgs2) {
-        _inherits(_class, _CompiledArgs2);
-
-        function _class() {
-            _classCallCheck(this, _class);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _CompiledArgs2.call.apply(_CompiledArgs2, [this].concat(args));
-            this.type = "empty-args";
-        }
-
-        _class.prototype.evaluate = function evaluate(vm) {
-            return EvaluatedArgs.empty();
-        };
-
-        return _class;
-    })(CompiledArgs))();
-    exports.COMPILED_EMPTY_ARGS = COMPILED_EMPTY_ARGS;
-
-    var EvaluatedArgs = (function () {
-        function EvaluatedArgs() {
-            _classCallCheck(this, EvaluatedArgs);
-        }
-
-        EvaluatedArgs.empty = function empty() {
-            return EMPTY_EVALUATED_ARGS;
-        };
-
-        EvaluatedArgs.create = function create(options) {
-            return new NonEmptyEvaluatedArgs(options);
-        };
-
-        EvaluatedArgs.positional = function positional(values) {
-            return new NonEmptyEvaluatedArgs({ positional: _glimmerRuntimeLibCompiledExpressionsPositionalArgs.EvaluatedPositionalArgs.create({ values: values }), named: _glimmerRuntimeLibCompiledExpressionsNamedArgs.EvaluatedNamedArgs.empty() });
-        };
-
-        EvaluatedArgs.prototype.withInternal = function withInternal() {
-            if (!this.internal) {
-                this.internal = _glimmerUtil.dict();
-            }
-            return this;
-        };
-
-        return EvaluatedArgs;
-    })();
-
-    exports.EvaluatedArgs = EvaluatedArgs;
-
-    var NonEmptyEvaluatedArgs = (function (_EvaluatedArgs) {
-        _inherits(NonEmptyEvaluatedArgs, _EvaluatedArgs);
-
-        function NonEmptyEvaluatedArgs(_ref3) {
-            var positional = _ref3.positional;
-            var named = _ref3.named;
-
-            _classCallCheck(this, NonEmptyEvaluatedArgs);
-
-            _EvaluatedArgs.call(this);
-            this.tag = _glimmerReference.combine([positional.tag, named.tag]);
-            this.positional = positional;
-            this.named = named;
-            this.internal = null;
-        }
-
-        return NonEmptyEvaluatedArgs;
-    })(EvaluatedArgs);
-
-    var EMPTY_EVALUATED_ARGS = new ((function (_EvaluatedArgs2) {
-        _inherits(_class2, _EvaluatedArgs2);
-
-        function _class2() {
-            _classCallCheck(this, _class2);
-
-            for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                args[_key2] = arguments[_key2];
-            }
-
-            _EvaluatedArgs2.call.apply(_EvaluatedArgs2, [this].concat(args));
-            this.tag = _glimmerReference.CONSTANT_TAG;
-            this.positional = _glimmerRuntimeLibCompiledExpressionsPositionalArgs.EVALUATED_EMPTY_POSITIONAL_ARGS;
-            this.named = _glimmerRuntimeLibCompiledExpressionsNamedArgs.EVALUATED_EMPTY_NAMED_ARGS;
-            this.internal = null;
-        }
-
-        _class2.prototype.withInternal = function withInternal() {
-            var args = new NonEmptyEvaluatedArgs(this);
-            args.internal = _glimmerUtil.dict();
-            return args;
-        };
-
-        return _class2;
-    })(EvaluatedArgs))();
-    exports.EMPTY_EVALUATED_ARGS = EMPTY_EVALUATED_ARGS;
-    exports.CompiledPositionalArgs = _glimmerRuntimeLibCompiledExpressionsPositionalArgs.CompiledPositionalArgs;
-    exports.EvaluatedPositionalArgs = _glimmerRuntimeLibCompiledExpressionsPositionalArgs.EvaluatedPositionalArgs;
-    exports.CompiledNamedArgs = _glimmerRuntimeLibCompiledExpressionsNamedArgs.CompiledNamedArgs;
-    exports.EvaluatedNamedArgs = _glimmerRuntimeLibCompiledExpressionsNamedArgs.EvaluatedNamedArgs;
-});
-
-enifed('glimmer-runtime/lib/compiled/expressions/concat', ['exports', 'glimmer-runtime/lib/compiled/opcodes/content', 'glimmer-reference'], function (exports, _glimmerRuntimeLibCompiledOpcodesContent, _glimmerReference) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var CompiledConcat = (function () {
-        function CompiledConcat(_ref) {
-            var parts = _ref.parts;
-
-            _classCallCheck(this, CompiledConcat);
-
-            this.type = "concat";
-            this.parts = parts;
-        }
-
-        CompiledConcat.prototype.evaluate = function evaluate(vm) {
-            var parts = new Array(this.parts.length);
-            for (var i = 0; i < this.parts.length; i++) {
-                parts[i] = this.parts[i].evaluate(vm);
-            }
-            return new ConcatReference(parts);
-        };
-
-        CompiledConcat.prototype.toJSON = function toJSON() {
-            return 'concat(' + this.parts.map(function (expr) {
-                return expr.toJSON();
-            }).join(", ") + ')';
-        };
-
-        return CompiledConcat;
-    })();
-
-    exports.default = CompiledConcat;
-
-    var ConcatReference = (function (_CachedReference) {
-        _inherits(ConcatReference, _CachedReference);
-
-        function ConcatReference(parts) {
-            _classCallCheck(this, ConcatReference);
-
-            _CachedReference.call(this);
-            this.tag = _glimmerReference.combineTagged(parts);
-            this.parts = parts;
-        }
-
-        ConcatReference.prototype.compute = function compute() {
-            var parts = new Array(this.parts.length);
-            for (var i = 0; i < this.parts.length; i++) {
-                parts[i] = _glimmerRuntimeLibCompiledOpcodesContent.normalizeTextValue(this.parts[i].value());
-            }
-            return parts.join('');
-        };
-
-        return ConcatReference;
-    })(_glimmerReference.CachedReference);
-});
-
-enifed('glimmer-runtime/lib/compiled/expressions/function', ['exports', 'glimmer-runtime/lib/syntax', 'glimmer-runtime/lib/compiled/expressions'], function (exports, _glimmerRuntimeLibSyntax, _glimmerRuntimeLibCompiledExpressions) {
-    'use strict';
-
-    exports.default = make;
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function make(func) {
-        return new FunctionExpressionSyntax(func);
-    }
-
-    var FunctionExpressionSyntax = (function (_ExpressionSyntax) {
-        _inherits(FunctionExpressionSyntax, _ExpressionSyntax);
-
-        function FunctionExpressionSyntax(func) {
-            _classCallCheck(this, FunctionExpressionSyntax);
-
-            _ExpressionSyntax.call(this);
-            this.type = "function-expression";
-            this.func = func;
-        }
-
-        FunctionExpressionSyntax.prototype.compile = function compile() {
-            return new CompiledFunctionExpression(this.func);
-        };
-
-        return FunctionExpressionSyntax;
-    })(_glimmerRuntimeLibSyntax.Expression);
-
-    var CompiledFunctionExpression = (function (_CompiledExpression) {
-        _inherits(CompiledFunctionExpression, _CompiledExpression);
-
-        function CompiledFunctionExpression(func) {
-            _classCallCheck(this, CompiledFunctionExpression);
-
-            _CompiledExpression.call(this);
-            this.type = "function";
-            this.func = func;
-        }
-
-        CompiledFunctionExpression.prototype.evaluate = function evaluate(vm) {
-            var func = this.func;
-
-            return func(vm);
-        };
-
-        CompiledFunctionExpression.prototype.toJSON = function toJSON() {
-            var func = this.func;
-
-            if (func.name) {
-                return '`' + func.name + '(...)`';
-            } else {
-                return "`func(...)`";
-            }
-        };
-
-        return CompiledFunctionExpression;
-    })(_glimmerRuntimeLibCompiledExpressions.CompiledExpression);
-});
-
-enifed('glimmer-runtime/lib/compiled/expressions/has-block-params', ['exports', 'glimmer-runtime/lib/compiled/expressions', 'glimmer-runtime/lib/compiled/expressions/value'], function (exports, _glimmerRuntimeLibCompiledExpressions, _glimmerRuntimeLibCompiledExpressionsValue) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var CompiledHasBlockParams = (function (_CompiledExpression) {
-        _inherits(CompiledHasBlockParams, _CompiledExpression);
-
-        function CompiledHasBlockParams(_ref) {
-            var blockName = _ref.blockName;
-            var blockSymbol = _ref.blockSymbol;
-
-            _classCallCheck(this, CompiledHasBlockParams);
-
-            _CompiledExpression.call(this);
-            this.type = "has-block-params";
-            this.blockName = blockName;
-            this.blockSymbol = blockSymbol;
-        }
-
-        CompiledHasBlockParams.prototype.evaluate = function evaluate(vm) {
-            var blockRef = vm.scope().getBlock(this.blockSymbol);
-            return new _glimmerRuntimeLibCompiledExpressionsValue.ValueReference(!!(blockRef && blockRef.locals.length > 0));
-        };
-
-        CompiledHasBlockParams.prototype.toJSON = function toJSON() {
-            return 'has-block-params(' + this.blockName + ')';
-        };
-
-        return CompiledHasBlockParams;
-    })(_glimmerRuntimeLibCompiledExpressions.CompiledExpression);
-
-    exports.default = CompiledHasBlockParams;
-});
-
-enifed('glimmer-runtime/lib/compiled/expressions/has-block', ['exports', 'glimmer-runtime/lib/compiled/expressions', 'glimmer-runtime/lib/compiled/expressions/value'], function (exports, _glimmerRuntimeLibCompiledExpressions, _glimmerRuntimeLibCompiledExpressionsValue) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var CompiledHasBlock = (function (_CompiledExpression) {
-        _inherits(CompiledHasBlock, _CompiledExpression);
-
-        function CompiledHasBlock(_ref) {
-            var blockName = _ref.blockName;
-            var blockSymbol = _ref.blockSymbol;
-
-            _classCallCheck(this, CompiledHasBlock);
-
-            _CompiledExpression.call(this);
-            this.type = "has-block";
-            this.blockName = blockName;
-            this.blockSymbol = blockSymbol;
-        }
-
-        CompiledHasBlock.prototype.evaluate = function evaluate(vm) {
-            var blockRef = vm.scope().getBlock(this.blockSymbol);
-            return new _glimmerRuntimeLibCompiledExpressionsValue.ValueReference(!!blockRef);
-        };
-
-        CompiledHasBlock.prototype.toJSON = function toJSON() {
-            return 'has-block(' + this.blockName + ')';
-        };
-
-        return CompiledHasBlock;
-    })(_glimmerRuntimeLibCompiledExpressions.CompiledExpression);
-
-    exports.default = CompiledHasBlock;
-});
-
-enifed('glimmer-runtime/lib/compiled/expressions/helper', ['exports', 'glimmer-runtime/lib/compiled/expressions'], function (exports, _glimmerRuntimeLibCompiledExpressions) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var CompiledHelper = (function (_CompiledExpression) {
-        _inherits(CompiledHelper, _CompiledExpression);
-
-        function CompiledHelper(_ref) {
-            var name = _ref.name;
-            var helper = _ref.helper;
-            var args = _ref.args;
-
-            _classCallCheck(this, CompiledHelper);
-
-            _CompiledExpression.call(this);
-            this.type = "helper";
-            this.name = name;
-            this.helper = helper;
-            this.args = args;
-        }
-
-        CompiledHelper.prototype.evaluate = function evaluate(vm) {
-            var helper = this.helper;
-
-            return helper(vm, this.args.evaluate(vm));
-        };
-
-        CompiledHelper.prototype.toJSON = function toJSON() {
-            return '`' + this.name.join('.') + '($ARGS)`';
-        };
-
-        return CompiledHelper;
-    })(_glimmerRuntimeLibCompiledExpressions.CompiledExpression);
-
-    exports.default = CompiledHelper;
-});
-
-enifed('glimmer-runtime/lib/compiled/expressions/named-args', ['exports', 'glimmer-runtime/lib/references', 'glimmer-reference', 'glimmer-util'], function (exports, _glimmerRuntimeLibReferences, _glimmerReference, _glimmerUtil) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var CompiledNamedArgs = (function () {
-        function CompiledNamedArgs() {
-            _classCallCheck(this, CompiledNamedArgs);
-        }
-
-        CompiledNamedArgs.create = function create(_ref) {
-            var map = _ref.map;
-
-            if (Object.keys(map).length) {
-                return new CompiledNonEmptyNamedArgs({ map: map });
-            } else {
-                return COMPILED_EMPTY_NAMED_ARGS;
-            }
-        };
-
-        return CompiledNamedArgs;
-    })();
-
-    exports.CompiledNamedArgs = CompiledNamedArgs;
-
-    var CompiledNonEmptyNamedArgs = (function (_CompiledNamedArgs) {
-        _inherits(CompiledNonEmptyNamedArgs, _CompiledNamedArgs);
-
-        function CompiledNonEmptyNamedArgs(_ref2) {
-            var map = _ref2.map;
-
-            _classCallCheck(this, CompiledNonEmptyNamedArgs);
-
-            _CompiledNamedArgs.call(this);
-            this.type = "named-args";
-            this.map = map;
-        }
-
-        CompiledNonEmptyNamedArgs.prototype.evaluate = function evaluate(vm) {
-            var map = this.map;
-
-            var compiledMap = _glimmerUtil.dict();
-            var compiledKeys = Object.keys(map);
-            for (var i = 0; i < compiledKeys.length; i++) {
-                var key = compiledKeys[i];
-                compiledMap[key] = map[key].evaluate(vm);
-            }
-            return EvaluatedNamedArgs.create({ map: compiledMap });
-        };
-
-        CompiledNonEmptyNamedArgs.prototype.toJSON = function toJSON() {
-            var map = this.map;
-
-            var inner = Object.keys(map).map(function (key) {
-                return key + ': ' + map[key].toJSON();
-            }).join(", ");
-            return '{' + inner + '}';
-        };
-
-        return CompiledNonEmptyNamedArgs;
-    })(CompiledNamedArgs);
-
-    var COMPILED_EMPTY_NAMED_ARGS = new ((function (_CompiledNamedArgs2) {
-        _inherits(_class, _CompiledNamedArgs2);
-
-        function _class() {
-            _classCallCheck(this, _class);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _CompiledNamedArgs2.call.apply(_CompiledNamedArgs2, [this].concat(args));
-            this.type = "empty-named-args";
-            this.map = _glimmerUtil.dict();
-        }
-
-        _class.prototype.evaluate = function evaluate(vm) {
-            return EvaluatedNamedArgs.empty();
-        };
-
-        _class.prototype.toJSON = function toJSON() {
-            return '<EMPTY>';
-        };
-
-        return _class;
-    })(CompiledNamedArgs))();
-    exports.COMPILED_EMPTY_NAMED_ARGS = COMPILED_EMPTY_NAMED_ARGS;
-
-    var EvaluatedNamedArgs = (function () {
-        function EvaluatedNamedArgs() {
-            _classCallCheck(this, EvaluatedNamedArgs);
-        }
-
-        EvaluatedNamedArgs.empty = function empty() {
-            return EVALUATED_EMPTY_NAMED_ARGS;
-        };
-
-        EvaluatedNamedArgs.create = function create(_ref3) {
-            var map = _ref3.map;
-
-            return new NonEmptyEvaluatedNamedArgs({ map: map });
-        };
-
-        EvaluatedNamedArgs.prototype.forEach = function forEach(callback) {
-            var map = this.map;
-
-            var mapKeys = Object.keys(map);
-            for (var i = 0; i < mapKeys.length; i++) {
-                var key = mapKeys[i];
-                callback(key, map[key]);
-            }
-        };
-
-        return EvaluatedNamedArgs;
-    })();
-
-    exports.EvaluatedNamedArgs = EvaluatedNamedArgs;
-
-    var NonEmptyEvaluatedNamedArgs = (function (_EvaluatedNamedArgs) {
-        _inherits(NonEmptyEvaluatedNamedArgs, _EvaluatedNamedArgs);
-
-        function NonEmptyEvaluatedNamedArgs(_ref4) {
-            var map = _ref4.map;
-
-            _classCallCheck(this, NonEmptyEvaluatedNamedArgs);
-
-            _EvaluatedNamedArgs.call(this);
-            var keys = this.keys = Object.keys(map);
-            this.map = map;
-            var tags = [];
-            for (var i = 0; i < keys.length; i++) {
-                var key = keys[i];
-                tags.push(map[key].tag);
-            }
-            this.tag = _glimmerReference.combine(tags);
-        }
-
-        NonEmptyEvaluatedNamedArgs.prototype.get = function get(key) {
-            return this.map[key] || _glimmerRuntimeLibReferences.UNDEFINED_REFERENCE;
-        };
-
-        NonEmptyEvaluatedNamedArgs.prototype.has = function has(key) {
-            return !!this.map[key];
-        };
-
-        NonEmptyEvaluatedNamedArgs.prototype.value = function value() {
-            var map = this.map;
-            var keys = this.keys;
-
-            var out = _glimmerUtil.dict();
-            for (var i = 0; i < keys.length; i++) {
-                var key = keys[i];
-                out[key] = map[key].value();
-            }
-            return out;
-        };
-
-        return NonEmptyEvaluatedNamedArgs;
-    })(EvaluatedNamedArgs);
-
-    var EVALUATED_EMPTY_NAMED_ARGS = new ((function (_EvaluatedNamedArgs2) {
-        _inherits(_class2, _EvaluatedNamedArgs2);
-
-        function _class2() {
-            _classCallCheck(this, _class2);
-
-            for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                args[_key2] = arguments[_key2];
-            }
-
-            _EvaluatedNamedArgs2.call.apply(_EvaluatedNamedArgs2, [this].concat(args));
-            this.tag = _glimmerReference.CONSTANT_TAG;
-            this.keys = [];
-        }
-
-        _class2.prototype.get = function get() {
-            return _glimmerRuntimeLibReferences.UNDEFINED_REFERENCE;
-        };
-
-        _class2.prototype.has = function has(key) {
-            return false;
-        };
-
-        _class2.prototype.value = function value() {
-            return {};
-        };
-
-        return _class2;
-    })(EvaluatedNamedArgs))();
-    exports.EVALUATED_EMPTY_NAMED_ARGS = EVALUATED_EMPTY_NAMED_ARGS;
-});
-
-enifed('glimmer-runtime/lib/compiled/expressions/positional-args', ['exports', 'glimmer-runtime/lib/references', 'glimmer-reference'], function (exports, _glimmerRuntimeLibReferences, _glimmerReference) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var CompiledPositionalArgs = (function () {
-        function CompiledPositionalArgs() {
-            _classCallCheck(this, CompiledPositionalArgs);
-        }
-
-        CompiledPositionalArgs.create = function create(_ref) {
-            var values = _ref.values;
-
-            if (values.length) {
-                return new CompiledNonEmptyPositionalArgs({ values: values });
-            } else {
-                return COMPILED_EMPTY_POSITIONAL_ARGS;
-            }
-        };
-
-        return CompiledPositionalArgs;
-    })();
-
-    exports.CompiledPositionalArgs = CompiledPositionalArgs;
-
-    var CompiledNonEmptyPositionalArgs = (function (_CompiledPositionalArgs) {
-        _inherits(CompiledNonEmptyPositionalArgs, _CompiledPositionalArgs);
-
-        function CompiledNonEmptyPositionalArgs(_ref2) {
-            var values = _ref2.values;
-
-            _classCallCheck(this, CompiledNonEmptyPositionalArgs);
-
-            _CompiledPositionalArgs.call(this);
-            this.type = "positional-args";
-            this.length = values.length;
-            this.values = values;
-        }
-
-        CompiledNonEmptyPositionalArgs.prototype.evaluate = function evaluate(vm) {
-            var values = this.values;
-
-            var valueReferences = new Array(values.length);
-            for (var i = 0; i < values.length; i++) {
-                valueReferences[i] = values[i].evaluate(vm);
-            }
-            return EvaluatedPositionalArgs.create({ values: valueReferences });
-        };
-
-        CompiledNonEmptyPositionalArgs.prototype.toJSON = function toJSON() {
-            return '[' + this.values.map(function (value) {
-                return value.toJSON();
-            }).join(", ") + ']';
-        };
-
-        return CompiledNonEmptyPositionalArgs;
-    })(CompiledPositionalArgs);
-
-    var COMPILED_EMPTY_POSITIONAL_ARGS = new ((function (_CompiledPositionalArgs2) {
-        _inherits(_class, _CompiledPositionalArgs2);
-
-        function _class() {
-            _classCallCheck(this, _class);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _CompiledPositionalArgs2.call.apply(_CompiledPositionalArgs2, [this].concat(args));
-            this.type = "empty-positional-args";
-            this.length = 0;
-        }
-
-        _class.prototype.evaluate = function evaluate(vm) {
-            return EvaluatedPositionalArgs.empty();
-        };
-
-        _class.prototype.toJSON = function toJSON() {
-            return '<EMPTY>';
-        };
-
-        return _class;
-    })(CompiledPositionalArgs))();
-    exports.COMPILED_EMPTY_POSITIONAL_ARGS = COMPILED_EMPTY_POSITIONAL_ARGS;
-
-    var EvaluatedPositionalArgs = (function () {
-        function EvaluatedPositionalArgs() {
-            _classCallCheck(this, EvaluatedPositionalArgs);
-        }
-
-        EvaluatedPositionalArgs.empty = function empty() {
-            return EVALUATED_EMPTY_POSITIONAL_ARGS;
-        };
-
-        EvaluatedPositionalArgs.create = function create(_ref3) {
-            var values = _ref3.values;
-
-            return new NonEmptyEvaluatedPositionalArgs({ values: values });
-        };
-
-        EvaluatedPositionalArgs.prototype.forEach = function forEach(callback) {
-            var values = this.values;
-            for (var i = 0; i < values.length; i++) {
-                callback(values[i]);
-            }
-        };
-
-        return EvaluatedPositionalArgs;
-    })();
-
-    exports.EvaluatedPositionalArgs = EvaluatedPositionalArgs;
-
-    var NonEmptyEvaluatedPositionalArgs = (function (_EvaluatedPositionalArgs) {
-        _inherits(NonEmptyEvaluatedPositionalArgs, _EvaluatedPositionalArgs);
-
-        function NonEmptyEvaluatedPositionalArgs(_ref4) {
-            var values = _ref4.values;
-
-            _classCallCheck(this, NonEmptyEvaluatedPositionalArgs);
-
-            _EvaluatedPositionalArgs.call(this);
-            this.tag = _glimmerReference.combineTagged(values);
-            this.length = values.length;
-            this.values = values;
-        }
-
-        NonEmptyEvaluatedPositionalArgs.prototype.at = function at(index) {
-            return this.values[index];
-        };
-
-        NonEmptyEvaluatedPositionalArgs.prototype.value = function value() {
-            var ret = new Array(this.values.length);
-            for (var i = 0; i < this.values.length; i++) {
-                ret[i] = this.values[i].value();
-            }
-            return ret;
-        };
-
-        return NonEmptyEvaluatedPositionalArgs;
-    })(EvaluatedPositionalArgs);
-
-    var EVALUATED_EMPTY_POSITIONAL_ARGS = new ((function (_EvaluatedPositionalArgs2) {
-        _inherits(_class2, _EvaluatedPositionalArgs2);
-
-        function _class2() {
-            _classCallCheck(this, _class2);
-
-            for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                args[_key2] = arguments[_key2];
-            }
-
-            _EvaluatedPositionalArgs2.call.apply(_EvaluatedPositionalArgs2, [this].concat(args));
-            this.tag = _glimmerReference.CONSTANT_TAG;
-            this.length = 0;
-            this.values = [];
-        }
-
-        _class2.prototype.at = function at() {
-            return _glimmerRuntimeLibReferences.NULL_REFERENCE;
-        };
-
-        _class2.prototype.value = function value() {
-            return [];
-        };
-
-        return _class2;
-    })(EvaluatedPositionalArgs))();
-    exports.EVALUATED_EMPTY_POSITIONAL_ARGS = EVALUATED_EMPTY_POSITIONAL_ARGS;
-});
-
-enifed('glimmer-runtime/lib/compiled/expressions/ref', ['exports', 'glimmer-runtime/lib/compiled/expressions', 'glimmer-reference'], function (exports, _glimmerRuntimeLibCompiledExpressions, _glimmerReference) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var CompiledSymbolRef = (function (_CompiledExpression) {
-        _inherits(CompiledSymbolRef, _CompiledExpression);
-
-        function CompiledSymbolRef(_ref) {
-            var debug = _ref.debug;
-            var symbol = _ref.symbol;
-            var path = _ref.path;
-
-            _classCallCheck(this, CompiledSymbolRef);
-
-            _CompiledExpression.call(this);
-            this.debug = debug;
-            this.symbol = symbol;
-            this.path = path;
-        }
-
-        CompiledSymbolRef.prototype.evaluate = function evaluate(vm) {
-            var base = this.referenceForSymbol(vm);
-            return _glimmerReference.referenceFromParts(base, this.path);
-        };
-
-        CompiledSymbolRef.prototype.toJSON = function toJSON() {
-            var debug = this.debug;
-            var symbol = this.symbol;
-            var path = this.path;
-
-            if (path.length) {
-                return '$' + symbol + '(' + debug + ').' + path.join('.');
-            } else {
-                return '$' + symbol + '(' + debug + ')';
-            }
-        };
-
-        return CompiledSymbolRef;
-    })(_glimmerRuntimeLibCompiledExpressions.CompiledExpression);
-
-    exports.CompiledSymbolRef = CompiledSymbolRef;
-
-    var CompiledKeywordRef = (function () {
-        function CompiledKeywordRef(_ref2) {
-            var name = _ref2.name;
-            var path = _ref2.path;
-
-            _classCallCheck(this, CompiledKeywordRef);
-
-            this.type = "keyword-ref";
-            this.name = name;
-            this.path = path;
-        }
-
-        CompiledKeywordRef.prototype.evaluate = function evaluate(vm) {
-            var base = vm.dynamicScope()[this.name];
-            ;
-            return _glimmerReference.referenceFromParts(base, this.path);
-        };
-
-        CompiledKeywordRef.prototype.toJSON = function toJSON() {
-            var name = this.name;
-            var path = this.path;
-
-            if (path.length) {
-                return '$KEYWORDS[' + name + '].' + path.join('.');
-            } else {
-                return '$KEYWORDS[' + name + ']';
-            }
-        };
-
-        return CompiledKeywordRef;
-    })();
-
-    exports.CompiledKeywordRef = CompiledKeywordRef;
-
-    var CompiledLocalRef = (function (_CompiledSymbolRef) {
-        _inherits(CompiledLocalRef, _CompiledSymbolRef);
-
-        function CompiledLocalRef() {
-            _classCallCheck(this, CompiledLocalRef);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _CompiledSymbolRef.call.apply(_CompiledSymbolRef, [this].concat(args));
-            this.type = "local-ref";
-        }
-
-        CompiledLocalRef.prototype.referenceForSymbol = function referenceForSymbol(vm) {
-            return vm.referenceForSymbol(this.symbol);
-        };
-
-        return CompiledLocalRef;
-    })(CompiledSymbolRef);
-
-    exports.CompiledLocalRef = CompiledLocalRef;
-
-    var CompiledSelfRef = (function (_CompiledExpression2) {
-        _inherits(CompiledSelfRef, _CompiledExpression2);
-
-        function CompiledSelfRef(_ref3) {
-            var parts = _ref3.parts;
-
-            _classCallCheck(this, CompiledSelfRef);
-
-            _CompiledExpression2.call(this);
-            this.type = "self-ref";
-            this.parts = parts;
-        }
-
-        CompiledSelfRef.prototype.evaluate = function evaluate(vm) {
-            return _glimmerReference.referenceFromParts(vm.getSelf(), this.parts);
-        };
-
-        CompiledSelfRef.prototype.toJSON = function toJSON() {
-            var path = ['self'];
-            path.push.apply(path, this.parts);
-            return path.join('.');
-        };
-
-        return CompiledSelfRef;
-    })(_glimmerRuntimeLibCompiledExpressions.CompiledExpression);
-
-    exports.CompiledSelfRef = CompiledSelfRef;
-});
-
-enifed('glimmer-runtime/lib/compiled/expressions/value', ['exports', 'glimmer-runtime/lib/compiled/expressions', 'glimmer-reference', 'glimmer-util'], function (exports, _glimmerRuntimeLibCompiledExpressions, _glimmerReference, _glimmerUtil) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var CompiledValue = (function (_CompiledExpression) {
-        _inherits(CompiledValue, _CompiledExpression);
-
-        function CompiledValue(_ref) {
-            var value = _ref.value;
-
-            _classCallCheck(this, CompiledValue);
-
-            _CompiledExpression.call(this);
-            this.type = "value";
-            this.reference = new ValueReference(value);
-        }
-
-        CompiledValue.prototype.evaluate = function evaluate(vm) {
-            return this.reference;
-        };
-
-        CompiledValue.prototype.toJSON = function toJSON() {
-            return JSON.stringify(this.reference.value());
-        };
-
-        return CompiledValue;
-    })(_glimmerRuntimeLibCompiledExpressions.CompiledExpression);
-
-    exports.default = CompiledValue;
-
-    var ValueReference = (function (_ConstReference) {
-        _inherits(ValueReference, _ConstReference);
-
-        function ValueReference() {
-            _classCallCheck(this, ValueReference);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _ConstReference.call.apply(_ConstReference, [this].concat(args));
-            this.children = _glimmerUtil.dict();
-        }
-
-        ValueReference.prototype.get = function get(key) {
-            var children = this.children;
-
-            var child = children[key];
-            if (!child) {
-                child = children[key] = new ValueReference(this.inner[key]);
-            }
-            return child;
-        };
-
-        ValueReference.prototype.value = function value() {
-            return this.inner;
-        };
-
-        return ValueReference;
-    })(_glimmerReference.ConstReference);
-
-    exports.ValueReference = ValueReference;
-});
-
-enifed('glimmer-runtime/lib/compiled/opcodes/builder', ['exports', 'glimmer-runtime/lib/compiled/opcodes/component', 'glimmer-runtime/lib/compiled/opcodes/content', 'glimmer-runtime/lib/compiled/opcodes/dom', 'glimmer-runtime/lib/compiled/opcodes/lists', 'glimmer-runtime/lib/compiled/opcodes/vm', 'glimmer-util', 'glimmer-runtime/lib/utils'], function (exports, _glimmerRuntimeLibCompiledOpcodesComponent, _glimmerRuntimeLibCompiledOpcodesContent, _glimmerRuntimeLibCompiledOpcodesDom, _glimmerRuntimeLibCompiledOpcodesLists, _glimmerRuntimeLibCompiledOpcodesVm, _glimmerUtil, _glimmerRuntimeLibUtils) {
-    'use strict';
-
-    var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var StatementCompilationBufferProxy = (function () {
-        function StatementCompilationBufferProxy(inner) {
-            _classCallCheck(this, StatementCompilationBufferProxy);
-
-            this.inner = inner;
-        }
-
-        StatementCompilationBufferProxy.prototype.toOpSeq = function toOpSeq() {
-            return this.inner.toOpSeq();
-        };
-
-        StatementCompilationBufferProxy.prototype.append = function append(opcode) {
-            this.inner.append(opcode);
-        };
-
-        StatementCompilationBufferProxy.prototype.getLocalSymbol = function getLocalSymbol(name) {
-            return this.inner.getLocalSymbol(name);
-        };
-
-        StatementCompilationBufferProxy.prototype.hasLocalSymbol = function hasLocalSymbol(name) {
-            return this.inner.hasLocalSymbol(name);
-        };
-
-        StatementCompilationBufferProxy.prototype.getNamedSymbol = function getNamedSymbol(name) {
-            return this.inner.getNamedSymbol(name);
-        };
-
-        StatementCompilationBufferProxy.prototype.hasNamedSymbol = function hasNamedSymbol(name) {
-            return this.inner.hasNamedSymbol(name);
-        };
-
-        StatementCompilationBufferProxy.prototype.getBlockSymbol = function getBlockSymbol(name) {
-            return this.inner.getBlockSymbol(name);
-        };
-
-        StatementCompilationBufferProxy.prototype.hasBlockSymbol = function hasBlockSymbol(name) {
-            return this.inner.hasBlockSymbol(name);
-        };
-
-        // only used for {{view.name}}
-
-        StatementCompilationBufferProxy.prototype.hasKeyword = function hasKeyword(name) {
-            return this.inner.hasKeyword(name);
-        };
-
-        _createClass(StatementCompilationBufferProxy, [{
-            key: 'component',
-            get: function () {
-                return this.inner.component;
-            }
-        }]);
-
-        return StatementCompilationBufferProxy;
-    })();
-
-    var BasicOpcodeBuilder = (function (_StatementCompilationBufferProxy) {
-        _inherits(BasicOpcodeBuilder, _StatementCompilationBufferProxy);
-
-        function BasicOpcodeBuilder(inner, _block, env) {
-            _classCallCheck(this, BasicOpcodeBuilder);
-
-            _StatementCompilationBufferProxy.call(this, inner);
-            this._block = _block;
-            this.env = env;
-            this.labelsStack = new _glimmerUtil.Stack();
-            this.templatesStack = new _glimmerUtil.Stack();
-        }
-
-        // helpers
-
-        BasicOpcodeBuilder.prototype.startBlock = function startBlock(_ref) {
-            var templates = _ref.templates;
-
-            this.templatesStack.push(templates);
-        };
-
-        BasicOpcodeBuilder.prototype.endBlock = function endBlock() {
-            this.templatesStack.pop();
-        };
-
-        BasicOpcodeBuilder.prototype.startLabels = function startLabels() {
-            this.labelsStack.push(_glimmerUtil.dict());
-        };
-
-        BasicOpcodeBuilder.prototype.stopLabels = function stopLabels() {
-            this.labelsStack.pop();
-        };
-
-        BasicOpcodeBuilder.prototype.labelFor = function labelFor(name) {
-            var labels = this.labels;
-            var label = labels[name];
-            if (!label) {
-                label = labels[name] = new _glimmerRuntimeLibCompiledOpcodesVm.LabelOpcode(name);
-            }
-            return label;
-        };
-
-        // components
-
-        BasicOpcodeBuilder.prototype.putComponentDefinition = function putComponentDefinition(args, definition) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesComponent.PutComponentDefinitionOpcode({ args: this.compile(args), definition: definition }));
-        };
-
-        BasicOpcodeBuilder.prototype.putDynamicComponentDefinition = function putDynamicComponentDefinition(args) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesComponent.PutDynamicComponentDefinitionOpcode({ args: this.compile(args) }));
-        };
-
-        BasicOpcodeBuilder.prototype.openComponent = function openComponent() {
-            var shadow = arguments.length <= 0 || arguments[0] === undefined ? _glimmerRuntimeLibUtils.EMPTY_ARRAY : arguments[0];
-
-            this.append(new _glimmerRuntimeLibCompiledOpcodesComponent.OpenComponentOpcode({ shadow: shadow, templates: this.templates }));
-        };
-
-        BasicOpcodeBuilder.prototype.didCreateElement = function didCreateElement() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesComponent.DidCreateElementOpcode());
-        };
-
-        BasicOpcodeBuilder.prototype.shadowAttributes = function shadowAttributes() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesComponent.ShadowAttributesOpcode());
-        };
-
-        BasicOpcodeBuilder.prototype.closeComponent = function closeComponent() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesComponent.CloseComponentOpcode());
-        };
-
-        // content
-
-        BasicOpcodeBuilder.prototype.cautiousAppend = function cautiousAppend() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesContent.OptimizedCautiousAppendOpcode());
-        };
-
-        BasicOpcodeBuilder.prototype.trustingAppend = function trustingAppend() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesContent.OptimizedTrustingAppendOpcode());
-        };
-
-        // dom
-
-        BasicOpcodeBuilder.prototype.text = function text(_text) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesDom.TextOpcode({ text: _text }));
-        };
-
-        BasicOpcodeBuilder.prototype.openPrimitiveElement = function openPrimitiveElement(tag) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesDom.OpenPrimitiveElementOpcode({ tag: tag }));
-        };
-
-        BasicOpcodeBuilder.prototype.openDynamicPrimitiveElement = function openDynamicPrimitiveElement() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesDom.OpenDynamicPrimitiveElementOpcode());
-        };
-
-        BasicOpcodeBuilder.prototype.closeElement = function closeElement() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesDom.CloseElementOpcode());
-        };
-
-        BasicOpcodeBuilder.prototype.staticAttr = function staticAttr(options) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesDom.StaticAttrOpcode(options));
-        };
-
-        BasicOpcodeBuilder.prototype.dynamicAttrNS = function dynamicAttrNS(options) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesDom.DynamicAttrNSOpcode(options));
-        };
-
-        BasicOpcodeBuilder.prototype.dynamicAttr = function dynamicAttr(options) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesDom.DynamicAttrOpcode(options));
-        };
-
-        BasicOpcodeBuilder.prototype.comment = function comment(_comment) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesDom.CommentOpcode({ comment: _comment }));
-        };
-
-        // lists
-
-        BasicOpcodeBuilder.prototype.putIterator = function putIterator() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesLists.PutIteratorOpcode());
-        };
-
-        BasicOpcodeBuilder.prototype.enterList = function enterList(start, end) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesLists.EnterListOpcode(this.labelFor(start), this.labelFor(end)));
-        };
-
-        BasicOpcodeBuilder.prototype.exitList = function exitList() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesLists.ExitListOpcode());
-        };
-
-        BasicOpcodeBuilder.prototype.enterWithKey = function enterWithKey(start, end) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesLists.EnterWithKeyOpcode(this.labelFor(start), this.labelFor(end)));
-        };
-
-        BasicOpcodeBuilder.prototype.nextIter = function nextIter(end) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesLists.NextIterOpcode(this.labelFor(end)));
-        };
-
-        // vm
-
-        BasicOpcodeBuilder.prototype.label = function label(name) {
-            this.append(this.labelFor(name));
-        };
-
-        BasicOpcodeBuilder.prototype.pushChildScope = function pushChildScope() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.PushChildScopeOpcode());
-        };
-
-        BasicOpcodeBuilder.prototype.popScope = function popScope() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.PopScopeOpcode());
-        };
-
-        BasicOpcodeBuilder.prototype.pushDynamicScope = function pushDynamicScope() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.PushDynamicScopeOpcode());
-        };
-
-        BasicOpcodeBuilder.prototype.popDynamicScope = function popDynamicScope() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.PopDynamicScopeOpcode());
-        };
-
-        BasicOpcodeBuilder.prototype.putNull = function putNull() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.PutNullOpcode());
-        };
-
-        BasicOpcodeBuilder.prototype.putValue = function putValue(expression) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.PutValueOpcode({ expression: this.compile(expression) }));
-        };
-
-        BasicOpcodeBuilder.prototype.putArgs = function putArgs(args) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.PutArgsOpcode({ args: this.compile(args) }));
-        };
-
-        BasicOpcodeBuilder.prototype.bindPositionalArgs = function bindPositionalArgs(block) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.BindPositionalArgsOpcode({ block: block }));
-        };
-
-        BasicOpcodeBuilder.prototype.bindNamedArgs = function bindNamedArgs(named) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.BindNamedArgsOpcode({ named: named }));
-        };
-
-        BasicOpcodeBuilder.prototype.bindBlocks = function bindBlocks(blocks) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.BindBlocksOpcode({ blocks: blocks }));
-        };
-
-        BasicOpcodeBuilder.prototype.bindDynamicScope = function bindDynamicScope(callback) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.BindDynamicScopeOpcode(callback));
-        };
-
-        BasicOpcodeBuilder.prototype.enter = function enter(_enter, exit) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.EnterOpcode({ begin: this.labelFor(_enter), end: this.labelFor(exit) }));
-        };
-
-        BasicOpcodeBuilder.prototype.exit = function exit() {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.ExitOpcode());
-        };
-
-        BasicOpcodeBuilder.prototype.evaluate = function evaluate(name) {
-            var block = arguments.length <= 1 || arguments[1] === undefined ? this.templates[name] : arguments[1];
-            return (function () {
-                this.append(new _glimmerRuntimeLibCompiledOpcodesVm.EvaluateOpcode({ debug: name, block: block }));
-            }).apply(this, arguments);
-        };
-
-        BasicOpcodeBuilder.prototype.test = function test(testFunc) {
-            if (testFunc === 'const') {
-                this.append(new _glimmerRuntimeLibCompiledOpcodesVm.TestOpcode(_glimmerRuntimeLibCompiledOpcodesVm.ConstTest));
-            } else if (testFunc === 'simple') {
-                this.append(new _glimmerRuntimeLibCompiledOpcodesVm.TestOpcode(_glimmerRuntimeLibCompiledOpcodesVm.SimpleTest));
-            } else if (testFunc === 'environment') {
-                this.append(new _glimmerRuntimeLibCompiledOpcodesVm.TestOpcode(_glimmerRuntimeLibCompiledOpcodesVm.EnvironmentTest));
-            } else if (typeof testFunc === 'function') {
-                this.append(new _glimmerRuntimeLibCompiledOpcodesVm.TestOpcode(testFunc));
-            } else {
-                throw new Error('unreachable');
-            }
-        };
-
-        BasicOpcodeBuilder.prototype.jump = function jump(target) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.JumpOpcode({ target: this.labelFor(target) }));
-        };
-
-        BasicOpcodeBuilder.prototype.jumpIf = function jumpIf(target) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.JumpIfOpcode({ target: this.labelFor(target) }));
-        };
-
-        BasicOpcodeBuilder.prototype.jumpUnless = function jumpUnless(target) {
-            this.append(new _glimmerRuntimeLibCompiledOpcodesVm.JumpUnlessOpcode({ target: this.labelFor(target) }));
-        };
-
-        _createClass(BasicOpcodeBuilder, [{
-            key: 'labels',
-            get: function () {
-                return this.labelsStack.current;
-            }
-        }, {
-            key: 'templates',
-            get: function () {
-                return this.templatesStack.current;
-            }
-        }]);
-
-        return BasicOpcodeBuilder;
-    })(StatementCompilationBufferProxy);
-
-    exports.BasicOpcodeBuilder = BasicOpcodeBuilder;
-
-    function isCompilableExpression(expr) {
-        return expr && typeof expr['compile'] === 'function';
-    }
-    var SIMPLE_BLOCK = { templates: null };
-
-    var OpcodeBuilder = (function (_BasicOpcodeBuilder) {
-        _inherits(OpcodeBuilder, _BasicOpcodeBuilder);
-
-        function OpcodeBuilder() {
-            _classCallCheck(this, OpcodeBuilder);
-
-            _BasicOpcodeBuilder.apply(this, arguments);
-        }
-
-        OpcodeBuilder.prototype.compile = function compile(expr) {
-            if (isCompilableExpression(expr)) {
-                return expr.compile(this, this.env, this._block);
-            } else {
-                return expr;
-            }
-        };
-
-        OpcodeBuilder.prototype.setupDynamicScope = function setupDynamicScope(callback) {
-            this.pushDynamicScope();
-            this.bindDynamicScope(callback);
-        };
-
-        OpcodeBuilder.prototype.bindNamedArgsForLayout = function bindNamedArgsForLayout(layout) {
-            this.append(_glimmerRuntimeLibCompiledOpcodesVm.BindNamedArgsOpcode.create(layout));
-        };
-
-        OpcodeBuilder.prototype.bindBlocksForLayout = function bindBlocksForLayout(layout) {
-            this.append(_glimmerRuntimeLibCompiledOpcodesVm.BindBlocksOpcode.create(layout));
-        };
-
-        OpcodeBuilder.prototype.simpleBlock = function simpleBlock(callback) {
-            this.block(SIMPLE_BLOCK, callback);
-        };
-
-        OpcodeBuilder.prototype.block = function block(_ref2, callback) {
-            var templates = _ref2.templates;
-            var args = _ref2.args;
-
-            this.startLabels();
-            this.startBlock({ templates: templates });
-            this.enter('BEGIN', 'END');
-            this.label('BEGIN');
-            if (args) this.putArgs(args);
-            callback(this, 'BEGIN', 'END');
-            this.label('END');
-            this.exit();
-            this.endBlock();
-            this.stopLabels();
-        };
-
-        OpcodeBuilder.prototype.iter = function iter(_ref3, callback) {
-            var templates = _ref3.templates;
-
-            this.startLabels();
-            this.startBlock({ templates: templates });
-            this.enterList('BEGIN', 'END');
-            this.label('ITER');
-            this.nextIter('BREAK');
-            this.enterWithKey('BEGIN', 'END');
-            this.label('BEGIN');
-            callback(this, 'BEGIN', 'END');
-            this.label('END');
-            this.exit();
-            this.jump('ITER');
-            this.label('BREAK');
-            this.exitList();
-            this.endBlock();
-            this.stopLabels();
-        };
-
-        OpcodeBuilder.prototype.unit = function unit(_ref4, callback) {
-            var templates = _ref4.templates;
-
-            this.startLabels();
-            this.startBlock({ templates: templates });
-            callback(this);
-            this.endBlock();
-            this.stopLabels();
-        };
-
-        return OpcodeBuilder;
-    })(BasicOpcodeBuilder);
-
-    exports.default = OpcodeBuilder;
-});
-
-enifed('glimmer-runtime/lib/compiled/opcodes/component', ['exports', 'glimmer-runtime/lib/opcodes', 'glimmer-runtime/lib/compiled/opcodes/vm', 'glimmer-reference'], function (exports, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibCompiledOpcodesVm, _glimmerReference) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var PutDynamicComponentDefinitionOpcode = (function (_Opcode) {
-        _inherits(PutDynamicComponentDefinitionOpcode, _Opcode);
-
-        function PutDynamicComponentDefinitionOpcode(_ref) {
-            var args = _ref.args;
-
-            _classCallCheck(this, PutDynamicComponentDefinitionOpcode);
-
-            _Opcode.call(this);
-            this.type = "put-dynamic-component-definition";
-            this.args = args;
-        }
-
-        PutDynamicComponentDefinitionOpcode.prototype.evaluate = function evaluate(vm) {
-            var definitionRef = vm.frame.getOperand();
-            var cache = _glimmerReference.isConst(definitionRef) ? undefined : new _glimmerReference.ReferenceCache(definitionRef);
-            var definition = cache ? cache.peek() : definitionRef.value();
-            var args = this.args.evaluate(vm).withInternal();
-            vm.frame.setArgs(args);
-            args.internal["definition"] = definition;
-            if (cache) {
-                vm.updateWith(new _glimmerRuntimeLibCompiledOpcodesVm.Assert(cache));
-            }
-        };
-
-        return PutDynamicComponentDefinitionOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.PutDynamicComponentDefinitionOpcode = PutDynamicComponentDefinitionOpcode;
-
-    var PutComponentDefinitionOpcode = (function (_Opcode2) {
-        _inherits(PutComponentDefinitionOpcode, _Opcode2);
-
-        function PutComponentDefinitionOpcode(_ref2) {
-            var args = _ref2.args;
-            var definition = _ref2.definition;
-
-            _classCallCheck(this, PutComponentDefinitionOpcode);
-
-            _Opcode2.call(this);
-            this.type = "put-component-definition";
-            this.args = args;
-            this.definition = definition;
-        }
-
-        PutComponentDefinitionOpcode.prototype.evaluate = function evaluate(vm) {
-            var args = this.args.evaluate(vm).withInternal();
-            args.internal["definition"] = this.definition;
-            vm.frame.setArgs(args);
-        };
-
-        return PutComponentDefinitionOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.PutComponentDefinitionOpcode = PutComponentDefinitionOpcode;
-
-    var OpenComponentOpcode = (function (_Opcode3) {
-        _inherits(OpenComponentOpcode, _Opcode3);
-
-        function OpenComponentOpcode(_ref3) {
-            var shadow = _ref3.shadow;
-            var templates = _ref3.templates;
-
-            _classCallCheck(this, OpenComponentOpcode);
-
-            _Opcode3.call(this);
-            this.type = "open-component";
-            this.shadow = shadow;
-            this.templates = templates;
-        }
-
-        OpenComponentOpcode.prototype.evaluate = function evaluate(vm) {
-            var shadow = this.shadow;
-            var templates = this.templates;
-
-            var args = vm.frame.getArgs();
-            var definition = args.internal["definition"];
-            vm.pushDynamicScope();
-            var dynamicScope = vm.dynamicScope();
-            var manager = definition.manager;
-            var hasDefaultBlock = templates && !!templates.default; // TODO Cleanup?
-            var preparedArgs = manager.prepareArgs(definition, args);
-            var component = manager.create(definition, preparedArgs, dynamicScope, hasDefaultBlock);
-            var destructor = manager.getDestructor(component);
-            if (destructor) vm.newDestroyable(destructor);
-            preparedArgs.internal["component"] = component;
-            preparedArgs.internal["definition"] = definition;
-            preparedArgs.internal["shadow"] = shadow;
-            vm.beginCacheGroup();
-            var layout = manager.layoutFor(definition, component, vm.env);
-            var callerScope = vm.scope();
-            var selfRef = manager.getSelf(component);
-            vm.pushRootScope(selfRef, layout.symbols);
-            vm.invokeLayout({ templates: templates, args: preparedArgs, shadow: shadow, layout: layout, callerScope: callerScope });
-            vm.env.didCreate(component, manager);
-            vm.updateWith(new UpdateComponentOpcode({ name: definition.name, component: component, manager: manager, args: preparedArgs, dynamicScope: dynamicScope }));
-        };
-
-        return OpenComponentOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.OpenComponentOpcode = OpenComponentOpcode;
-
-    var UpdateComponentOpcode = (function (_UpdatingOpcode) {
-        _inherits(UpdateComponentOpcode, _UpdatingOpcode);
-
-        function UpdateComponentOpcode(_ref4) {
-            var name = _ref4.name;
-            var component = _ref4.component;
-            var manager = _ref4.manager;
-            var args = _ref4.args;
-            var dynamicScope = _ref4.dynamicScope;
-
-            _classCallCheck(this, UpdateComponentOpcode);
-
-            _UpdatingOpcode.call(this);
-            this.type = "update-component";
-            var tag = undefined;
-            var componentTag = manager.getTag(component);
-            if (componentTag) {
-                tag = this.tag = _glimmerReference.combine([args.tag, componentTag]);
-            } else {
-                tag = this.tag = args.tag;
-            }
-            this.name = name;
-            this.component = component;
-            this.manager = manager;
-            this.args = args;
-            this.dynamicScope = dynamicScope;
-            this.lastUpdated = tag.value();
-        }
-
-        UpdateComponentOpcode.prototype.evaluate = function evaluate(vm) {
-            var component = this.component;
-            var manager = this.manager;
-            var tag = this.tag;
-            var args = this.args;
-            var dynamicScope = this.dynamicScope;
-            var lastUpdated = this.lastUpdated;
-
-            if (!tag.validate(lastUpdated)) {
-                manager.update(component, args, dynamicScope);
-                vm.env.didUpdate(component, manager);
-                this.lastUpdated = tag.value();
-            }
-        };
-
-        UpdateComponentOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: [JSON.stringify(this.name)]
-            };
-        };
-
-        return UpdateComponentOpcode;
-    })(_glimmerRuntimeLibOpcodes.UpdatingOpcode);
-
-    exports.UpdateComponentOpcode = UpdateComponentOpcode;
-
-    var DidCreateElementOpcode = (function (_Opcode4) {
-        _inherits(DidCreateElementOpcode, _Opcode4);
-
-        function DidCreateElementOpcode() {
-            _classCallCheck(this, DidCreateElementOpcode);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _Opcode4.call.apply(_Opcode4, [this].concat(args));
-            this.type = "did-create-element";
-        }
-
-        // Slow path for non-specialized component invocations. Uses an internal
-        // named lookup on the args.
-
-        DidCreateElementOpcode.prototype.evaluate = function evaluate(vm) {
-            var args = vm.frame.getArgs();
-            var internal = args.internal;
-            var definition = internal['definition'];
-            var manager = definition.manager;
-            var component = internal['component'];
-            manager.didCreateElement(component, vm.stack().element, vm.stack().elementOperations);
-        };
-
-        DidCreateElementOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: ["$ARGS"]
-            };
-        };
-
-        return DidCreateElementOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.DidCreateElementOpcode = DidCreateElementOpcode;
-
-    var ShadowAttributesOpcode = (function (_Opcode5) {
-        _inherits(ShadowAttributesOpcode, _Opcode5);
-
-        function ShadowAttributesOpcode() {
-            _classCallCheck(this, ShadowAttributesOpcode);
-
-            for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                args[_key2] = arguments[_key2];
-            }
-
-            _Opcode5.call.apply(_Opcode5, [this].concat(args));
-            this.type = "shadow-attributes";
-        }
-
-        ShadowAttributesOpcode.prototype.evaluate = function evaluate(vm) {
-            var args = vm.frame.getArgs();
-            var internal = args.internal;
-            var shadow = internal['shadow'];
-            var named = args.named;
-            if (!shadow) return;
-            shadow.forEach(function (name) {
-                vm.stack().setAttribute(name, named.get(name), false);
-            });
-        };
-
-        ShadowAttributesOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: ["$ARGS"]
-            };
-        };
-
-        return ShadowAttributesOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.ShadowAttributesOpcode = ShadowAttributesOpcode;
-
-    var CloseComponentOpcode = (function (_Opcode6) {
-        _inherits(CloseComponentOpcode, _Opcode6);
-
-        function CloseComponentOpcode() {
-            _classCallCheck(this, CloseComponentOpcode);
-
-            for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-                args[_key3] = arguments[_key3];
-            }
-
-            _Opcode6.call.apply(_Opcode6, [this].concat(args));
-            this.type = "close-component";
-        }
-
-        CloseComponentOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.popScope();
-            vm.popDynamicScope();
-            vm.commitCacheGroup();
-        };
-
-        return CloseComponentOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.CloseComponentOpcode = CloseComponentOpcode;
-});
-
-enifed('glimmer-runtime/lib/compiled/opcodes/content', ['exports', 'glimmer-runtime/lib/upsert', 'glimmer-runtime/lib/component/interfaces', 'glimmer-runtime/lib/opcodes', 'glimmer-runtime/lib/vm/update', 'glimmer-reference', 'glimmer-util', 'glimmer-runtime/lib/bounds', 'glimmer-runtime/lib/builder', 'glimmer-runtime/lib/compiler', 'glimmer-runtime/lib/compiled/opcodes/builder', 'glimmer-runtime/lib/references', 'glimmer-runtime/lib/syntax/core'], function (exports, _glimmerRuntimeLibUpsert, _glimmerRuntimeLibComponentInterfaces, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibVmUpdate, _glimmerReference, _glimmerUtil, _glimmerRuntimeLibBounds, _glimmerRuntimeLibBuilder, _glimmerRuntimeLibCompiler, _glimmerRuntimeLibCompiledOpcodesBuilder, _glimmerRuntimeLibReferences, _glimmerRuntimeLibSyntaxCore) {
-    'use strict';
-
-    exports.normalizeTextValue = normalizeTextValue;
-    exports.normalizeTrustedValue = normalizeTrustedValue;
-    exports.normalizeValue = normalizeValue;
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function isEmpty(value) {
-        return value === null || value === undefined || typeof value['toString'] !== 'function';
-    }
-
-    function normalizeTextValue(value) {
-        if (isEmpty(value)) {
-            return '';
-        }
-        return String(value);
-    }
-
-    function normalizeTrustedValue(value) {
-        if (isEmpty(value)) {
-            return '';
-        }
-        if (_glimmerRuntimeLibUpsert.isString(value)) {
-            return value;
-        }
-        if (_glimmerRuntimeLibUpsert.isSafeString(value)) {
-            return value.toHTML();
-        }
-        if (_glimmerRuntimeLibUpsert.isNode(value)) {
-            return value;
-        }
-        return String(value);
-    }
-
-    function normalizeValue(value) {
-        if (isEmpty(value)) {
-            return '';
-        }
-        if (_glimmerRuntimeLibUpsert.isString(value)) {
-            return value;
-        }
-        if (_glimmerRuntimeLibUpsert.isSafeString(value) || _glimmerRuntimeLibUpsert.isNode(value)) {
-            return value;
-        }
-        return String(value);
-    }
-
-    var AppendOpcode = (function (_Opcode) {
-        _inherits(AppendOpcode, _Opcode);
-
-        function AppendOpcode() {
-            _classCallCheck(this, AppendOpcode);
-
-            _Opcode.apply(this, arguments);
-        }
-
-        AppendOpcode.prototype.evaluate = function evaluate(vm) {
-            var reference = vm.frame.getOperand();
-            var normalized = this.normalize(reference);
-            var value = undefined,
-                cache = undefined;
-            if (_glimmerReference.isConst(reference)) {
-                value = normalized.value();
-            } else {
-                cache = new _glimmerReference.ReferenceCache(normalized);
-                value = cache.peek();
-            }
-            var stack = vm.stack();
-            var upsert = this.insert(stack.dom, stack, value);
-            var bounds = new _glimmerRuntimeLibBuilder.Fragment(upsert.bounds);
-            stack.newBounds(bounds);
-            if (cache /* i.e. !isConst(reference) */) {
-                    vm.updateWith(this.updateWith(vm, reference, cache, bounds, upsert));
-                }
-        };
-
-        AppendOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: ["$OPERAND"]
-            };
-        };
-
-        return AppendOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.AppendOpcode = AppendOpcode;
-
-    var GuardedAppendOpcode = (function (_AppendOpcode) {
-        _inherits(GuardedAppendOpcode, _AppendOpcode);
-
-        function GuardedAppendOpcode(expression) {
-            _classCallCheck(this, GuardedAppendOpcode);
-
-            _AppendOpcode.call(this);
-            this.deopted = null;
-            this.expression = expression;
-        }
-
-        GuardedAppendOpcode.prototype.evaluate = function evaluate(vm) {
-            if (this.deopted) {
-                vm.pushEvalFrame(this.deopted);
-            } else {
-                vm.evaluateOperand(this.expression);
-                var value = vm.frame.getOperand().value();
-                if (_glimmerRuntimeLibComponentInterfaces.isComponentDefinition(value)) {
-                    vm.pushEvalFrame(this.deopt(vm.env));
-                } else {
-                    _AppendOpcode.prototype.evaluate.call(this, vm);
-                }
-            }
-        };
-
-        GuardedAppendOpcode.prototype.deopt = function deopt(env) {
-            var _this = this;
-
-            // At compile time, we determined that this append callsite might refer
-            // to a local variable/property lookup that resolves to a component
-            // definition at runtime.
-            //
-            // We could have eagerly compiled this callsite into something like this:
-            //
-            //   {{#if (is-component-definition foo)}}
-            //     {{component foo}}
-            //   {{else}}
-            //     {{foo}}
-            //   {{/if}}
-            //
-            // However, in practice, there might be a large amout of these callsites
-            // and most of them would resolve to a simple value lookup. Therefore, we
-            // tried to be optimistic and assumed that the callsite will resolve to
-            // appending a simple value.
-            //
-            // However, we have reached here because at runtime, the guard conditional
-            // have detected that this callsite is indeed referring to a component
-            // definition object. Since this is likely going to be true for other
-            // instances of the same callsite, it is now appropiate to deopt into the
-            // expanded version that handles both cases. The compilation would look
-            // like this:
-            //
-            //               Enter(BEGIN, END)
-            //   BEGIN:      Noop
-            //               Test(is-component-definition)
-            //               JumpUnless(VALUE)
-            //   COMPONENT:  Noop
-            //               PutDynamicComponentDefinitionOpcode
-            //               OpenComponent
-            //               CloseComponent
-            //               Jump(END)
-            //   VALUE:      Noop
-            //               OptimizedAppend
-            //   END:        Noop
-            //               Exit
-            //
-            // Keep in mind that even if we *don't* reach here at initial render time,
-            // it is still possible (although quite rare) that the simple value we
-            // encounter during initial render could later change into a component
-            // definition object at update time. That is handled by the "lazy deopt"
-            // code on the update side (scroll down for the next big block of comment).
-            var buffer = new _glimmerRuntimeLibCompiler.CompileIntoList(env, null);
-            var dsl = new _glimmerRuntimeLibCompiledOpcodesBuilder.default(buffer, null, env);
-            dsl.block({ templates: null }, function (dsl, BEGIN, END) {
-                dsl.putValue(_this.expression);
-                dsl.test(IsComponentDefinitionReference.create);
-                dsl.jumpUnless('VALUE');
-                dsl.label('COMPONENT');
-                dsl.putDynamicComponentDefinition(_glimmerRuntimeLibSyntaxCore.Args.empty());
-                dsl.openComponent();
-                dsl.closeComponent();
-                dsl.jump(END);
-                dsl.label('VALUE');
-                dsl.append(new _this.AppendOpcode());
-            });
-            var deopted = this.deopted = dsl.toOpSeq();
-            // From this point on, we have essentially replaced ourselve with a new set
-            // of opcodes. Since we will always be executing the new/deopted code, it's
-            // a good idea (as a pattern) to null out any unneeded fields here to avoid
-            // holding on to unneeded/stale objects:
-            this.expression = null;
-            return deopted;
-        };
-
-        GuardedAppendOpcode.prototype.toJSON = function toJSON() {
-            var guid = this._guid;
-            var type = this.type;
-            var deopted = this.deopted;
-
-            if (deopted) {
-                return {
-                    guid: guid,
-                    type: type,
-                    deopted: true,
-                    children: deopted.toArray().map(function (op) {
-                        return op.toJSON();
-                    })
-                };
-            } else {
-                return {
-                    guid: guid,
-                    type: type,
-                    args: [this.expression.toJSON()]
-                };
-            }
-        };
-
-        return GuardedAppendOpcode;
-    })(AppendOpcode);
-
-    exports.GuardedAppendOpcode = GuardedAppendOpcode;
-
-    var IsComponentDefinitionReference = (function (_ConditionalReference) {
-        _inherits(IsComponentDefinitionReference, _ConditionalReference);
-
-        function IsComponentDefinitionReference() {
-            _classCallCheck(this, IsComponentDefinitionReference);
-
-            _ConditionalReference.apply(this, arguments);
-        }
-
-        IsComponentDefinitionReference.create = function create(inner) {
-            return new IsComponentDefinitionReference(inner);
-        };
-
-        IsComponentDefinitionReference.prototype.toBool = function toBool(value) {
-            return _glimmerRuntimeLibComponentInterfaces.isComponentDefinition(value);
-        };
-
-        return IsComponentDefinitionReference;
-    })(_glimmerRuntimeLibReferences.ConditionalReference);
-
-    var UpdateOpcode = (function (_UpdatingOpcode) {
-        _inherits(UpdateOpcode, _UpdatingOpcode);
-
-        function UpdateOpcode(cache, bounds, upsert) {
-            _classCallCheck(this, UpdateOpcode);
-
-            _UpdatingOpcode.call(this);
-            this.cache = cache;
-            this.bounds = bounds;
-            this.upsert = upsert;
-            this.tag = cache.tag;
-        }
-
-        UpdateOpcode.prototype.evaluate = function evaluate(vm) {
-            var value = this.cache.revalidate();
-            if (_glimmerReference.isModified(value)) {
-                var bounds = this.bounds;
-                var upsert = this.upsert;
-                var dom = vm.dom;
-
-                if (!this.upsert.update(dom, value)) {
-                    var cursor = new _glimmerRuntimeLibBounds.Cursor(bounds.parentElement(), _glimmerRuntimeLibBounds.clear(bounds));
-                    upsert = this.upsert = this.insert(dom, cursor, value);
-                }
-                bounds.update(upsert.bounds);
-            }
-        };
-
-        UpdateOpcode.prototype.toJSON = function toJSON() {
-            var guid = this._guid;
-            var type = this.type;
-            var cache = this.cache;
-
-            return {
-                guid: guid,
-                type: type,
-                details: { lastValue: JSON.stringify(cache.peek()) }
-            };
-        };
-
-        return UpdateOpcode;
-    })(_glimmerRuntimeLibOpcodes.UpdatingOpcode);
-
-    var GuardedUpdateOpcode = (function (_UpdateOpcode) {
-        _inherits(GuardedUpdateOpcode, _UpdateOpcode);
-
-        function GuardedUpdateOpcode(reference, cache, bounds, upsert, appendOpcode, state) {
-            _classCallCheck(this, GuardedUpdateOpcode);
-
-            _UpdateOpcode.call(this, cache, bounds, upsert);
-            this.reference = reference;
-            this.appendOpcode = appendOpcode;
-            this.state = state;
-            this.deopted = null;
-            this.tag = this._tag = new _glimmerReference.UpdatableTag(this.tag);
-            this.state.block = null;
-        }
-
-        GuardedUpdateOpcode.prototype.evaluate = function evaluate(vm) {
-            if (this.deopted) {
-                vm.evaluateOpcode(this.deopted);
-            } else {
-                if (_glimmerRuntimeLibComponentInterfaces.isComponentDefinition(this.reference.value())) {
-                    this.lazyDeopt(vm);
-                } else {
-                    _UpdateOpcode.prototype.evaluate.call(this, vm);
-                }
-            }
-        };
-
-        GuardedUpdateOpcode.prototype.lazyDeopt = function lazyDeopt(vm) {
-            // Durign initial render, we know that the reference does not contain a
-            // component definition, so we optimistically assumed that this append
-            // is just a normal append. However, at update time, we discovered that
-            // the reference has switched into containing a component definition, so
-            // we need to do a "lazy deopt", simulating what would have happened if
-            // we had decided to perform the deopt in the first place during initial
-            // render.
-            //
-            // More concretely, we would have expanded the curly into a if/else, and
-            // based on whether the value is a component definition or not, we would
-            // have entered either the dynamic component branch or the simple value
-            // branch.
-            //
-            // Since we rendered a simple value during initial render (and all the
-            // updates up until this point), we need to pretend that the result is
-            // produced by the "VALUE" branch of the deopted append opcode:
-            //
-            //   Try(BEGIN, END)
-            //     Assert(IsComponentDefinition, expected=false)
-            //     OptimizedUpdate
-            //
-            // In this case, because the reference has switched from being a simple
-            // value into a component definition, what would have happened is that
-            // the assert would throw, causing the Try opcode to teardown the bounds
-            // and rerun the original append opcode.
-            //
-            // Since the Try opcode would have nuked the updating opcodes anyway, we
-            // wouldn't have to worry about simulating those. All we have to do is to
-            // execute the Try opcode and immediately throw.
-            var bounds = this.bounds;
-            var appendOpcode = this.appendOpcode;
-            var state = this.state;
-
-            var appendOps = appendOpcode.deopt(vm.env);
-            var enter = appendOps.head();
-            var ops = enter.slice;
-            var tracker = state.block = new _glimmerRuntimeLibBuilder.BlockTracker(bounds.parentElement());
-            tracker.newBounds(this.bounds);
-            var children = new _glimmerUtil.LinkedList();
-            var deopted = this.deopted = new _glimmerRuntimeLibVmUpdate.TryOpcode({ ops: ops, state: state, children: children });
-            this._tag.update(deopted.tag);
-            vm.evaluateOpcode(deopted);
-            vm.throw();
-            // From this point on, we have essentially replaced ourselve with a new
-            // opcode. Since we will always be executing the new/deopted code, it's a
-            // good idea (as a pattern) to null out any unneeded fields here to avoid
-            // holding on to unneeded/stale objects:
-            this._tag = null;
-            this.reference = null;
-            this.cache = null;
-            this.bounds = null;
-            this.upsert = null;
-            this.appendOpcode = null;
-            this.state = null;
-        };
-
-        GuardedUpdateOpcode.prototype.toJSON = function toJSON() {
-            var guid = this._guid;
-            var type = this.type;
-            var deopted = this.deopted;
-
-            if (deopted) {
-                return {
-                    guid: guid,
-                    type: type,
-                    deopted: true,
-                    children: [deopted.toJSON()]
-                };
-            } else {
-                return _UpdateOpcode.prototype.toJSON.call(this);
-            }
-        };
-
-        return GuardedUpdateOpcode;
-    })(UpdateOpcode);
-
-    exports.GuardedUpdateOpcode = GuardedUpdateOpcode;
-
-    var OptimizedCautiousAppendOpcode = (function (_AppendOpcode2) {
-        _inherits(OptimizedCautiousAppendOpcode, _AppendOpcode2);
-
-        function OptimizedCautiousAppendOpcode() {
-            _classCallCheck(this, OptimizedCautiousAppendOpcode);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _AppendOpcode2.call.apply(_AppendOpcode2, [this].concat(args));
-            this.type = 'optimized-cautious-append';
-        }
-
-        OptimizedCautiousAppendOpcode.prototype.normalize = function normalize(reference) {
-            return _glimmerReference.map(reference, normalizeValue);
-        };
-
-        OptimizedCautiousAppendOpcode.prototype.insert = function insert(dom, cursor, value) {
-            return _glimmerRuntimeLibUpsert.cautiousInsert(dom, cursor, value);
-        };
-
-        OptimizedCautiousAppendOpcode.prototype.updateWith = function updateWith(vm, reference, cache, bounds, upsert) {
-            return new OptimizedCautiousUpdateOpcode(cache, bounds, upsert);
-        };
-
-        return OptimizedCautiousAppendOpcode;
-    })(AppendOpcode);
-
-    exports.OptimizedCautiousAppendOpcode = OptimizedCautiousAppendOpcode;
-
-    var OptimizedCautiousUpdateOpcode = (function (_UpdateOpcode2) {
-        _inherits(OptimizedCautiousUpdateOpcode, _UpdateOpcode2);
-
-        function OptimizedCautiousUpdateOpcode() {
-            _classCallCheck(this, OptimizedCautiousUpdateOpcode);
-
-            for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                args[_key2] = arguments[_key2];
-            }
-
-            _UpdateOpcode2.call.apply(_UpdateOpcode2, [this].concat(args));
-            this.type = 'optimized-cautious-update';
-        }
-
-        OptimizedCautiousUpdateOpcode.prototype.insert = function insert(dom, cursor, value) {
-            return _glimmerRuntimeLibUpsert.cautiousInsert(dom, cursor, value);
-        };
-
-        return OptimizedCautiousUpdateOpcode;
-    })(UpdateOpcode);
-
-    var GuardedCautiousAppendOpcode = (function (_GuardedAppendOpcode) {
-        _inherits(GuardedCautiousAppendOpcode, _GuardedAppendOpcode);
-
-        function GuardedCautiousAppendOpcode() {
-            _classCallCheck(this, GuardedCautiousAppendOpcode);
-
-            for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-                args[_key3] = arguments[_key3];
-            }
-
-            _GuardedAppendOpcode.call.apply(_GuardedAppendOpcode, [this].concat(args));
-            this.type = 'guarded-cautious-append';
-            this.AppendOpcode = OptimizedCautiousAppendOpcode;
-        }
-
-        GuardedCautiousAppendOpcode.prototype.normalize = function normalize(reference) {
-            return _glimmerReference.map(reference, normalizeValue);
-        };
-
-        GuardedCautiousAppendOpcode.prototype.insert = function insert(dom, cursor, value) {
-            return _glimmerRuntimeLibUpsert.cautiousInsert(dom, cursor, value);
-        };
-
-        GuardedCautiousAppendOpcode.prototype.updateWith = function updateWith(vm, reference, cache, bounds, upsert) {
-            return new GuardedCautiousUpdateOpcode(reference, cache, bounds, upsert, this, vm.capture());
-        };
-
-        return GuardedCautiousAppendOpcode;
-    })(GuardedAppendOpcode);
-
-    exports.GuardedCautiousAppendOpcode = GuardedCautiousAppendOpcode;
-
-    var GuardedCautiousUpdateOpcode = (function (_GuardedUpdateOpcode) {
-        _inherits(GuardedCautiousUpdateOpcode, _GuardedUpdateOpcode);
-
-        function GuardedCautiousUpdateOpcode() {
-            _classCallCheck(this, GuardedCautiousUpdateOpcode);
-
-            for (var _len4 = arguments.length, args = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
-                args[_key4] = arguments[_key4];
-            }
-
-            _GuardedUpdateOpcode.call.apply(_GuardedUpdateOpcode, [this].concat(args));
-            this.type = 'guarded-cautious-update';
-        }
-
-        GuardedCautiousUpdateOpcode.prototype.insert = function insert(dom, cursor, value) {
-            return _glimmerRuntimeLibUpsert.cautiousInsert(dom, cursor, value);
-        };
-
-        return GuardedCautiousUpdateOpcode;
-    })(GuardedUpdateOpcode);
-
-    var OptimizedTrustingAppendOpcode = (function (_AppendOpcode3) {
-        _inherits(OptimizedTrustingAppendOpcode, _AppendOpcode3);
-
-        function OptimizedTrustingAppendOpcode() {
-            _classCallCheck(this, OptimizedTrustingAppendOpcode);
-
-            for (var _len5 = arguments.length, args = Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
-                args[_key5] = arguments[_key5];
-            }
-
-            _AppendOpcode3.call.apply(_AppendOpcode3, [this].concat(args));
-            this.type = 'optimized-trusting-append';
-        }
-
-        OptimizedTrustingAppendOpcode.prototype.normalize = function normalize(reference) {
-            return _glimmerReference.map(reference, normalizeTrustedValue);
-        };
-
-        OptimizedTrustingAppendOpcode.prototype.insert = function insert(dom, cursor, value) {
-            return _glimmerRuntimeLibUpsert.trustingInsert(dom, cursor, value);
-        };
-
-        OptimizedTrustingAppendOpcode.prototype.updateWith = function updateWith(vm, reference, cache, bounds, upsert) {
-            return new OptimizedTrustingUpdateOpcode(cache, bounds, upsert);
-        };
-
-        return OptimizedTrustingAppendOpcode;
-    })(AppendOpcode);
-
-    exports.OptimizedTrustingAppendOpcode = OptimizedTrustingAppendOpcode;
-
-    var OptimizedTrustingUpdateOpcode = (function (_UpdateOpcode3) {
-        _inherits(OptimizedTrustingUpdateOpcode, _UpdateOpcode3);
-
-        function OptimizedTrustingUpdateOpcode() {
-            _classCallCheck(this, OptimizedTrustingUpdateOpcode);
-
-            for (var _len6 = arguments.length, args = Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
-                args[_key6] = arguments[_key6];
-            }
-
-            _UpdateOpcode3.call.apply(_UpdateOpcode3, [this].concat(args));
-            this.type = 'optimized-trusting-update';
-        }
-
-        OptimizedTrustingUpdateOpcode.prototype.insert = function insert(dom, cursor, value) {
-            return _glimmerRuntimeLibUpsert.trustingInsert(dom, cursor, value);
-        };
-
-        return OptimizedTrustingUpdateOpcode;
-    })(UpdateOpcode);
-
-    var GuardedTrustingAppendOpcode = (function (_GuardedAppendOpcode2) {
-        _inherits(GuardedTrustingAppendOpcode, _GuardedAppendOpcode2);
-
-        function GuardedTrustingAppendOpcode() {
-            _classCallCheck(this, GuardedTrustingAppendOpcode);
-
-            for (var _len7 = arguments.length, args = Array(_len7), _key7 = 0; _key7 < _len7; _key7++) {
-                args[_key7] = arguments[_key7];
-            }
-
-            _GuardedAppendOpcode2.call.apply(_GuardedAppendOpcode2, [this].concat(args));
-            this.type = 'guarded-trusting-append';
-            this.AppendOpcode = OptimizedTrustingAppendOpcode;
-        }
-
-        GuardedTrustingAppendOpcode.prototype.normalize = function normalize(reference) {
-            return _glimmerReference.map(reference, normalizeTrustedValue);
-        };
-
-        GuardedTrustingAppendOpcode.prototype.insert = function insert(dom, cursor, value) {
-            return _glimmerRuntimeLibUpsert.trustingInsert(dom, cursor, value);
-        };
-
-        GuardedTrustingAppendOpcode.prototype.updateWith = function updateWith(vm, reference, cache, bounds, upsert) {
-            return new GuardedTrustingUpdateOpcode(reference, cache, bounds, upsert, this, vm.capture());
-        };
-
-        return GuardedTrustingAppendOpcode;
-    })(GuardedAppendOpcode);
-
-    exports.GuardedTrustingAppendOpcode = GuardedTrustingAppendOpcode;
-
-    var GuardedTrustingUpdateOpcode = (function (_GuardedUpdateOpcode2) {
-        _inherits(GuardedTrustingUpdateOpcode, _GuardedUpdateOpcode2);
-
-        function GuardedTrustingUpdateOpcode() {
-            _classCallCheck(this, GuardedTrustingUpdateOpcode);
-
-            for (var _len8 = arguments.length, args = Array(_len8), _key8 = 0; _key8 < _len8; _key8++) {
-                args[_key8] = arguments[_key8];
-            }
-
-            _GuardedUpdateOpcode2.call.apply(_GuardedUpdateOpcode2, [this].concat(args));
-            this.type = 'trusting-update';
-        }
-
-        GuardedTrustingUpdateOpcode.prototype.insert = function insert(dom, cursor, value) {
-            return _glimmerRuntimeLibUpsert.trustingInsert(dom, cursor, value);
-        };
-
-        return GuardedTrustingUpdateOpcode;
-    })(GuardedUpdateOpcode);
-});
-
-enifed('glimmer-runtime/lib/compiled/opcodes/dom', ['exports', 'glimmer-runtime/lib/opcodes', 'glimmer-util', 'glimmer-reference', 'glimmer-runtime/lib/references', 'glimmer-runtime/lib/compiled/expressions/value'], function (exports, _glimmerRuntimeLibOpcodes, _glimmerUtil, _glimmerReference, _glimmerRuntimeLibReferences, _glimmerRuntimeLibCompiledExpressionsValue) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var TextOpcode = (function (_Opcode) {
-        _inherits(TextOpcode, _Opcode);
-
-        function TextOpcode(_ref) {
-            var text = _ref.text;
-
-            _classCallCheck(this, TextOpcode);
-
-            _Opcode.call(this);
-            this.type = "text";
-            this.text = text;
-        }
-
-        TextOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.stack().appendText(this.text);
-        };
-
-        TextOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: [JSON.stringify(this.text)]
-            };
-        };
-
-        return TextOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.TextOpcode = TextOpcode;
-
-    var OpenPrimitiveElementOpcode = (function (_Opcode2) {
-        _inherits(OpenPrimitiveElementOpcode, _Opcode2);
-
-        function OpenPrimitiveElementOpcode(_ref2) {
-            var tag = _ref2.tag;
-
-            _classCallCheck(this, OpenPrimitiveElementOpcode);
-
-            _Opcode2.call(this);
-            this.type = "open-primitive-element";
-            this.tag = tag;
-        }
-
-        OpenPrimitiveElementOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.stack().openElement(this.tag);
-        };
-
-        OpenPrimitiveElementOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: [JSON.stringify(this.tag)]
-            };
-        };
-
-        return OpenPrimitiveElementOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.OpenPrimitiveElementOpcode = OpenPrimitiveElementOpcode;
-
-    var OpenDynamicPrimitiveElementOpcode = (function (_Opcode3) {
-        _inherits(OpenDynamicPrimitiveElementOpcode, _Opcode3);
-
-        function OpenDynamicPrimitiveElementOpcode() {
-            _classCallCheck(this, OpenDynamicPrimitiveElementOpcode);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _Opcode3.call.apply(_Opcode3, [this].concat(args));
-            this.type = "open-dynamic-primitive-element";
-        }
-
-        OpenDynamicPrimitiveElementOpcode.prototype.evaluate = function evaluate(vm) {
-            var tagName = vm.frame.getOperand().value();
-            vm.stack().openElement(tagName);
-        };
-
-        OpenDynamicPrimitiveElementOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: ["$OPERAND"]
-            };
-        };
-
-        return OpenDynamicPrimitiveElementOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.OpenDynamicPrimitiveElementOpcode = OpenDynamicPrimitiveElementOpcode;
-
-    var ClassList = (function () {
-        function ClassList() {
-            _classCallCheck(this, ClassList);
-
-            this.list = null;
-            this.isConst = true;
-        }
-
-        ClassList.prototype.append = function append(reference) {
-            var list = this.list;
-            var isConst = this.isConst;
-
-            if (list === null) list = this.list = [];
-            list.push(reference);
-            this.isConst = isConst && _glimmerReference.isConst(reference);
-        };
-
-        ClassList.prototype.toReference = function toReference() {
-            var list = this.list;
-            var isConst = this.isConst;
-
-            if (!list) return _glimmerRuntimeLibReferences.NULL_REFERENCE;
-            if (isConst) return new _glimmerRuntimeLibCompiledExpressionsValue.ValueReference(toClassName(list));
-            return new ClassListReference(list);
-        };
-
-        return ClassList;
-    })();
-
-    var ClassListReference = (function (_CachedReference) {
-        _inherits(ClassListReference, _CachedReference);
-
-        function ClassListReference(list) {
-            _classCallCheck(this, ClassListReference);
-
-            _CachedReference.call(this);
-            this.list = [];
-            this.tag = _glimmerReference.combineTagged(list);
-            this.list = list;
-        }
-
-        ClassListReference.prototype.compute = function compute() {
-            return toClassName(this.list);
-        };
-
-        return ClassListReference;
-    })(_glimmerReference.CachedReference);
-
-    function toClassName(list) {
-        var ret = [];
-        for (var i = 0; i < list.length; i++) {
-            var value = list[i].value();
-            if (value !== false && value !== null && value !== undefined) ret.push(value);
-        }
-        return ret.length === 0 ? null : ret.join(' ');
-    }
-
-    var CloseElementOpcode = (function (_Opcode4) {
-        _inherits(CloseElementOpcode, _Opcode4);
-
-        function CloseElementOpcode() {
-            _classCallCheck(this, CloseElementOpcode);
-
-            for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                args[_key2] = arguments[_key2];
-            }
-
-            _Opcode4.call.apply(_Opcode4, [this].concat(args));
-            this.type = "close-element";
-        }
-
-        CloseElementOpcode.prototype.evaluate = function evaluate(vm) {
-            var dom = vm.env.getDOM();
-            var stack = vm.stack();
-            var element = stack.element;
-            var groups = stack.elementOperations.groups;
-
-            var classList = new ClassList();
-            var flattened = _glimmerUtil.dict();
-            var flattenedKeys = [];
-            // This is a hardcoded merge strategy:
-            // 1. Classes are merged together split by whitespace
-            // 2. Other attributes are first-write-wins (which means invocation
-            //    wins over top-level element in components)
-            for (var i = 0; i < groups.length; i++) {
-                for (var j = 0; j < groups[i].length; j++) {
-                    var op = groups[i][j];
-                    var _name = op['name'];
-                    var reference = op['reference'];
-                    if (_name === 'class') {
-                        classList.append(reference);
-                    } else if (!flattened[_name]) {
-                        flattenedKeys.push(_name);
-                        flattened[_name] = op;
-                    }
-                }
-            }
-            var className = classList.toReference();
-            var attr = 'class';
-            var attributeManager = vm.env.attributeFor(element, attr, className, false);
-            var attribute = new Attribute(element, attributeManager, attr, className);
-            var opcode = attribute.flush(dom);
-            if (opcode) {
-                vm.updateWith(opcode);
-            }
-            for (var k = 0; k < flattenedKeys.length; k++) {
-                var _opcode = flattened[flattenedKeys[k]].flush(dom);
-                if (_opcode) vm.updateWith(_opcode);
-            }
-            stack.closeElement();
-        };
-
-        return CloseElementOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.CloseElementOpcode = CloseElementOpcode;
-
-    var StaticAttrOpcode = (function (_Opcode5) {
-        _inherits(StaticAttrOpcode, _Opcode5);
-
-        function StaticAttrOpcode(_ref3) {
-            var namespace = _ref3.namespace;
-            var name = _ref3.name;
-            var value = _ref3.value;
-
-            _classCallCheck(this, StaticAttrOpcode);
-
-            _Opcode5.call(this);
-            this.type = "static-attr";
-            this.namespace = namespace;
-            this.name = name;
-            this.value = new _glimmerRuntimeLibCompiledExpressionsValue.ValueReference(value);
-        }
-
-        StaticAttrOpcode.prototype.evaluate = function evaluate(vm) {
-            var name = this.name;
-            var value = this.value;
-            var namespace = this.namespace;
-
-            if (namespace) {
-                vm.stack().setAttributeNS(namespace, name, value, false);
-            } else {
-                vm.stack().setAttribute(name, value, false);
-            }
-        };
-
-        StaticAttrOpcode.prototype.toJSON = function toJSON() {
-            var guid = this._guid;
-            var type = this.type;
-            var namespace = this.namespace;
-            var name = this.name;
-            var value = this.value;
-
-            var details = _glimmerUtil.dict();
-            if (namespace) {
-                details["namespace"] = JSON.stringify(namespace);
-            }
-            details["name"] = JSON.stringify(name);
-            details["value"] = JSON.stringify(value.value());
-            return { guid: guid, type: type, details: details };
-        };
-
-        return StaticAttrOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.StaticAttrOpcode = StaticAttrOpcode;
-
-    var ModifierOpcode = (function (_Opcode6) {
-        _inherits(ModifierOpcode, _Opcode6);
-
-        function ModifierOpcode(_ref4) {
-            var name = _ref4.name;
-            var manager = _ref4.manager;
-            var args = _ref4.args;
-
-            _classCallCheck(this, ModifierOpcode);
-
-            _Opcode6.call(this);
-            this.type = "modifier";
-            this.name = name;
-            this.manager = manager;
-            this.args = args;
-        }
-
-        ModifierOpcode.prototype.evaluate = function evaluate(vm) {
-            var manager = this.manager;
-
-            var stack = vm.stack();
-            var element = stack.element;
-            var dom = stack.dom;
-
-            var args = this.args.evaluate(vm);
-            var dynamicScope = vm.dynamicScope();
-            var modifier = manager.install(element, args, dom, dynamicScope);
-            var destructor = manager.getDestructor(modifier);
-            if (destructor) {
-                vm.newDestroyable(destructor);
-            }
-            vm.updateWith(new UpdateModifierOpcode({
-                manager: manager,
-                modifier: modifier,
-                element: element,
-                dynamicScope: dynamicScope,
-                args: args
-            }));
-        };
-
-        ModifierOpcode.prototype.toJSON = function toJSON() {
-            var guid = this._guid;
-            var type = this.type;
-            var name = this.name;
-            var args = this.args;
-
-            var details = _glimmerUtil.dict();
-            details["type"] = JSON.stringify(type);
-            details["name"] = JSON.stringify(name);
-            details["args"] = JSON.stringify(args);
-            return { guid: guid, type: type, details: details };
-        };
-
-        return ModifierOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.ModifierOpcode = ModifierOpcode;
-
-    var UpdateModifierOpcode = (function (_UpdatingOpcode) {
-        _inherits(UpdateModifierOpcode, _UpdatingOpcode);
-
-        function UpdateModifierOpcode(_ref5) {
-            var manager = _ref5.manager;
-            var modifier = _ref5.modifier;
-            var element = _ref5.element;
-            var dynamicScope = _ref5.dynamicScope;
-            var args = _ref5.args;
-
-            _classCallCheck(this, UpdateModifierOpcode);
-
-            _UpdatingOpcode.call(this);
-            this.type = "update-modifier";
-            this.modifier = modifier;
-            this.manager = manager;
-            this.element = element;
-            this.dynamicScope = dynamicScope;
-            this.args = args;
-            this.tag = args.tag;
-            this.lastUpdated = args.tag.value();
-        }
-
-        UpdateModifierOpcode.prototype.evaluate = function evaluate(vm) {
-            var manager = this.manager;
-            var modifier = this.modifier;
-            var element = this.element;
-            var dynamicScope = this.dynamicScope;
-            var args = this.args;
-            var lastUpdated = this.lastUpdated;
-
-            if (!args.tag.validate(lastUpdated)) {
-                manager.update(modifier, element, args, vm.dom, dynamicScope);
-                this.lastUpdated = args.tag.value();
-            }
-        };
-
-        UpdateModifierOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: [JSON.stringify(this.args)]
-            };
-        };
-
-        return UpdateModifierOpcode;
-    })(_glimmerRuntimeLibOpcodes.UpdatingOpcode);
-
-    exports.UpdateModifierOpcode = UpdateModifierOpcode;
-
-    var Attribute = (function () {
-        function Attribute(element, changeList, name, reference, namespace) {
-            _classCallCheck(this, Attribute);
-
-            this.element = element;
-            this.reference = reference;
-            this.changeList = changeList;
-            this.tag = reference.tag;
-            this.name = name;
-            this.cache = null;
-            this.namespace = namespace;
-        }
-
-        Attribute.prototype.patch = function patch(dom) {
-            var element = this.element;
-            var cache = this.cache;
-
-            var value = cache.revalidate();
-            if (_glimmerReference.isModified(value)) {
-                this.changeList.updateAttribute(dom, element, this.name, value, this.namespace);
-            }
-        };
-
-        Attribute.prototype.flush = function flush(dom) {
-            var reference = this.reference;
-            var element = this.element;
-
-            if (_glimmerReference.isConst(reference)) {
-                var value = reference.value();
-                this.changeList.setAttribute(dom, element, this.name, value, this.namespace);
-            } else {
-                var cache = this.cache = new _glimmerReference.ReferenceCache(reference);
-                var value = cache.peek();
-                this.changeList.setAttribute(dom, element, this.name, value, this.namespace);
-                return new PatchElementOpcode(this);
-            }
-        };
-
-        Attribute.prototype.toJSON = function toJSON() {
-            var element = this.element;
-            var namespace = this.namespace;
-            var name = this.name;
-            var cache = this.cache;
-
-            var formattedElement = formatElement(element);
-            var lastValue = cache.peek();
-            if (namespace) {
-                return {
-                    element: formattedElement,
-                    type: 'attribute',
-                    namespace: namespace,
-                    name: name,
-                    lastValue: lastValue
-                };
-            }
-            return {
-                element: formattedElement,
-                type: 'attribute',
-                namespace: namespace,
-                name: name,
-                lastValue: lastValue
-            };
-        };
-
-        return Attribute;
-    })();
-
-    exports.Attribute = Attribute;
-
-    function formatElement(element) {
-        return JSON.stringify('<' + element.tagName.toLowerCase() + ' />');
-    }
-
-    var DynamicAttrNSOpcode = (function (_Opcode7) {
-        _inherits(DynamicAttrNSOpcode, _Opcode7);
-
-        function DynamicAttrNSOpcode(_ref6) {
-            var name = _ref6.name;
-            var namespace = _ref6.namespace;
-            var isTrusting = _ref6.isTrusting;
-
-            _classCallCheck(this, DynamicAttrNSOpcode);
-
-            _Opcode7.call(this);
-            this.type = "dynamic-attr";
-            this.name = name;
-            this.namespace = namespace;
-            this.isTrusting = isTrusting;
-        }
-
-        DynamicAttrNSOpcode.prototype.evaluate = function evaluate(vm) {
-            var name = this.name;
-            var namespace = this.namespace;
-            var isTrusting = this.isTrusting;
-
-            var reference = vm.frame.getOperand();
-            vm.stack().setAttributeNS(namespace, name, reference, isTrusting);
-        };
-
-        DynamicAttrNSOpcode.prototype.toJSON = function toJSON() {
-            var guid = this._guid;
-            var type = this.type;
-            var name = this.name;
-            var namespace = this.namespace;
-
-            var details = _glimmerUtil.dict();
-            details["name"] = JSON.stringify(name);
-            details["value"] = "$OPERAND";
-            if (namespace) {
-                details["namespace"] = JSON.stringify(namespace);
-            }
-            return { guid: guid, type: type, details: details };
-        };
-
-        return DynamicAttrNSOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.DynamicAttrNSOpcode = DynamicAttrNSOpcode;
-
-    var DynamicAttrOpcode = (function (_Opcode8) {
-        _inherits(DynamicAttrOpcode, _Opcode8);
-
-        function DynamicAttrOpcode(_ref7) {
-            var name = _ref7.name;
-            var isTrusting = _ref7.isTrusting;
-
-            _classCallCheck(this, DynamicAttrOpcode);
-
-            _Opcode8.call(this);
-            this.type = "dynamic-attr";
-            this.name = name;
-            this.isTrusting = isTrusting;
-        }
-
-        DynamicAttrOpcode.prototype.evaluate = function evaluate(vm) {
-            var name = this.name;
-            var isTrusting = this.isTrusting;
-
-            var reference = vm.frame.getOperand();
-            vm.stack().setAttribute(name, reference, isTrusting);
-        };
-
-        DynamicAttrOpcode.prototype.toJSON = function toJSON() {
-            var guid = this._guid;
-            var type = this.type;
-            var name = this.name;
-
-            var details = _glimmerUtil.dict();
-            details["name"] = JSON.stringify(name);
-            details["value"] = "$OPERAND";
-            return { guid: guid, type: type, details: details };
-        };
-
-        return DynamicAttrOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.DynamicAttrOpcode = DynamicAttrOpcode;
-
-    var PatchElementOpcode = (function (_UpdatingOpcode2) {
-        _inherits(PatchElementOpcode, _UpdatingOpcode2);
-
-        function PatchElementOpcode(operation) {
-            _classCallCheck(this, PatchElementOpcode);
-
-            _UpdatingOpcode2.call(this);
-            this.type = "patch-element";
-            this.tag = operation.tag;
-            this.operation = operation;
-        }
-
-        PatchElementOpcode.prototype.evaluate = function evaluate(vm) {
-            this.operation.patch(vm.env.getDOM());
-        };
-
-        PatchElementOpcode.prototype.toJSON = function toJSON() {
-            var _guid = this._guid;
-            var type = this.type;
-            var operation = this.operation;
-
-            return {
-                guid: _guid,
-                type: type,
-                details: operation.toJSON()
-            };
-        };
-
-        return PatchElementOpcode;
-    })(_glimmerRuntimeLibOpcodes.UpdatingOpcode);
-
-    exports.PatchElementOpcode = PatchElementOpcode;
-
-    var CommentOpcode = (function (_Opcode9) {
-        _inherits(CommentOpcode, _Opcode9);
-
-        function CommentOpcode(_ref8) {
-            var comment = _ref8.comment;
-
-            _classCallCheck(this, CommentOpcode);
-
-            _Opcode9.call(this);
-            this.type = "comment";
-            this.comment = comment;
-        }
-
-        CommentOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.stack().appendComment(this.comment);
-        };
-
-        CommentOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: [JSON.stringify(this.comment)]
-            };
-        };
-
-        return CommentOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.CommentOpcode = CommentOpcode;
-});
-
-enifed('glimmer-runtime/lib/compiled/opcodes/lists', ['exports', 'glimmer-runtime/lib/opcodes', 'glimmer-runtime/lib/compiled/expressions/args', 'glimmer-util', 'glimmer-reference'], function (exports, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibCompiledExpressionsArgs, _glimmerUtil, _glimmerReference) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var IterablePresenceReference = (function () {
-        function IterablePresenceReference(artifacts) {
-            _classCallCheck(this, IterablePresenceReference);
-
-            this.tag = artifacts.tag;
-            this.artifacts = artifacts;
-        }
-
-        IterablePresenceReference.prototype.value = function value() {
-            return !this.artifacts.isEmpty();
-        };
-
-        return IterablePresenceReference;
-    })();
-
-    var PutIteratorOpcode = (function (_Opcode) {
-        _inherits(PutIteratorOpcode, _Opcode);
-
-        function PutIteratorOpcode() {
-            _classCallCheck(this, PutIteratorOpcode);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _Opcode.call.apply(_Opcode, [this].concat(args));
-            this.type = "put-iterator";
-        }
-
-        PutIteratorOpcode.prototype.evaluate = function evaluate(vm) {
-            var listRef = vm.frame.getOperand();
-            var args = vm.frame.getArgs();
-            var iterable = vm.env.iterableFor(listRef, args);
-            var iterator = new _glimmerReference.ReferenceIterator(iterable);
-            vm.frame.setIterator(iterator);
-            vm.frame.setCondition(new IterablePresenceReference(iterator.artifacts));
-        };
-
-        return PutIteratorOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.PutIteratorOpcode = PutIteratorOpcode;
-
-    var EnterListOpcode = (function (_Opcode2) {
-        _inherits(EnterListOpcode, _Opcode2);
-
-        function EnterListOpcode(start, end) {
-            _classCallCheck(this, EnterListOpcode);
-
-            _Opcode2.call(this);
-            this.type = "enter-list";
-            this.slice = new _glimmerUtil.ListSlice(start, end);
-        }
-
-        EnterListOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.enterList(this.slice);
-        };
-
-        EnterListOpcode.prototype.toJSON = function toJSON() {
-            var slice = this.slice;
-            var type = this.type;
-            var _guid = this._guid;
-
-            var begin = slice.head();
-            var end = slice.tail();
-            return {
-                guid: _guid,
-                type: type,
-                args: [JSON.stringify(begin.inspect()), JSON.stringify(end.inspect())]
-            };
-        };
-
-        return EnterListOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.EnterListOpcode = EnterListOpcode;
-
-    var ExitListOpcode = (function (_Opcode3) {
-        _inherits(ExitListOpcode, _Opcode3);
-
-        function ExitListOpcode() {
-            _classCallCheck(this, ExitListOpcode);
-
-            for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                args[_key2] = arguments[_key2];
-            }
-
-            _Opcode3.call.apply(_Opcode3, [this].concat(args));
-            this.type = "exit-list";
-        }
-
-        ExitListOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.exitList();
-        };
-
-        return ExitListOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.ExitListOpcode = ExitListOpcode;
-
-    var EnterWithKeyOpcode = (function (_Opcode4) {
-        _inherits(EnterWithKeyOpcode, _Opcode4);
-
-        function EnterWithKeyOpcode(start, end) {
-            _classCallCheck(this, EnterWithKeyOpcode);
-
-            _Opcode4.call(this);
-            this.type = "enter-with-key";
-            this.slice = new _glimmerUtil.ListSlice(start, end);
-        }
-
-        EnterWithKeyOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.enterWithKey(vm.frame.getKey(), this.slice);
-        };
-
-        EnterWithKeyOpcode.prototype.toJSON = function toJSON() {
-            var slice = this.slice;
-            var _guid = this._guid;
-            var type = this.type;
-
-            var begin = slice.head();
-            var end = slice.tail();
-            return {
-                guid: _guid,
-                type: type,
-                args: [JSON.stringify(begin.inspect()), JSON.stringify(end.inspect())]
-            };
-        };
-
-        return EnterWithKeyOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.EnterWithKeyOpcode = EnterWithKeyOpcode;
-
-    var TRUE_REF = new _glimmerReference.ConstReference(true);
-    var FALSE_REF = new _glimmerReference.ConstReference(false);
-
-    var NextIterOpcode = (function (_Opcode5) {
-        _inherits(NextIterOpcode, _Opcode5);
-
-        function NextIterOpcode(end) {
-            _classCallCheck(this, NextIterOpcode);
-
-            _Opcode5.call(this);
-            this.type = "next-iter";
-            this.end = end;
-        }
-
-        NextIterOpcode.prototype.evaluate = function evaluate(vm) {
-            var item = vm.frame.getIterator().next();
-            if (item) {
-                vm.frame.setCondition(TRUE_REF);
-                vm.frame.setKey(item.key);
-                vm.frame.setOperand(item.value);
-                vm.frame.setArgs(_glimmerRuntimeLibCompiledExpressionsArgs.EvaluatedArgs.positional([item.value, item.memo]));
-            } else {
-                vm.frame.setCondition(FALSE_REF);
-                vm.goto(this.end);
-            }
-        };
-
-        return NextIterOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.NextIterOpcode = NextIterOpcode;
-});
-
-enifed('glimmer-runtime/lib/compiled/opcodes/vm', ['exports', 'glimmer-runtime/lib/opcodes', 'glimmer-runtime/lib/compiled/expressions/args', 'glimmer-runtime/lib/vm', 'glimmer-runtime/lib/utils', 'glimmer-runtime/lib/references', 'glimmer-reference', 'glimmer-runtime/lib/compiled/expressions/value', 'glimmer-util', 'glimmer-runtime/lib/scanner'], function (exports, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibCompiledExpressionsArgs, _glimmerRuntimeLibVm, _glimmerRuntimeLibUtils, _glimmerRuntimeLibReferences, _glimmerReference, _glimmerRuntimeLibCompiledExpressionsValue, _glimmerUtil, _glimmerRuntimeLibScanner) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var PushChildScopeOpcode = (function (_Opcode) {
-        _inherits(PushChildScopeOpcode, _Opcode);
-
-        function PushChildScopeOpcode() {
-            _classCallCheck(this, PushChildScopeOpcode);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _Opcode.call.apply(_Opcode, [this].concat(args));
-            this.type = "push-child-scope";
-        }
-
-        PushChildScopeOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.pushChildScope();
-        };
-
-        return PushChildScopeOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.PushChildScopeOpcode = PushChildScopeOpcode;
-
-    var PopScopeOpcode = (function (_Opcode2) {
-        _inherits(PopScopeOpcode, _Opcode2);
-
-        function PopScopeOpcode() {
-            _classCallCheck(this, PopScopeOpcode);
-
-            for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                args[_key2] = arguments[_key2];
-            }
-
-            _Opcode2.call.apply(_Opcode2, [this].concat(args));
-            this.type = "pop-scope";
-        }
-
-        PopScopeOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.popScope();
-        };
-
-        return PopScopeOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.PopScopeOpcode = PopScopeOpcode;
-
-    var PushDynamicScopeOpcode = (function (_Opcode3) {
-        _inherits(PushDynamicScopeOpcode, _Opcode3);
-
-        function PushDynamicScopeOpcode() {
-            _classCallCheck(this, PushDynamicScopeOpcode);
-
-            for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-                args[_key3] = arguments[_key3];
-            }
-
-            _Opcode3.call.apply(_Opcode3, [this].concat(args));
-            this.type = "push-dynamic-scope";
-        }
-
-        PushDynamicScopeOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.pushDynamicScope();
-        };
-
-        return PushDynamicScopeOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.PushDynamicScopeOpcode = PushDynamicScopeOpcode;
-
-    var PopDynamicScopeOpcode = (function (_Opcode4) {
-        _inherits(PopDynamicScopeOpcode, _Opcode4);
-
-        function PopDynamicScopeOpcode() {
-            _classCallCheck(this, PopDynamicScopeOpcode);
-
-            for (var _len4 = arguments.length, args = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
-                args[_key4] = arguments[_key4];
-            }
-
-            _Opcode4.call.apply(_Opcode4, [this].concat(args));
-            this.type = "pop-dynamic-scope";
-        }
-
-        PopDynamicScopeOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.popDynamicScope();
-        };
-
-        return PopDynamicScopeOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.PopDynamicScopeOpcode = PopDynamicScopeOpcode;
-
-    var PutNullOpcode = (function (_Opcode5) {
-        _inherits(PutNullOpcode, _Opcode5);
-
-        function PutNullOpcode() {
-            _classCallCheck(this, PutNullOpcode);
-
-            for (var _len5 = arguments.length, args = Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
-                args[_key5] = arguments[_key5];
-            }
-
-            _Opcode5.call.apply(_Opcode5, [this].concat(args));
-            this.type = "put-null";
-        }
-
-        PutNullOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.frame.setOperand(_glimmerRuntimeLibReferences.NULL_REFERENCE);
-        };
-
-        return PutNullOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.PutNullOpcode = PutNullOpcode;
-
-    var PutValueOpcode = (function (_Opcode6) {
-        _inherits(PutValueOpcode, _Opcode6);
-
-        function PutValueOpcode(_ref) {
-            var expression = _ref.expression;
-
-            _classCallCheck(this, PutValueOpcode);
-
-            _Opcode6.call(this);
-            this.type = "put-value";
-            this.expression = expression;
-        }
-
-        PutValueOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.evaluateOperand(this.expression);
-        };
-
-        PutValueOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: [this.expression.toJSON()]
-            };
-        };
-
-        return PutValueOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.PutValueOpcode = PutValueOpcode;
-
-    var PutArgsOpcode = (function (_Opcode7) {
-        _inherits(PutArgsOpcode, _Opcode7);
-
-        function PutArgsOpcode(_ref2) {
-            var args = _ref2.args;
-
-            _classCallCheck(this, PutArgsOpcode);
-
-            _Opcode7.call(this);
-            this.type = "put-args";
-            this.args = args;
-        }
-
-        PutArgsOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.evaluateArgs(this.args);
-        };
-
-        PutArgsOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                details: {
-                    "positional": this.args.positional.toJSON(),
-                    "named": this.args.named.toJSON()
-                }
-            };
-        };
-
-        return PutArgsOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.PutArgsOpcode = PutArgsOpcode;
-
-    var BindPositionalArgsOpcode = (function (_Opcode8) {
-        _inherits(BindPositionalArgsOpcode, _Opcode8);
-
-        function BindPositionalArgsOpcode(_ref3) {
-            var block = _ref3.block;
-
-            _classCallCheck(this, BindPositionalArgsOpcode);
-
-            _Opcode8.call(this);
-            this.type = "bind-positional-args";
-            this.names = block.locals;
-            var positional = this.positional = [];
-            block.locals.forEach(function (name) {
-                positional.push(block.symbolTable.getLocal(name));
-            });
-        }
-
-        BindPositionalArgsOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.bindPositionalArgs(this.positional);
-        };
-
-        BindPositionalArgsOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: ['[' + this.names.map(function (name) {
-                    return JSON.stringify(name);
-                }).join(", ") + ']']
-            };
-        };
-
-        return BindPositionalArgsOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.BindPositionalArgsOpcode = BindPositionalArgsOpcode;
-
-    var BindNamedArgsOpcode = (function (_Opcode9) {
-        _inherits(BindNamedArgsOpcode, _Opcode9);
-
-        function BindNamedArgsOpcode(_ref4) {
-            var named = _ref4.named;
-
-            _classCallCheck(this, BindNamedArgsOpcode);
-
-            _Opcode9.call(this);
-            this.type = "bind-named-args";
-            this.named = named;
-        }
-
-        BindNamedArgsOpcode.create = function create(layout) {
-            var named = layout['named'].reduce(function (obj, name) {
-                var _assign;
-
-                return _glimmerUtil.assign(obj, (_assign = {}, _assign[name] = layout.symbolTable.getNamed(name), _assign));
-            }, _glimmerUtil.dict());
-            _glimmerRuntimeLibUtils.turbocharge(named);
-            return new BindNamedArgsOpcode({ named: named });
-        };
-
-        BindNamedArgsOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.bindNamedArgs(this.named);
-        };
-
-        BindNamedArgsOpcode.prototype.toJSON = function toJSON() {
-            var _this = this;
-
-            var args = Object.keys(this.named).map(function (name) {
-                return '$' + _this.named[name] + ': $ARGS[' + name + ']';
-            });
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: args
-            };
-        };
-
-        return BindNamedArgsOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.BindNamedArgsOpcode = BindNamedArgsOpcode;
-
-    var BindBlocksOpcode = (function (_Opcode10) {
-        _inherits(BindBlocksOpcode, _Opcode10);
-
-        function BindBlocksOpcode(_ref5) {
-            var blocks = _ref5.blocks;
-
-            _classCallCheck(this, BindBlocksOpcode);
-
-            _Opcode10.call(this);
-            this.type = "bind-blocks";
-            this.blocks = blocks;
-        }
-
-        BindBlocksOpcode.create = function create(template) {
-            var blocks = _glimmerUtil.dict();
-            template['yields'].forEach(function (name) {
-                blocks[name] = template.symbolTable.getYield(name);
-            });
-            return new BindBlocksOpcode({ blocks: blocks });
-        };
-
-        BindBlocksOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.bindBlocks(this.blocks);
-        };
-
-        return BindBlocksOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.BindBlocksOpcode = BindBlocksOpcode;
-    exports.BindDynamicScopeCallback = _glimmerRuntimeLibVm.BindDynamicScopeCallback;
-
-    var BindDynamicScopeOpcode = (function (_Opcode11) {
-        _inherits(BindDynamicScopeOpcode, _Opcode11);
-
-        function BindDynamicScopeOpcode(callback) {
-            _classCallCheck(this, BindDynamicScopeOpcode);
-
-            _Opcode11.call(this);
-            this.type = "bind-dynamic-scope";
-            this.callback = callback;
-        }
-
-        BindDynamicScopeOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.bindDynamicScope(this.callback);
-        };
-
-        return BindDynamicScopeOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.BindDynamicScopeOpcode = BindDynamicScopeOpcode;
-
-    var EnterOpcode = (function (_Opcode12) {
-        _inherits(EnterOpcode, _Opcode12);
-
-        function EnterOpcode(_ref6) {
-            var begin = _ref6.begin;
-            var end = _ref6.end;
-
-            _classCallCheck(this, EnterOpcode);
-
-            _Opcode12.call(this);
-            this.type = "enter";
-            this.slice = new _glimmerUtil.ListSlice(begin, end);
-        }
-
-        EnterOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.enter(this.slice);
-        };
-
-        EnterOpcode.prototype.toJSON = function toJSON() {
-            var slice = this.slice;
-            var type = this.type;
-            var _guid = this._guid;
-
-            var begin = slice.head();
-            var end = slice.tail();
-            return {
-                guid: _guid,
-                type: type,
-                args: [JSON.stringify(begin.inspect()), JSON.stringify(end.inspect())]
-            };
-        };
-
-        return EnterOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.EnterOpcode = EnterOpcode;
-
-    var ExitOpcode = (function (_Opcode13) {
-        _inherits(ExitOpcode, _Opcode13);
-
-        function ExitOpcode() {
-            _classCallCheck(this, ExitOpcode);
-
-            for (var _len6 = arguments.length, args = Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
-                args[_key6] = arguments[_key6];
-            }
-
-            _Opcode13.call.apply(_Opcode13, [this].concat(args));
-            this.type = "exit";
-        }
-
-        ExitOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.exit();
-        };
-
-        return ExitOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.ExitOpcode = ExitOpcode;
-
-    var LabelOpcode = (function (_Opcode14) {
-        _inherits(LabelOpcode, _Opcode14);
-
-        function LabelOpcode(label) {
-            _classCallCheck(this, LabelOpcode);
-
-            _Opcode14.call(this);
-            this.tag = _glimmerReference.CONSTANT_TAG;
-            this.type = "label";
-            this.label = null;
-            this.prev = null;
-            this.next = null;
-            if (label) this.label = label;
-        }
-
-        LabelOpcode.prototype.evaluate = function evaluate() {};
-
-        LabelOpcode.prototype.inspect = function inspect() {
-            return this.label + ' [' + this._guid + ']';
-        };
-
-        LabelOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: [JSON.stringify(this.inspect())]
-            };
-        };
-
-        return LabelOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.LabelOpcode = LabelOpcode;
-
-    var EvaluateOpcode = (function (_Opcode15) {
-        _inherits(EvaluateOpcode, _Opcode15);
-
-        function EvaluateOpcode(_ref7) {
-            var debug = _ref7.debug;
-            var block = _ref7.block;
-
-            _classCallCheck(this, EvaluateOpcode);
-
-            _Opcode15.call(this);
-            this.type = "evaluate";
-            this.debug = debug;
-            this.block = block;
-        }
-
-        EvaluateOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.invokeBlock(this.block, vm.frame.getArgs());
-        };
-
-        EvaluateOpcode.prototype.toJSON = function toJSON() {
-            var guid = this._guid;
-            var type = this.type;
-            var debug = this.debug;
-            var block = this.block;
-
-            var compiled = block['compiled'];
-            var children = undefined;
-            if (compiled) {
-                children = compiled.ops.toArray().map(function (op) {
-                    return op.toJSON();
-                });
-            } else {
-                children = [{ guid: null, type: '[ UNCOMPILED BLOCK ]' }];
-            }
-            return {
-                guid: guid,
-                type: type,
-                args: [debug],
-                children: children
-            };
-        };
-
-        return EvaluateOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.EvaluateOpcode = EvaluateOpcode;
-
-    var EvaluatePartialOpcode = (function (_Opcode16) {
-        _inherits(EvaluatePartialOpcode, _Opcode16);
-
-        function EvaluatePartialOpcode(_ref8) {
-            var name = _ref8.name;
-            var symbolTable = _ref8.symbolTable;
-
-            _classCallCheck(this, EvaluatePartialOpcode);
-
-            _Opcode16.call(this);
-            this.type = "evaluate-partial";
-            this.cache = _glimmerUtil.dict();
-            this.name = name;
-            this.symbolTable = symbolTable;
-        }
-
-        EvaluatePartialOpcode.prototype.evaluate = function evaluate(vm) {
-            var reference = this.name.evaluate(vm);
-            var referenceCache = new _glimmerReference.ReferenceCache(reference);
-            var name = referenceCache.revalidate();
-            var block = this.cache[name];
-            if (!block) {
-                var _vm$env$lookupPartial = vm.env.lookupPartial([name]);
-
-                var template = _vm$env$lookupPartial.template;
-
-                var scanner = new _glimmerRuntimeLibScanner.default(template, vm.env);
-                block = scanner.scanPartial(this.symbolTable);
-            }
-            vm.invokeBlock(block, _glimmerRuntimeLibCompiledExpressionsArgs.EvaluatedArgs.empty());
-            if (!_glimmerReference.isConst(reference)) {
-                vm.updateWith(new Assert(referenceCache));
-            }
-        };
-
-        EvaluatePartialOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: [this.name.toJSON()]
-            };
-        };
-
-        return EvaluatePartialOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.EvaluatePartialOpcode = EvaluatePartialOpcode;
-
-    var NameToPartialOpcode = (function (_Opcode17) {
-        _inherits(NameToPartialOpcode, _Opcode17);
-
-        function NameToPartialOpcode() {
-            _classCallCheck(this, NameToPartialOpcode);
-
-            for (var _len7 = arguments.length, args = Array(_len7), _key7 = 0; _key7 < _len7; _key7++) {
-                args[_key7] = arguments[_key7];
-            }
-
-            _Opcode17.call.apply(_Opcode17, [this].concat(args));
-            this.type = "name-to-partial";
-        }
-
-        NameToPartialOpcode.prototype.evaluate = function evaluate(vm) {
-            var reference = vm.frame.getOperand();
-            var referenceCache = new _glimmerReference.ReferenceCache(reference);
-            var name = referenceCache.revalidate();
-            var partial = name && vm.env.hasPartial([name]) ? vm.env.lookupPartial([name]) : false;
-            vm.frame.setOperand(new _glimmerRuntimeLibCompiledExpressionsValue.ValueReference(partial));
-            if (!_glimmerReference.isConst(reference)) {
-                vm.updateWith(new Assert(referenceCache));
-            }
-        };
-
-        NameToPartialOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: ["$OPERAND"]
-            };
-        };
-
-        return NameToPartialOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.NameToPartialOpcode = NameToPartialOpcode;
-    var ConstTest = function (ref, env) {
-        return new _glimmerReference.ConstReference(!!ref.value());
-    };
-    exports.ConstTest = ConstTest;
-    var SimpleTest = function (ref, env) {
-        return ref;
-    };
-    exports.SimpleTest = SimpleTest;
-    var EnvironmentTest = function (ref, env) {
-        return env.toConditionalReference(ref);
-    };
-    exports.EnvironmentTest = EnvironmentTest;
-
-    var TestOpcode = (function (_Opcode18) {
-        _inherits(TestOpcode, _Opcode18);
-
-        function TestOpcode(testFunc) {
-            _classCallCheck(this, TestOpcode);
-
-            _Opcode18.call(this);
-            this.testFunc = testFunc;
-            this.type = "test";
-        }
-
-        TestOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.frame.setCondition(this.testFunc(vm.frame.getOperand(), vm.env));
-        };
-
-        TestOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: ["$OPERAND", this.testFunc.name]
-            };
-        };
-
-        return TestOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.TestOpcode = TestOpcode;
-
-    var JumpOpcode = (function (_Opcode19) {
-        _inherits(JumpOpcode, _Opcode19);
-
-        function JumpOpcode(_ref9) {
-            var target = _ref9.target;
-
-            _classCallCheck(this, JumpOpcode);
-
-            _Opcode19.call(this);
-            this.type = "jump";
-            this.target = target;
-        }
-
-        JumpOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.goto(this.target);
-        };
-
-        JumpOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: [JSON.stringify(this.target.inspect())]
-            };
-        };
-
-        return JumpOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.JumpOpcode = JumpOpcode;
-
-    var JumpIfOpcode = (function (_JumpOpcode) {
-        _inherits(JumpIfOpcode, _JumpOpcode);
-
-        function JumpIfOpcode() {
-            _classCallCheck(this, JumpIfOpcode);
-
-            for (var _len8 = arguments.length, args = Array(_len8), _key8 = 0; _key8 < _len8; _key8++) {
-                args[_key8] = arguments[_key8];
-            }
-
-            _JumpOpcode.call.apply(_JumpOpcode, [this].concat(args));
-            this.type = "jump-if";
-        }
-
-        JumpIfOpcode.prototype.evaluate = function evaluate(vm) {
-            var reference = vm.frame.getCondition();
-            if (_glimmerReference.isConst(reference)) {
-                if (reference.value()) {
-                    _JumpOpcode.prototype.evaluate.call(this, vm);
-                }
-            } else {
-                var cache = new _glimmerReference.ReferenceCache(reference);
-                if (cache.peek()) {
-                    _JumpOpcode.prototype.evaluate.call(this, vm);
-                }
-                vm.updateWith(new Assert(cache));
-            }
-        };
-
-        return JumpIfOpcode;
-    })(JumpOpcode);
-
-    exports.JumpIfOpcode = JumpIfOpcode;
-
-    var JumpUnlessOpcode = (function (_JumpOpcode2) {
-        _inherits(JumpUnlessOpcode, _JumpOpcode2);
-
-        function JumpUnlessOpcode() {
-            _classCallCheck(this, JumpUnlessOpcode);
-
-            for (var _len9 = arguments.length, args = Array(_len9), _key9 = 0; _key9 < _len9; _key9++) {
-                args[_key9] = arguments[_key9];
-            }
-
-            _JumpOpcode2.call.apply(_JumpOpcode2, [this].concat(args));
-            this.type = "jump-unless";
-        }
-
-        JumpUnlessOpcode.prototype.evaluate = function evaluate(vm) {
-            var reference = vm.frame.getCondition();
-            if (_glimmerReference.isConst(reference)) {
-                if (!reference.value()) {
-                    _JumpOpcode2.prototype.evaluate.call(this, vm);
-                }
-            } else {
-                var cache = new _glimmerReference.ReferenceCache(reference);
-                if (!cache.peek()) {
-                    _JumpOpcode2.prototype.evaluate.call(this, vm);
-                }
-                vm.updateWith(new Assert(cache));
-            }
-        };
-
-        return JumpUnlessOpcode;
-    })(JumpOpcode);
-
-    exports.JumpUnlessOpcode = JumpUnlessOpcode;
-
-    var Assert = (function (_UpdatingOpcode) {
-        _inherits(Assert, _UpdatingOpcode);
-
-        function Assert(cache) {
-            _classCallCheck(this, Assert);
-
-            _UpdatingOpcode.call(this);
-            this.type = "assert";
-            this.tag = cache.tag;
-            this.cache = cache;
-        }
-
-        Assert.prototype.evaluate = function evaluate(vm) {
-            var cache = this.cache;
-
-            if (_glimmerReference.isModified(cache.revalidate())) {
-                vm.throw();
-            }
-        };
-
-        Assert.prototype.toJSON = function toJSON() {
-            var type = this.type;
-            var _guid = this._guid;
-            var cache = this.cache;
-
-            var expected = undefined;
-            try {
-                expected = JSON.stringify(cache.peek());
-            } catch (e) {
-                expected = String(cache.peek());
-            }
-            return {
-                guid: _guid,
-                type: type,
-                args: [],
-                details: { expected: expected }
-            };
-        };
-
-        return Assert;
-    })(_glimmerRuntimeLibOpcodes.UpdatingOpcode);
-
-    exports.Assert = Assert;
-
-    var JumpIfNotModifiedOpcode = (function (_UpdatingOpcode2) {
-        _inherits(JumpIfNotModifiedOpcode, _UpdatingOpcode2);
-
-        function JumpIfNotModifiedOpcode(_ref10) {
-            var tag = _ref10.tag;
-            var target = _ref10.target;
-
-            _classCallCheck(this, JumpIfNotModifiedOpcode);
-
-            _UpdatingOpcode2.call(this);
-            this.type = "jump-if-not-modified";
-            this.tag = tag;
-            this.target = target;
-            this.lastRevision = tag.value();
-        }
-
-        JumpIfNotModifiedOpcode.prototype.evaluate = function evaluate(vm) {
-            var tag = this.tag;
-            var target = this.target;
-            var lastRevision = this.lastRevision;
-
-            if (!vm.alwaysRevalidate && tag.validate(lastRevision)) {
-                vm.goto(target);
-            }
-        };
-
-        JumpIfNotModifiedOpcode.prototype.didModify = function didModify() {
-            this.lastRevision = this.tag.value();
-        };
-
-        JumpIfNotModifiedOpcode.prototype.toJSON = function toJSON() {
-            return {
-                guid: this._guid,
-                type: this.type,
-                args: [JSON.stringify(this.target.inspect())]
-            };
-        };
-
-        return JumpIfNotModifiedOpcode;
-    })(_glimmerRuntimeLibOpcodes.UpdatingOpcode);
-
-    exports.JumpIfNotModifiedOpcode = JumpIfNotModifiedOpcode;
-
-    var DidModifyOpcode = (function (_UpdatingOpcode3) {
-        _inherits(DidModifyOpcode, _UpdatingOpcode3);
-
-        function DidModifyOpcode(_ref11) {
-            var target = _ref11.target;
-
-            _classCallCheck(this, DidModifyOpcode);
-
-            _UpdatingOpcode3.call(this);
-            this.type = "did-modify";
-            this.tag = _glimmerReference.CONSTANT_TAG;
-            this.target = target;
-        }
-
-        DidModifyOpcode.prototype.evaluate = function evaluate() {
-            this.target.didModify();
-        };
-
-        return DidModifyOpcode;
-    })(_glimmerRuntimeLibOpcodes.UpdatingOpcode);
-
-    exports.DidModifyOpcode = DidModifyOpcode;
-});
-
-enifed('glimmer-runtime/lib/compiler', ['exports', 'glimmer-util', 'glimmer-runtime/lib/syntax/core', 'glimmer-runtime/lib/compiled/blocks', 'glimmer-runtime/lib/compiled/expressions/function', 'glimmer-runtime/lib/compiled/opcodes/builder'], function (exports, _glimmerUtil, _glimmerRuntimeLibSyntaxCore, _glimmerRuntimeLibCompiledBlocks, _glimmerRuntimeLibCompiledExpressionsFunction, _glimmerRuntimeLibCompiledOpcodesBuilder) {
-    'use strict';
-
-    var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-    exports.compileLayout = compileLayout;
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var Compiler = (function () {
-        function Compiler(block, env) {
-            _classCallCheck(this, Compiler);
-
-            this.block = block;
-            this.current = block.program.head();
-            this.env = env;
-            this.symbolTable = block.symbolTable;
-        }
-
-        Compiler.prototype.compileStatement = function compileStatement(statement, ops) {
-            this.env.statement(statement, this.block.meta).compile(ops, this.env, this.block);
-        };
-
-        return Compiler;
-    })();
-
-    function compileStatement(env, statement, ops, layout) {
-        env.statement(statement, layout.meta).compile(ops, env, layout);
-    }
-    exports.default = Compiler;
-
-    var EntryPointCompiler = (function (_Compiler) {
-        _inherits(EntryPointCompiler, _Compiler);
-
-        function EntryPointCompiler(template, env) {
-            _classCallCheck(this, EntryPointCompiler);
-
-            _Compiler.call(this, template, env);
-            var list = new CompileIntoList(env, template);
-            this.ops = new _glimmerRuntimeLibCompiledOpcodesBuilder.default(list, template, env);
-        }
-
-        EntryPointCompiler.prototype.compile = function compile() {
-            var block = this.block;
-            var ops = this.ops;
-            var program = block.program;
-
-            var current = program.head();
-            while (current) {
-                var next = program.nextNode(current);
-                this.compileStatement(current, ops);
-                current = next;
-            }
-            return ops.toOpSeq();
-        };
-
-        EntryPointCompiler.prototype.append = function append(op) {
-            this.ops.append(op);
-        };
-
-        EntryPointCompiler.prototype.getLocalSymbol = function getLocalSymbol(name) {
-            return this.symbolTable.getLocal(name);
-        };
-
-        EntryPointCompiler.prototype.getNamedSymbol = function getNamedSymbol(name) {
-            return this.symbolTable.getNamed(name);
-        };
-
-        EntryPointCompiler.prototype.getYieldSymbol = function getYieldSymbol(name) {
-            return this.symbolTable.getYield(name);
-        };
-
-        return EntryPointCompiler;
-    })(Compiler);
-
-    exports.EntryPointCompiler = EntryPointCompiler;
-
-    var InlineBlockCompiler = (function (_Compiler2) {
-        _inherits(InlineBlockCompiler, _Compiler2);
-
-        function InlineBlockCompiler(block, env) {
-            _classCallCheck(this, InlineBlockCompiler);
-
-            _Compiler2.call(this, block, env);
-            var list = new CompileIntoList(env, block);
-            this.ops = new _glimmerRuntimeLibCompiledOpcodesBuilder.default(list, block, env);
-        }
-
-        InlineBlockCompiler.prototype.compile = function compile() {
-            var block = this.block;
-            var ops = this.ops;
-            var program = block.program;
-
-            if (block.hasPositionalParameters()) {
-                ops.bindPositionalArgs(block);
-            }
-            var current = program.head();
-            while (current) {
-                var next = program.nextNode(current);
-                this.compileStatement(current, ops);
-                current = next;
-            }
-            return ops.toOpSeq();
-        };
-
-        return InlineBlockCompiler;
-    })(Compiler);
-
-    exports.InlineBlockCompiler = InlineBlockCompiler;
-
-    function compileLayout(compilable, env) {
-        var builder = new ComponentLayoutBuilder(env);
-        compilable.compile(builder);
-        return builder.compile();
-    }
-
-    var ComponentLayoutBuilder = (function () {
-        function ComponentLayoutBuilder(env) {
-            _classCallCheck(this, ComponentLayoutBuilder);
-
-            this.env = env;
-        }
-
-        ComponentLayoutBuilder.prototype.empty = function empty() {
-            this.inner = new EmptyBuilder(this.env);
-        };
-
-        ComponentLayoutBuilder.prototype.wrapLayout = function wrapLayout(layout) {
-            this.inner = new WrappedBuilder(this.env, layout);
-        };
-
-        ComponentLayoutBuilder.prototype.fromLayout = function fromLayout(layout) {
-            this.inner = new UnwrappedBuilder(this.env, layout);
-        };
-
-        ComponentLayoutBuilder.prototype.compile = function compile() {
-            return this.inner.compile();
-        };
-
-        _createClass(ComponentLayoutBuilder, [{
-            key: 'tag',
-            get: function () {
-                return this.inner.tag;
-            }
-        }, {
-            key: 'attrs',
-            get: function () {
-                return this.inner.attrs;
-            }
-        }]);
-
-        return ComponentLayoutBuilder;
-    })();
-
-    var EmptyBuilder = (function () {
-        function EmptyBuilder(env) {
-            _classCallCheck(this, EmptyBuilder);
-
-            this.env = env;
-        }
-
-        EmptyBuilder.prototype.compile = function compile() {
-            var env = this.env;
-
-            var list = new CompileIntoList(env, null);
-            return new _glimmerRuntimeLibCompiledBlocks.CompiledBlock(list, 0);
-        };
-
-        _createClass(EmptyBuilder, [{
-            key: 'tag',
-            get: function () {
-                throw new Error('Nope');
-            }
-        }, {
-            key: 'attrs',
-            get: function () {
-                throw new Error('Nope');
-            }
-        }]);
-
-        return EmptyBuilder;
-    })();
-
-    var WrappedBuilder = (function () {
-        function WrappedBuilder(env, layout) {
-            _classCallCheck(this, WrappedBuilder);
-
-            this.tag = new ComponentTagBuilder();
-            this.attrs = new ComponentAttrsBuilder();
-            this.env = env;
-            this.layout = layout;
-        }
-
-        WrappedBuilder.prototype.compile = function compile() {
-            //========DYNAMIC
-            //        PutValue(TagExpr)
-            //        Test
-            //        JumpUnless(BODY)
-            //        OpenDynamicPrimitiveElement
-            //        DidCreateElement
-            //        ...attr statements...
-            // BODY:  Noop
-            //        PutValue(TagExpr)
-            //        Test
-            //        JumpUnless(END)
-            //        CloseElement
-            // END:   Noop
-            //        Exit
-            //
-            //========STATIC
-            //        OpenPrimitiveElementOpcode
-            //        DidCreateElement
-            //        ...attr statements...
-            //        CloseElement
-            //        Exit
-            var env = this.env;
-            var layout = this.layout;
-
-            var symbolTable = layout.symbolTable;
-            var buffer = new CompileIntoList(env, layout);
-            var dsl = new _glimmerRuntimeLibCompiledOpcodesBuilder.default(buffer, layout, env);
-            dsl.startLabels();
-            if (this.tag.isDynamic) {
-                dsl.putValue(this.tag.dynamicTagName);
-                dsl.test('simple');
-                dsl.jumpUnless('BODY');
-                dsl.openDynamicPrimitiveElement();
-                dsl.didCreateElement();
-                this.attrs['buffer'].forEach(function (statement) {
-                    return compileStatement(env, statement, dsl, layout);
-                });
-                dsl.label('BODY');
-            } else if (this.tag.isStatic) {
-                var tag = this.tag.staticTagName;
-                dsl.openPrimitiveElement(tag);
-                dsl.didCreateElement();
-                this.attrs['buffer'].forEach(function (statement) {
-                    return compileStatement(env, statement, dsl, layout);
-                });
-            }
-            if (layout.hasNamedParameters()) {
-                dsl.bindNamedArgsForLayout(layout);
-            }
-            if (layout.hasYields()) {
-                dsl.bindBlocksForLayout(layout);
-            }
-            layout.program.forEachNode(function (statement) {
-                return compileStatement(env, statement, dsl, layout);
-            });
-            if (this.tag.isDynamic) {
-                dsl.putValue(this.tag.dynamicTagName);
-                dsl.test('simple');
-                dsl.jumpUnless('END');
-                dsl.closeElement();
-                dsl.label('END');
-            } else if (this.tag.isStatic) {
-                dsl.closeElement();
-            }
-            dsl.stopLabels();
-            return new _glimmerRuntimeLibCompiledBlocks.CompiledBlock(dsl.toOpSeq(), symbolTable.size);
-        };
-
-        return WrappedBuilder;
-    })();
-
-    var UnwrappedBuilder = (function () {
-        function UnwrappedBuilder(env, layout) {
-            _classCallCheck(this, UnwrappedBuilder);
-
-            this.attrs = new ComponentAttrsBuilder();
-            this.env = env;
-            this.layout = layout;
-        }
-
-        UnwrappedBuilder.prototype.compile = function compile() {
-            var env = this.env;
-            var layout = this.layout;
-
-            var buffer = new CompileIntoList(env, layout);
-            var dsl = new _glimmerRuntimeLibCompiledOpcodesBuilder.default(buffer, layout, env);
-            dsl.startLabels();
-            if (layout.hasNamedParameters()) {
-                dsl.bindNamedArgsForLayout(layout);
-            }
-            if (layout.hasYields()) {
-                dsl.bindBlocksForLayout(layout);
-            }
-            var attrs = this.attrs['buffer'];
-            var attrsInserted = false;
-            this.layout.program.forEachNode(function (statement) {
-                compileStatement(env, statement, dsl, layout);
-                if (!attrsInserted && isOpenElement(statement)) {
-                    dsl.didCreateElement();
-                    dsl.shadowAttributes();
-                    attrs.forEach(function (statement) {
-                        return compileStatement(env, statement, dsl, layout);
-                    });
-                    attrsInserted = true;
-                }
-            });
-            dsl.stopLabels();
-            return new _glimmerRuntimeLibCompiledBlocks.CompiledBlock(dsl.toOpSeq(), layout.symbolTable.size);
-        };
-
-        _createClass(UnwrappedBuilder, [{
-            key: 'tag',
-            get: function () {
-                throw new Error('BUG: Cannot call `tag` on an UnwrappedBuilder');
-            }
-        }]);
-
-        return UnwrappedBuilder;
-    })();
-
-    function isOpenElement(syntax) {
-        return syntax instanceof _glimmerRuntimeLibSyntaxCore.OpenElement || syntax instanceof _glimmerRuntimeLibSyntaxCore.OpenPrimitiveElement;
-    }
-
-    var ComponentTagBuilder = (function () {
-        function ComponentTagBuilder() {
-            _classCallCheck(this, ComponentTagBuilder);
-
-            this.isDynamic = null;
-            this.isStatic = null;
-            this.staticTagName = null;
-            this.dynamicTagName = null;
-        }
-
-        ComponentTagBuilder.prototype.static = function _static(tagName) {
-            this.isStatic = true;
-            this.staticTagName = tagName;
-        };
-
-        ComponentTagBuilder.prototype.dynamic = function dynamic(tagName) {
-            this.isDynamic = true;
-            this.dynamicTagName = _glimmerRuntimeLibCompiledExpressionsFunction.default(tagName);
-        };
-
-        return ComponentTagBuilder;
-    })();
-
-    var ComponentAttrsBuilder = (function () {
-        function ComponentAttrsBuilder() {
-            _classCallCheck(this, ComponentAttrsBuilder);
-
-            this.buffer = [];
-        }
-
-        ComponentAttrsBuilder.prototype.static = function _static(name, value) {
-            this.buffer.push(new _glimmerRuntimeLibSyntaxCore.StaticAttr({ name: name, value: value }));
-        };
-
-        ComponentAttrsBuilder.prototype.dynamic = function dynamic(name, value) {
-            this.buffer.push(new _glimmerRuntimeLibSyntaxCore.DynamicAttr({ name: name, value: _glimmerRuntimeLibCompiledExpressionsFunction.default(value), isTrusting: false }));
-        };
-
-        return ComponentAttrsBuilder;
-    })();
-
-    var ComponentBuilder = (function () {
-        function ComponentBuilder(dsl) {
-            _classCallCheck(this, ComponentBuilder);
-
-            this.dsl = dsl;
-            this.env = dsl.env;
-        }
-
-        ComponentBuilder.prototype.static = function _static(_ref) {
-            var definition = _ref.definition;
-            var args = _ref.args;
-            var shadow = _ref.shadow;
-            var templates = _ref.templates;
-
-            this.dsl.unit({ templates: templates }, function (dsl) {
-                dsl.putComponentDefinition(args, definition);
-                dsl.openComponent(shadow);
-                dsl.closeComponent();
-            });
-        };
-
-        ComponentBuilder.prototype.dynamic = function dynamic(_ref2) {
-            var definitionArgs = _ref2.definitionArgs;
-            var definition = _ref2.definition;
-            var args = _ref2.args;
-            var shadow = _ref2.shadow;
-            var templates = _ref2.templates;
-
-            this.dsl.unit({ templates: templates }, function (dsl) {
-                dsl.enter('BEGIN', 'END');
-                dsl.label('BEGIN');
-                dsl.putArgs(definitionArgs);
-                dsl.putValue(_glimmerRuntimeLibCompiledExpressionsFunction.default(definition));
-                dsl.test('simple');
-                dsl.jumpUnless('END');
-                dsl.putDynamicComponentDefinition(args);
-                dsl.openComponent(shadow);
-                dsl.closeComponent();
-                dsl.label('END');
-                dsl.exit();
-            });
-        };
-
-        return ComponentBuilder;
-    })();
-
-    var CompileIntoList = (function (_LinkedList) {
-        _inherits(CompileIntoList, _LinkedList);
-
-        function CompileIntoList(env, block) {
-            _classCallCheck(this, CompileIntoList);
-
-            _LinkedList.call(this);
-            this.env = env;
-            this.block = block;
-            var dsl = new _glimmerRuntimeLibCompiledOpcodesBuilder.default(this, block, env);
-            this.component = new ComponentBuilder(dsl);
-        }
-
-        CompileIntoList.prototype.getLocalSymbol = function getLocalSymbol(name) {
-            return this.block.symbolTable.getLocal(name);
-        };
-
-        CompileIntoList.prototype.hasLocalSymbol = function hasLocalSymbol(name) {
-            return typeof this.block.symbolTable.getLocal(name) === 'number';
-        };
-
-        CompileIntoList.prototype.getNamedSymbol = function getNamedSymbol(name) {
-            return this.block.symbolTable.getNamed(name);
-        };
-
-        CompileIntoList.prototype.hasNamedSymbol = function hasNamedSymbol(name) {
-            return typeof this.block.symbolTable.getNamed(name) === 'number';
-        };
-
-        CompileIntoList.prototype.getBlockSymbol = function getBlockSymbol(name) {
-            return this.block.symbolTable.getYield(name);
-        };
-
-        CompileIntoList.prototype.hasBlockSymbol = function hasBlockSymbol(name) {
-            return typeof this.block.symbolTable.getYield(name) === 'number';
-        };
-
-        CompileIntoList.prototype.hasKeyword = function hasKeyword(name) {
-            return this.env.hasKeyword(name);
-        };
-
-        CompileIntoList.prototype.toOpSeq = function toOpSeq() {
-            return this;
-        };
-
-        return CompileIntoList;
-    })(_glimmerUtil.LinkedList);
-
-    exports.CompileIntoList = CompileIntoList;
-});
-
-enifed('glimmer-runtime/lib/component/interfaces', ['exports'], function (exports) {
-    'use strict';
-
-    exports.isComponentDefinition = isComponentDefinition;
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var COMPONENT_DEFINITION_BRAND = 'COMPONENT DEFINITION [id=e59c754e-61eb-4392-8c4a-2c0ac72bfcd4]';
-
-    function isComponentDefinition(obj) {
-        return typeof obj === 'object' && obj && obj[COMPONENT_DEFINITION_BRAND];
-    }
-
-    var ComponentDefinition = function ComponentDefinition(name, manager, ComponentClass) {
-        _classCallCheck(this, ComponentDefinition);
-
-        this['COMPONENT DEFINITION [id=e59c754e-61eb-4392-8c4a-2c0ac72bfcd4]'] = true;
-        this.name = name;
-        this.manager = manager;
-        this.ComponentClass = ComponentClass;
-    };
-
-    exports.ComponentDefinition = ComponentDefinition;
-});
-
-enifed('glimmer-runtime/lib/dom/change-lists', ['exports', 'glimmer-runtime/lib/dom/sanitized-values', 'glimmer-runtime/lib/dom/props', 'glimmer-runtime/lib/dom/helper', 'glimmer-runtime/lib/compiled/opcodes/content'], function (exports, _glimmerRuntimeLibDomSanitizedValues, _glimmerRuntimeLibDomProps, _glimmerRuntimeLibDomHelper, _glimmerRuntimeLibCompiledOpcodesContent) {
-    'use strict';
-
-    exports.defaultChangeLists = defaultChangeLists;
-    exports.defaultPropertyChangeLists = defaultPropertyChangeLists;
-    exports.defaultAttributeChangeLists = defaultAttributeChangeLists;
-    exports.readDOMAttr = readDOMAttr;
-
-    function defaultChangeLists(element, attr, isTrusting, namespace) {
-        var tagName = element.tagName;
-        var isSVG = element.namespaceURI === _glimmerRuntimeLibDomHelper.SVG_NAMESPACE;
-        if (isSVG) {
-            return defaultAttributeChangeLists(tagName, attr);
-        }
-
-        var _normalizeProperty = _glimmerRuntimeLibDomProps.normalizeProperty(element, attr);
-
-        var type = _normalizeProperty.type;
-
-        if (type === 'attr') {
-            return defaultAttributeChangeLists(tagName, attr);
-        } else {
-            return defaultPropertyChangeLists(tagName, attr);
-        }
-    }
-
-    function defaultPropertyChangeLists(tagName, attr) {
-        if (_glimmerRuntimeLibDomSanitizedValues.requiresSanitization(tagName, attr)) {
-            return SafeHrefPropertyChangeList;
-        }
-        if (isInputValue(tagName, attr)) {
-            return InputValuePropertyChangeList;
-        }
-        return PropertyChangeList;
-    }
-
-    function defaultAttributeChangeLists(tagName, attr) {
-        if (_glimmerRuntimeLibDomSanitizedValues.requiresSanitization(tagName, attr)) {
-            return SafeHrefAttributeChangeList;
-        }
-        return AttributeChangeList;
-    }
-
-    function readDOMAttr(element, attr) {
-        var isSVG = element.namespaceURI === _glimmerRuntimeLibDomHelper.SVG_NAMESPACE;
-
-        var _normalizeProperty2 = _glimmerRuntimeLibDomProps.normalizeProperty(element, attr);
-
-        var type = _normalizeProperty2.type;
-        var normalized = _normalizeProperty2.normalized;
-
-        if (isSVG) {
-            return element.getAttribute(normalized);
-        }
-        if (type === 'attr') {
-            return element.getAttribute(normalized);
-        }
-        {
-            return element[normalized];
-        }
-    }
-
-    ;
-    var PropertyChangeList = {
-        setAttribute: function (dom, element, attr, value, namespace) {
-            if (value !== null) {
-                var normalized = attr.toLowerCase();
-                element[normalized] = _glimmerRuntimeLibDomProps.normalizePropertyValue(value);
-            }
-        },
-        updateAttribute: function (dom, element, attr, value, namespace) {
-            if (value === null) {
-                var normalized = attr.toLowerCase();
-                element[normalized] = value;
-            } else {
-                this.setAttribute.apply(this, arguments);
-            }
-        }
-    };
-    exports.PropertyChangeList = PropertyChangeList;
-    var AttributeChangeList = {
-        setAttribute: function (dom, element, attr, value, namespace) {
-            if (value !== null && value !== undefined) {
-                if (namespace) {
-                    dom.setAttributeNS(element, namespace, attr, _glimmerRuntimeLibCompiledOpcodesContent.normalizeTextValue(value));
-                } else {
-                    dom.setAttribute(element, attr, _glimmerRuntimeLibCompiledOpcodesContent.normalizeTextValue(value));
-                }
-            }
-        },
-        updateAttribute: function (dom, element, attr, value, namespace) {
-            if (value === null) {
-                if (namespace) {
-                    dom.removeAttributeNS(element, namespace, attr);
-                } else {
-                    dom.removeAttribute(element, attr);
-                }
-            } else {
-                this.setAttribute(dom, element, attr, value);
-            }
-        }
-    };
-    exports.AttributeChangeList = AttributeChangeList;
-    function isInputValue(tagName, attribute) {
-        return tagName === 'INPUT' && attribute === 'value';
-    }
-    var InputValuePropertyChangeList = {
-        setAttribute: function (dom, element, attr, value) {
-            var input = element;
-            var currentValue = input.value;
-            var normalizedValue = _glimmerRuntimeLibCompiledOpcodesContent.normalizeTextValue(value);
-            if (currentValue !== normalizedValue) {
-                input.value = normalizedValue;
-            }
-        },
-        updateAttribute: function (dom, element, attr, value) {
-            this.setAttribute(dom, element, attr, value);
-        }
-    };
-    exports.InputValuePropertyChangeList = InputValuePropertyChangeList;
-    var SafeHrefPropertyChangeList = {
-        setAttribute: function (dom, element, attr, value) {
-            PropertyChangeList.setAttribute(dom, element, attr, _glimmerRuntimeLibDomSanitizedValues.sanitizeAttributeValue(dom, element, attr, value));
-        },
-        updateAttribute: function (dom, element, attr, value) {
-            this.setAttribute(dom, element, attr, value);
-        }
-    };
-    exports.SafeHrefPropertyChangeList = SafeHrefPropertyChangeList;
-    var SafeHrefAttributeChangeList = {
-        setAttribute: function (dom, element, attr, value) {
-            AttributeChangeList.setAttribute(dom, element, attr, _glimmerRuntimeLibDomSanitizedValues.sanitizeAttributeValue(dom, element, attr, value));
-        },
-        updateAttribute: function (dom, element, attr, value) {
-            this.setAttribute(dom, element, attr, value);
-        }
-    };
-    exports.SafeHrefAttributeChangeList = SafeHrefAttributeChangeList;
-});
-
-enifed('glimmer-runtime/lib/dom/helper', ['exports', 'glimmer-runtime/lib/bounds', 'glimmer-runtime/lib/compat/inner-html-fix', 'glimmer-runtime/lib/compat/svg-inner-html-fix', 'glimmer-runtime/lib/compat/text-node-merging-fix'], function (exports, _glimmerRuntimeLibBounds, _glimmerRuntimeLibCompatInnerHtmlFix, _glimmerRuntimeLibCompatSvgInnerHtmlFix, _glimmerRuntimeLibCompatTextNodeMergingFix) {
-    'use strict';
-
-    exports.isWhitespace = isWhitespace;
-    exports.moveNodesBefore = moveNodesBefore;
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
-    exports.SVG_NAMESPACE = SVG_NAMESPACE;
-    // http://www.w3.org/TR/html/syntax.html#html-integration-point
-    var SVG_INTEGRATION_POINTS = { foreignObject: 1, desc: 1, title: 1 };
-    // http://www.w3.org/TR/html/syntax.html#adjust-svg-attributes
-    // TODO: Adjust SVG attributes
-    // http://www.w3.org/TR/html/syntax.html#parsing-main-inforeign
-    // TODO: Adjust SVG elements
-    // http://www.w3.org/TR/html/syntax.html#parsing-main-inforeign
-    var BLACKLIST_TABLE = Object.create(null);
-    exports.BLACKLIST_TABLE = BLACKLIST_TABLE;
-    ["b", "big", "blockquote", "body", "br", "center", "code", "dd", "div", "dl", "dt", "em", "embed", "h1", "h2", "h3", "h4", "h5", "h6", "head", "hr", "i", "img", "li", "listing", "main", "meta", "nobr", "ol", "p", "pre", "ruby", "s", "small", "span", "strong", "strike", "sub", "sup", "table", "tt", "u", "ul", "var"].forEach(function (tag) {
-        return BLACKLIST_TABLE[tag] = 1;
-    });
-    var WHITESPACE = /[\t-\r \xA0\u1680\u180E\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]/;
-
-    function isWhitespace(string) {
-        return WHITESPACE.test(string);
-    }
-
-    function moveNodesBefore(source, target, nextSibling) {
-        var first = source.firstChild;
-        var last = null;
-        var current = first;
-        while (current) {
-            last = current;
-            current = current.nextSibling;
-            target.insertBefore(last, nextSibling);
-        }
-        return [first, last];
-    }
-
-    var DOMHelper = (function () {
-        function DOMHelper(document) {
-            _classCallCheck(this, DOMHelper);
-
-            this.document = document;
-            this.namespace = null;
-            this.uselessElement = this.document.createElement('div');
-            this.uselessAnchor = this.document.createElement('a');
-        }
-
-        DOMHelper.prototype.protocolForURL = function protocolForURL(url) {
-            var uselessAnchor = this.uselessAnchor;
-
-            uselessAnchor.href = url;
-            return uselessAnchor.protocol;
-        };
-
-        DOMHelper.prototype.setAttribute = function setAttribute(element, name, value) {
-            element.setAttribute(name, value);
-        };
-
-        DOMHelper.prototype.setAttributeNS = function setAttributeNS(element, namespace, name, value) {
-            element.setAttributeNS(namespace, name, value);
-        };
-
-        DOMHelper.prototype.removeAttribute = function removeAttribute(element, name) {
-            element.removeAttribute(name);
-        };
-
-        DOMHelper.prototype.removeAttributeNS = function removeAttributeNS(element, namespace, name) {
-            element.removeAttributeNS(namespace, name);
-        };
-
-        DOMHelper.prototype.createTextNode = function createTextNode(text) {
-            return this.document.createTextNode(text);
-        };
-
-        DOMHelper.prototype.createComment = function createComment(data) {
-            return this.document.createComment(data);
-        };
-
-        DOMHelper.prototype.createElement = function createElement(tag, context) {
-            var isElementInSVGNamespace = context.namespaceURI === SVG_NAMESPACE || tag === 'svg';
-            var isHTMLIntegrationPoint = SVG_INTEGRATION_POINTS[context.tagName];
-            if (isElementInSVGNamespace && !isHTMLIntegrationPoint) {
-                // FIXME: This does not properly handle <font> with color, face, or
-                // size attributes, which is also disallowed by the spec. We should fix
-                // this.
-                if (BLACKLIST_TABLE[tag]) {
-                    throw new Error('Cannot create a ' + tag + ' inside of a <' + context.tagName + '>, because it\'s inside an SVG context');
-                }
-                return this.document.createElementNS(SVG_NAMESPACE, tag);
-            }
-            return this.document.createElement(tag);
-        };
-
-        DOMHelper.prototype.insertHTMLBefore = function insertHTMLBefore(_parent, nextSibling, html) {
-            // TypeScript vendored an old version of the DOM spec where `insertAdjacentHTML`
-            // only exists on `HTMLElement` but not on `Element`. We actually work with the
-            // newer version of the DOM API here (and monkey-patch this method in `./compat`
-            // when we detect older browsers). This is a hack to work around this limitation.
-            var parent = _parent;
-            var prev = nextSibling ? nextSibling.previousSibling : parent.lastChild;
-            var last = undefined;
-            if (html === null || html === '') {
-                return new _glimmerRuntimeLibBounds.ConcreteBounds(parent, null, null);
-            }
-            if (nextSibling === null) {
-                parent.insertAdjacentHTML('beforeEnd', html);
-                last = parent.lastChild;
-            } else if (nextSibling instanceof HTMLElement) {
-                nextSibling.insertAdjacentHTML('beforeBegin', html);
-                last = nextSibling.previousSibling;
-            } else {
-                // Non-element nodes do not support insertAdjacentHTML, so add an
-                // element and call it on that element. Then remove the element.
-                //
-                // This also protects Edge, IE and Firefox w/o the inspector open
-                // from merging adjacent text nodes. See ./compat/text-node-merging-fix.ts
-                parent.insertBefore(this.uselessElement, nextSibling);
-                this.uselessElement.insertAdjacentHTML('beforeBegin', html);
-                last = this.uselessElement.previousSibling;
-                parent.removeChild(this.uselessElement);
-            }
-            var first = prev ? prev.nextSibling : parent.firstChild;
-            return new _glimmerRuntimeLibBounds.ConcreteBounds(parent, first, last);
-        };
-
-        DOMHelper.prototype.insertNodeBefore = function insertNodeBefore(parent, node, reference) {
-            if (isDocumentFragment(node)) {
-                var firstChild = node.firstChild;
-                var lastChild = node.lastChild;
-
-                this.insertBefore(parent, node, reference);
-                return new _glimmerRuntimeLibBounds.ConcreteBounds(parent, firstChild, lastChild);
-            } else {
-                this.insertBefore(parent, node, reference);
-                return new _glimmerRuntimeLibBounds.SingleNodeBounds(parent, node);
-            }
-        };
-
-        DOMHelper.prototype.insertTextBefore = function insertTextBefore(parent, nextSibling, text) {
-            var textNode = this.createTextNode(text);
-            this.insertBefore(parent, textNode, nextSibling);
-            return textNode;
-        };
-
-        DOMHelper.prototype.insertBefore = function insertBefore(element, node, reference) {
-            element.insertBefore(node, reference);
-        };
-
-        DOMHelper.prototype.insertAfter = function insertAfter(element, node, reference) {
-            this.insertBefore(element, node, reference.nextSibling);
-        };
-
-        return DOMHelper;
-    })();
-
-    function isDocumentFragment(node) {
-        return node.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
-    }
-    var helper = DOMHelper;
-    var doc = typeof document === 'undefined' ? undefined : document;
-    helper = _glimmerRuntimeLibCompatTextNodeMergingFix.default(doc, helper);
-    helper = _glimmerRuntimeLibCompatInnerHtmlFix.default(doc, helper);
-    helper = _glimmerRuntimeLibCompatSvgInnerHtmlFix.default(doc, helper, SVG_NAMESPACE);
-    exports.default = helper;
-    exports.DOMHelper = DOMHelper;
-});
-
-enifed('glimmer-runtime/lib/dom/props', ['exports'], function (exports) {
-    /*
-     * @method normalizeProperty
-     * @param element {HTMLElement}
-     * @param slotName {String}
-     * @returns {Object} { name, type }
-     */
-    'use strict';
-
-    exports.normalizeProperty = normalizeProperty;
-    exports.normalizePropertyValue = normalizePropertyValue;
-
-    function normalizeProperty(element, slotName) {
-        var type = undefined,
-            normalized = undefined;
-        if (slotName in element) {
-            normalized = slotName;
-            type = 'prop';
-        } else {
-            var lower = slotName.toLowerCase();
-            if (lower in element) {
-                type = 'prop';
-                normalized = lower;
-            } else {
-                type = 'attr';
-                normalized = slotName;
-            }
-        }
-        if (type === 'prop' && (normalized.toLowerCase() === 'style' || preferAttr(element.tagName, normalized))) {
-            type = 'attr';
-        }
-        return { normalized: normalized, type: type };
-    }
-
-    function normalizePropertyValue(value) {
-        if (value === '') {
-            return true;
-        }
-        return value;
-    }
-
-    // properties that MUST be set as attributes, due to:
-    // * browser bug
-    // * strange spec outlier
-    var ATTR_OVERRIDES = {
-        // phantomjs < 2.0 lets you set it as a prop but won't reflect it
-        // back to the attribute. button.getAttribute('type') === null
-        BUTTON: { type: true, form: true },
-        INPUT: {
-            // Some version of IE (like IE9) actually throw an exception
-            // if you set input.type = 'something-unknown'
-            type: true,
-            form: true,
-            // Chrome 46.0.2464.0: 'autocorrect' in document.createElement('input') === false
-            // Safari 8.0.7: 'autocorrect' in document.createElement('input') === false
-            // Mobile Safari (iOS 8.4 simulator): 'autocorrect' in document.createElement('input') === true
-            autocorrect: true
-        },
-        // element.form is actually a legitimate readOnly property, that is to be
-        // mutated, but must be mutated by setAttribute...
-        SELECT: { form: true },
-        OPTION: { form: true },
-        TEXTAREA: { form: true },
-        LABEL: { form: true },
-        FIELDSET: { form: true },
-        LEGEND: { form: true },
-        OBJECT: { form: true }
-    };
-    function preferAttr(tagName, propName) {
-        var tag = ATTR_OVERRIDES[tagName.toUpperCase()];
-        return tag && tag[propName.toLowerCase()] || false;
-    }
-});
-
-enifed('glimmer-runtime/lib/dom/sanitized-values', ['exports', 'glimmer-runtime/lib/upsert'], function (exports, _glimmerRuntimeLibUpsert) {
-    'use strict';
-
-    exports.requiresSanitization = requiresSanitization;
-    exports.sanitizeAttributeValue = sanitizeAttributeValue;
-
-    var badProtocols = ['javascript:', 'vbscript:'];
-    var badTags = ['A', 'BODY', 'LINK', 'IMG', 'IFRAME', 'BASE', 'FORM'];
-    var badTagsForDataURI = ['EMBED'];
-    var badAttributes = ['href', 'src', 'background', 'action'];
-    exports.badAttributes = badAttributes;
-    var badAttributesForDataURI = ['src'];
-    function has(array, item) {
-        return array.indexOf(item) !== -1;
-    }
-    function checkURI(tagName, attribute) {
-        return (tagName === null || has(badTags, tagName)) && has(badAttributes, attribute);
-    }
-    function checkDataURI(tagName, attribute) {
-        return has(badTagsForDataURI, tagName) && has(badAttributesForDataURI, attribute);
-    }
-
-    function requiresSanitization(tagName, attribute) {
-        return checkURI(tagName, attribute) || checkDataURI(tagName, attribute);
-    }
-
-    function sanitizeAttributeValue(dom, element, attribute, value) {
-        var tagName = undefined;
-        if (_glimmerRuntimeLibUpsert.isSafeString(value)) {
-            return value.toHTML();
-        }
-        if (!element) {
-            tagName = null;
-        } else {
-            tagName = element.tagName.toUpperCase();
-        }
-        if (checkURI(tagName, attribute)) {
-            var protocol = dom.protocolForURL(value);
-            if (has(badProtocols, protocol)) {
-                return 'unsafe:' + value;
-            }
-        }
-        if (checkDataURI(tagName, attribute)) {
-            return 'unsafe:' + value;
-        }
-        return value;
-    }
-});
-
-enifed('glimmer-runtime/lib/environment', ['exports', 'glimmer-runtime/lib/references', 'glimmer-runtime/lib/dom/change-lists', 'glimmer-util', 'glimmer-runtime/lib/syntax/core', 'glimmer-runtime/lib/syntax/builtins/if', 'glimmer-runtime/lib/syntax/builtins/unless', 'glimmer-runtime/lib/syntax/builtins/with', 'glimmer-runtime/lib/syntax/builtins/each', 'glimmer-runtime/lib/syntax/builtins/partial'], function (exports, _glimmerRuntimeLibReferences, _glimmerRuntimeLibDomChangeLists, _glimmerUtil, _glimmerRuntimeLibSyntaxCore, _glimmerRuntimeLibSyntaxBuiltinsIf, _glimmerRuntimeLibSyntaxBuiltinsUnless, _glimmerRuntimeLibSyntaxBuiltinsWith, _glimmerRuntimeLibSyntaxBuiltinsEach, _glimmerRuntimeLibSyntaxBuiltinsPartial) {
-    'use strict';
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var Scope = (function () {
-        function Scope(references) {
-            _classCallCheck(this, Scope);
-
-            this.callerScope = null;
-            this.slots = references;
-        }
-
-        Scope.root = function root(self) {
-            var size = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
-
-            var refs = new Array(size + 1);
-            for (var i = 0; i <= size; i++) {
-                refs[i] = _glimmerRuntimeLibReferences.NULL_REFERENCE;
-            }
-            return new Scope(refs).init({ self: self });
-        };
-
-        Scope.prototype.init = function init(_ref) {
-            var self = _ref.self;
-
-            this.slots[0] = self;
-            return this;
-        };
-
-        Scope.prototype.getSelf = function getSelf() {
-            return this.slots[0];
-        };
-
-        Scope.prototype.getSymbol = function getSymbol(symbol) {
-            return this.slots[symbol];
-        };
-
-        Scope.prototype.getBlock = function getBlock(symbol) {
-            return this.slots[symbol];
-        };
-
-        Scope.prototype.bindSymbol = function bindSymbol(symbol, value) {
-            this.slots[symbol] = value;
-        };
-
-        Scope.prototype.bindBlock = function bindBlock(symbol, value) {
-            this.slots[symbol] = value;
-        };
-
-        Scope.prototype.bindCallerScope = function bindCallerScope(scope) {
-            this.callerScope = scope;
-        };
-
-        Scope.prototype.getCallerScope = function getCallerScope() {
-            return this.callerScope;
-        };
-
-        Scope.prototype.child = function child() {
-            return new Scope(this.slots.slice());
-        };
-
-        return Scope;
-    })();
-
-    exports.Scope = Scope;
-
-    var Environment = (function () {
-        function Environment(dom) {
-            _classCallCheck(this, Environment);
-
-            this.createdComponents = null;
-            this.createdManagers = null;
-            this.updatedComponents = null;
-            this.updatedManagers = null;
-            this.destructors = null;
-            this.dom = dom;
-        }
-
-        Environment.prototype.toConditionalReference = function toConditionalReference(reference) {
-            return new _glimmerRuntimeLibReferences.ConditionalReference(reference);
-        };
-
-        Environment.prototype.getDOM = function getDOM() {
-            return this.dom;
-        };
-
-        Environment.prototype.getIdentity = function getIdentity(object) {
-            return _glimmerUtil.intern(_glimmerUtil.ensureGuid(object) + '');
-        };
-
-        Environment.prototype.statement = function statement(_statement, blockMeta) {
-            return this.refineStatement(parseStatement(_statement), blockMeta) || _statement;
-        };
-
-        Environment.prototype.refineStatement = function refineStatement(statement, blockMeta) {
-            var isSimple = statement.isSimple;
-            var isBlock = statement.isBlock;
-            var isInline = statement.isInline;
-            var key = statement.key;
-            var args = statement.args;
-            var templates = statement.templates;
-
-            if (isSimple && isInline) {
-                if (key === 'partial') {
-                    return new _glimmerRuntimeLibSyntaxBuiltinsPartial.default({ args: args });
-                }
-            }
-            if (isSimple && isBlock) {
-                switch (key) {
-                    case 'each':
-                        return new _glimmerRuntimeLibSyntaxBuiltinsEach.default({ args: args, templates: templates });
-                    case 'if':
-                        return new _glimmerRuntimeLibSyntaxBuiltinsIf.default({ args: args, templates: templates });
-                    case 'with':
-                        return new _glimmerRuntimeLibSyntaxBuiltinsWith.default({ args: args, templates: templates });
-                    case 'unless':
-                        return new _glimmerRuntimeLibSyntaxBuiltinsUnless.default({ args: args, templates: templates });
-                }
-            }
-        };
-
-        Environment.prototype.begin = function begin() {
-            this.createdComponents = [];
-            this.createdManagers = [];
-            this.updatedComponents = [];
-            this.updatedManagers = [];
-            this.destructors = [];
-        };
-
-        Environment.prototype.didCreate = function didCreate(component, manager) {
-            this.createdComponents.push(component);
-            this.createdManagers.push(manager);
-        };
-
-        Environment.prototype.didUpdate = function didUpdate(component, manager) {
-            this.updatedComponents.push(component);
-            this.updatedManagers.push(manager);
-        };
-
-        Environment.prototype.didDestroy = function didDestroy(d) {
-            this.destructors.push(d);
-        };
-
-        Environment.prototype.commit = function commit() {
-            for (var i = 0; i < this.createdComponents.length; i++) {
-                var component = this.createdComponents[i];
-                var manager = this.createdManagers[i];
-                manager.didCreate(component);
-            }
-            for (var i = this.updatedComponents.length - 1; i >= 0; i--) {
-                var component = this.updatedComponents[i];
-                var manager = this.updatedManagers[i];
-                manager.didUpdate(component);
-            }
-            for (var i = 0; i < this.destructors.length; i++) {
-                this.destructors[i].destroy();
-            }
-        };
-
-        Environment.prototype.hasKeyword = function hasKeyword(string) {
-            return false;
-        };
-
-        Environment.prototype.attributeFor = function attributeFor(element, attr, reference, isTrusting, namespace) {
-            return _glimmerRuntimeLibDomChangeLists.defaultChangeLists(element, attr, isTrusting, namespace);
-        };
-
-        return Environment;
-    })();
-
-    exports.Environment = Environment;
-    exports.default = Environment;
-
-    function parseStatement(statement) {
-        var type = statement.type;
-        var block = type === 'block' ? statement : null;
-        var append = type === 'optimized-append' ? statement : null;
-        var modifier = type === 'modifier' ? statement : null;
-        var appendType = append && append.value.type;
-        var args = undefined;
-        var path = undefined;
-        if (block) {
-            args = block.args;
-            path = block.path;
-        } else if (append && (appendType === 'unknown' || appendType === 'get')) {
-            var appendValue = append.value;
-            args = _glimmerRuntimeLibSyntaxCore.Args.empty();
-            path = appendValue.ref.path();
-        } else if (append && append.value.type === 'helper') {
-            var helper = append.value;
-            args = helper.args;
-            path = helper.ref.path();
-        } else if (modifier) {
-            path = modifier.path;
-            args = modifier.args;
-        }
-        var key = undefined,
-            isSimple = undefined;
-        if (path) {
-            isSimple = path.length === 1;
-            key = path[0];
-        }
-        return {
-            isSimple: isSimple,
-            path: path,
-            key: key,
-            args: args,
-            appendType: appendType,
-            original: statement,
-            isInline: !!append,
-            isBlock: !!block,
-            isModifier: !!modifier,
-            templates: block && block.templates
-        };
-    }
-});
-
-enifed("glimmer-runtime/lib/modifier/interfaces", ["exports"], function (exports) {
-  "use strict";
-});
-
-enifed("glimmer-runtime/lib/opcode-builder", ["exports"], function (exports) {
-  "use strict";
-});
-
-enifed('glimmer-runtime/lib/opcodes', ['exports', 'glimmer-util'], function (exports, _glimmerUtil) {
-    'use strict';
-
-    exports.inspect = inspect;
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var AbstractOpcode = (function () {
-        function AbstractOpcode() {
-            _classCallCheck(this, AbstractOpcode);
-
-            _glimmerUtil.initializeGuid(this);
-        }
-
-        AbstractOpcode.prototype.toJSON = function toJSON() {
-            return { guid: this._guid, type: this.type };
-        };
-
-        return AbstractOpcode;
-    })();
-
-    exports.AbstractOpcode = AbstractOpcode;
-
-    var Opcode = (function (_AbstractOpcode) {
-        _inherits(Opcode, _AbstractOpcode);
-
-        function Opcode() {
-            _classCallCheck(this, Opcode);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _AbstractOpcode.call.apply(_AbstractOpcode, [this].concat(args));
-            this.next = null;
-            this.prev = null;
-        }
-
-        return Opcode;
-    })(AbstractOpcode);
-
-    exports.Opcode = Opcode;
-
-    var UpdatingOpcode = (function (_AbstractOpcode2) {
-        _inherits(UpdatingOpcode, _AbstractOpcode2);
-
-        function UpdatingOpcode() {
-            _classCallCheck(this, UpdatingOpcode);
-
-            for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                args[_key2] = arguments[_key2];
-            }
-
-            _AbstractOpcode2.call.apply(_AbstractOpcode2, [this].concat(args));
-            this.next = null;
-            this.prev = null;
-        }
-
-        return UpdatingOpcode;
-    })(AbstractOpcode);
-
-    exports.UpdatingOpcode = UpdatingOpcode;
-
-    function inspect(opcodes) {
-        var buffer = [];
-        opcodes.toArray().forEach(function (opcode, i) {
-            _inspect(opcode.toJSON(), buffer, 0, i);
-        });
-        return buffer.join('');
-    }
-
-    function _inspect(opcode, buffer, level, index) {
-        var indentation = [];
-        for (var i = 0; i < level; i++) {
-            indentation.push('  ');
-        }
-        buffer.push.apply(buffer, indentation);
-        buffer.push(index + 1 + '. ' + opcode.type.toUpperCase());
-        if (opcode.args || opcode.details) {
-            buffer.push('(');
-            if (opcode.args) {
-                buffer.push(opcode.args.join(', '));
-            }
-            if (opcode.details) {
-                var _keys = Object.keys(opcode.details);
-                if (_keys.length) {
-                    if (opcode.args && opcode.args.length) {
-                        buffer.push(', ');
-                    }
-                    buffer.push(_keys.map(function (key) {
-                        return key + '=' + opcode.details[key];
-                    }).join(', '));
-                }
-            }
-            buffer.push(')');
-        }
-        buffer.push('\n');
-        if (opcode.children && opcode.children.length) {
-            for (var i = 0; i < opcode.children.length; i++) {
-                _inspect(opcode.children[i], buffer, level + 1, i);
-            }
-        }
-    }
-});
-
-enifed("glimmer-runtime/lib/partial", ["exports"], function (exports) {
-    "use strict";
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var PartialDefinition = function PartialDefinition(name, template) {
-        _classCallCheck(this, PartialDefinition);
-
-        this.name = name;
-        this.template = template;
-    };
-
-    exports.PartialDefinition = PartialDefinition;
-});
-
-enifed('glimmer-runtime/lib/references', ['exports', 'glimmer-reference'], function (exports, _glimmerReference) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var PrimitiveReference = (function (_ConstReference) {
-        _inherits(PrimitiveReference, _ConstReference);
-
-        function PrimitiveReference() {
-            _classCallCheck(this, PrimitiveReference);
-
-            _ConstReference.apply(this, arguments);
-        }
-
-        PrimitiveReference.prototype.get = function get() {
-            return UNDEFINED_REFERENCE;
-        };
-
-        return PrimitiveReference;
-    })(_glimmerReference.ConstReference);
-
-    exports.PrimitiveReference = PrimitiveReference;
-
-    var ConditionalReference = (function () {
-        function ConditionalReference(inner) {
-            _classCallCheck(this, ConditionalReference);
-
-            this.inner = inner;
-            this.tag = inner.tag;
-        }
-
-        ConditionalReference.prototype.value = function value() {
-            return this.toBool(this.inner.value());
-        };
-
-        ConditionalReference.prototype.toBool = function toBool(value) {
-            return !!value;
-        };
-
-        return ConditionalReference;
-    })();
-
-    exports.ConditionalReference = ConditionalReference;
-    var NULL_REFERENCE = new PrimitiveReference(null);
-    exports.NULL_REFERENCE = NULL_REFERENCE;
-    var UNDEFINED_REFERENCE = new PrimitiveReference(undefined);
-    exports.UNDEFINED_REFERENCE = UNDEFINED_REFERENCE;
-});
-
-enifed('glimmer-runtime/lib/scanner', ['exports', 'glimmer-runtime/lib/syntax/statements', 'glimmer-runtime/lib/compiled/blocks', 'glimmer-util'], function (exports, _glimmerRuntimeLibSyntaxStatements, _glimmerRuntimeLibCompiledBlocks, _glimmerUtil) {
-    'use strict';
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var Scanner = (function () {
-        function Scanner(spec, env) {
-            _classCallCheck(this, Scanner);
-
-            this.spec = spec;
-            this.env = env;
-        }
-
-        Scanner.prototype.scanEntryPoint = function scanEntryPoint() {
-            var _this = this;
-
-            return this.scanTop(function (_ref) {
-                var program = _ref.program;
-                var children = _ref.children;
-                var meta = _this.spec.meta;
-
-                return _glimmerRuntimeLibCompiledBlocks.EntryPoint.create({ children: children, program: program, symbolTable: null, meta: meta });
-            });
-        };
-
-        Scanner.prototype.scanLayout = function scanLayout() {
-            var _this2 = this;
-
-            return this.scanTop(function (_ref2) {
-                var program = _ref2.program;
-                var children = _ref2.children;
-                var _spec = _this2.spec;
-                var named = _spec.named;
-                var yields = _spec.yields;
-                var meta = _spec.meta;
-
-                return _glimmerRuntimeLibCompiledBlocks.Layout.create({ children: children, program: program, named: named, yields: yields, symbolTable: null, meta: meta });
-            });
-        };
-
-        Scanner.prototype.scanPartial = function scanPartial(symbolTable) {
-            var _this3 = this;
-
-            return this.scanTop(function (_ref3) {
-                var program = _ref3.program;
-                var children = _ref3.children;
-                var _spec2 = _this3.spec;
-                var locals = _spec2.locals;
-                var meta = _spec2.meta;
-
-                return new _glimmerRuntimeLibCompiledBlocks.PartialBlock({ children: children, program: program, locals: locals, symbolTable: symbolTable, meta: meta });
-            });
-        };
-
-        Scanner.prototype.scanTop = function scanTop(makeTop) {
-            var spec = this.spec;
-            var specBlocks = spec.blocks;
-            var meta = spec.meta;
-
-            var blocks = [];
-            for (var i = 0, block = undefined; block = specBlocks[i]; i++) {
-                blocks.push(this.buildBlock(block, blocks, meta));
-            }
-            return makeTop(this.buildStatements(spec, blocks)).initBlocks();
-        };
-
-        Scanner.prototype.buildBlock = function buildBlock(block, blocks, meta) {
-            var _buildStatements = this.buildStatements(block, blocks);
-
-            var program = _buildStatements.program;
-            var children = _buildStatements.children;
-
-            return new _glimmerRuntimeLibCompiledBlocks.InlineBlock({ children: children, locals: block.locals, program: program, symbolTable: null, meta: meta });
-        };
-
-        Scanner.prototype.buildStatements = function buildStatements(_ref4, blocks) {
-            var statements = _ref4.statements;
-
-            if (statements.length === 0) return EMPTY_PROGRAM;
-            return new BlockScanner(statements, blocks, this.env).scan();
-        };
-
-        return Scanner;
-    })();
-
-    exports.default = Scanner;
-
-    var EMPTY_PROGRAM = {
-        program: _glimmerUtil.EMPTY_SLICE,
-        children: []
-    };
-
-    var BlockScanner = (function () {
-        function BlockScanner(statements, blocks, env) {
-            _classCallCheck(this, BlockScanner);
-
-            this.stack = new _glimmerUtil.Stack();
-            this.stack.push(new ChildBlockScanner());
-            this.reader = new SyntaxReader(statements, blocks);
-            this.env = env;
-        }
-
-        BlockScanner.prototype.scan = function scan() {
-            var statement = undefined;
-            while (statement = this.reader.next()) {
-                this.addStatement(statement);
-            }
-            return { program: this.stack.current.program, children: this.stack.current.children };
-        };
-
-        BlockScanner.prototype.startBlock = function startBlock() {
-            this.stack.push(new ChildBlockScanner());
-        };
-
-        BlockScanner.prototype.endBlock = function endBlock() {
-            var _stack$pop = this.stack.pop();
-
-            var children = _stack$pop.children;
-            var program = _stack$pop.program;
-
-            var block = new _glimmerRuntimeLibCompiledBlocks.InlineBlock({ children: children, program: program, symbolTable: null, meta: null, locals: [] });
-            this.addChild(block);
-            return block;
-        };
-
-        BlockScanner.prototype.addChild = function addChild(block) {
-            this.stack.current.addChild(block);
-        };
-
-        BlockScanner.prototype.addStatement = function addStatement(statement) {
-            this.stack.current.addStatement(statement.scan(this));
-        };
-
-        BlockScanner.prototype.next = function next() {
-            return this.reader.next();
-        };
-
-        BlockScanner.prototype.unput = function unput(statement) {
-            this.reader.unput(statement);
-        };
-
-        return BlockScanner;
-    })();
-
-    exports.BlockScanner = BlockScanner;
-
-    var ChildBlockScanner = (function () {
-        function ChildBlockScanner() {
-            _classCallCheck(this, ChildBlockScanner);
-
-            this.children = [];
-            this.program = new _glimmerUtil.LinkedList();
-        }
-
-        ChildBlockScanner.prototype.addChild = function addChild(block) {
-            this.children.push(block);
-        };
-
-        ChildBlockScanner.prototype.addStatement = function addStatement(statement) {
-            this.program.append(statement);
-        };
-
-        return ChildBlockScanner;
-    })();
-
-    var SyntaxReader = (function () {
-        function SyntaxReader(statements, blocks) {
-            _classCallCheck(this, SyntaxReader);
-
-            this.current = 0;
-            this.last = null;
-            this.statements = statements;
-            this.blocks = blocks;
-        }
-
-        SyntaxReader.prototype.unput = function unput(statement) {
-            this.last = statement;
-        };
-
-        SyntaxReader.prototype.next = function next() {
-            var last = this.last;
-            if (last) {
-                this.last = null;
-                return last;
-            } else if (this.current === this.statements.length) {
-                return null;
-            }
-            var sexp = this.statements[this.current++];
-            return _glimmerRuntimeLibSyntaxStatements.default(sexp, this.blocks);
-        };
-
-        return SyntaxReader;
-    })();
-
-    exports.SyntaxReader = SyntaxReader;
-});
-
-enifed('glimmer-runtime/lib/symbol-table', ['exports', 'glimmer-util'], function (exports, _glimmerUtil) {
-    'use strict';
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var SymbolTable = (function () {
-        function SymbolTable(parent, template) {
-            _classCallCheck(this, SymbolTable);
-
-            this.locals = _glimmerUtil.dict();
-            this.named = _glimmerUtil.dict();
-            this.yields = _glimmerUtil.dict();
-            this.size = 1;
-            this.parent = parent;
-            this.top = parent ? parent.top : this;
-            this.template = template;
-        }
-
-        SymbolTable.initForEntryPoint = function initForEntryPoint(top) {
-            return top.symbolTable = new SymbolTable(null, top).initEntryPoint(top);
-        };
-
-        SymbolTable.initForLayout = function initForLayout(layout) {
-            return layout.symbolTable = new SymbolTable(null, layout).initLayout(layout);
-        };
-
-        SymbolTable.initForBlock = function initForBlock(_ref) {
-            var parent = _ref.parent;
-            var block = _ref.block;
-
-            return block.symbolTable = new SymbolTable(parent, block).initBlock(block);
-        };
-
-        SymbolTable.prototype.initEntryPoint = function initEntryPoint(_) {
-            return this;
-        };
-
-        SymbolTable.prototype.initBlock = function initBlock(_ref2) {
-            var locals = _ref2.locals;
-
-            this.initPositionals(locals);
-            return this;
-        };
-
-        SymbolTable.prototype.initLayout = function initLayout(_ref3) {
-            var named = _ref3.named;
-            var yields = _ref3.yields;
-
-            this.initNamed(named);
-            this.initYields(yields);
-            return this;
-        };
-
-        SymbolTable.prototype.initPositionals = function initPositionals(positionals) {
-            var _this = this;
-
-            if (positionals) positionals.forEach(function (s) {
-                return _this.locals[s] = _this.top.size++;
-            });
-            return this;
-        };
-
-        SymbolTable.prototype.initNamed = function initNamed(named) {
-            var _this2 = this;
-
-            if (named) named.forEach(function (s) {
-                return _this2.named[s] = _this2.top.size++;
-            });
-            return this;
-        };
-
-        SymbolTable.prototype.initYields = function initYields(yields) {
-            var _this3 = this;
-
-            if (yields) yields.forEach(function (b) {
-                return _this3.yields[b] = _this3.top.size++;
-            });
-            return this;
-        };
-
-        SymbolTable.prototype.getYield = function getYield(name) {
-            var yields = this.yields;
-            var parent = this.parent;
-
-            var symbol = yields[name];
-            if (!symbol && parent) {
-                symbol = parent.getYield(name);
-            }
-            return symbol;
-        };
-
-        SymbolTable.prototype.getNamed = function getNamed(name) {
-            var named = this.named;
-            var parent = this.parent;
-
-            var symbol = named[name];
-            if (!symbol && parent) {
-                symbol = parent.getNamed(name);
-            }
-            return symbol;
-        };
-
-        SymbolTable.prototype.getLocal = function getLocal(name) {
-            var locals = this.locals;
-            var parent = this.parent;
-
-            var symbol = locals[name];
-            if (!symbol && parent) {
-                symbol = parent.getLocal(name);
-            }
-            return symbol;
-        };
-
-        SymbolTable.prototype.isTop = function isTop() {
-            return this.top === this;
-        };
-
-        return SymbolTable;
-    })();
-
-    exports.default = SymbolTable;
-});
-
-enifed("glimmer-runtime/lib/syntax", ["exports"], function (exports) {
-    "use strict";
-
-    exports.isAttribute = isAttribute;
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var Statement = (function () {
-        function Statement() {
-            _classCallCheck(this, Statement);
-
-            this.next = null;
-            this.prev = null;
-        }
-
-        Statement.fromSpec = function fromSpec(spec, blocks) {
-            throw new Error("You need to implement fromSpec on " + this);
-        };
-
-        Statement.prototype.clone = function clone() {
-            // not type safe but the alternative is extreme boilerplate per
-            // syntax subclass.
-            return new this.constructor(this);
-        };
-
-        Statement.prototype.scan = function scan(scanner) {
-            return this;
-        };
-
-        return Statement;
-    })();
-
-    exports.Statement = Statement;
-
-    var Expression = (function () {
-        function Expression() {
-            _classCallCheck(this, Expression);
-        }
-
-        Expression.fromSpec = function fromSpec(spec, blocks) {
-            throw new Error("You need to implement fromSpec on " + this);
-        };
-
-        return Expression;
-    })();
-
-    exports.Expression = Expression;
-    var ATTRIBUTE = "e1185d30-7cac-4b12-b26a-35327d905d92";
-    exports.ATTRIBUTE = ATTRIBUTE;
-    var ARGUMENT = "0f3802314-d747-bbc5-0168-97875185c3rt";
-    exports.ARGUMENT = ARGUMENT;
-
-    var Attribute = (function (_Statement) {
-        _inherits(Attribute, _Statement);
-
-        function Attribute() {
-            _classCallCheck(this, Attribute);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _Statement.call.apply(_Statement, [this].concat(args));
-            this["e1185d30-7cac-4b12-b26a-35327d905d92"] = true;
-        }
-
-        return Attribute;
-    })(Statement);
-
-    exports.Attribute = Attribute;
-
-    var Argument = (function (_Statement2) {
-        _inherits(Argument, _Statement2);
-
-        function Argument() {
-            _classCallCheck(this, Argument);
-
-            for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                args[_key2] = arguments[_key2];
-            }
-
-            _Statement2.call.apply(_Statement2, [this].concat(args));
-            this["0f3802314-d747-bbc5-0168-97875185c3rt"] = true;
-        }
-
-        return Argument;
-    })(Statement);
-
-    exports.Argument = Argument;
-
-    function isAttribute(value) {
-        return value && value[ATTRIBUTE] === true;
-    }
-});
-
-enifed('glimmer-runtime/lib/syntax/builtins/each', ['exports', 'glimmer-runtime/lib/syntax'], function (exports, _glimmerRuntimeLibSyntax) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var EachSyntax = (function (_StatementSyntax) {
-        _inherits(EachSyntax, _StatementSyntax);
-
-        function EachSyntax(_ref) {
-            var args = _ref.args;
-            var templates = _ref.templates;
-
-            _classCallCheck(this, EachSyntax);
-
-            _StatementSyntax.call(this);
-            this.type = "each-statement";
-            this.isStatic = false;
-            this.args = args;
-            this.templates = templates;
-        }
-
-        EachSyntax.prototype.compile = function compile(dsl, env) {
-            //         Enter(BEGIN, END)
-            // BEGIN:  Noop
-            //         PutArgs
-            //         PutIterable
-            //         JumpUnless(ELSE)
-            //         EnterList(BEGIN2, END2)
-            // ITER:   Noop
-            //         NextIter(BREAK)
-            //         EnterWithKey(BEGIN2, END2)
-            // BEGIN2: Noop
-            //         PushChildScope
-            //         Evaluate(default)
-            //         PopScope
-            // END2:   Noop
-            //         Exit
-            //         Jump(ITER)
-            // BREAK:  Noop
-            //         ExitList
-            //         Jump(END)
-            // ELSE:   Noop
-            //         Evalulate(inverse)
-            // END:    Noop
-            //         Exit
-            var args = this.args;
-            var templates = this.templates;
-
-            dsl.block({ templates: templates, args: args }, function (dsl, BEGIN, END) {
-                dsl.putIterator();
-                if (templates.inverse) {
-                    dsl.jumpUnless('ELSE');
-                } else {
-                    dsl.jumpUnless(END);
-                }
-                dsl.iter({ templates: templates }, function (dsl, BEGIN, END) {
-                    dsl.pushChildScope();
-                    dsl.evaluate('default');
-                    dsl.popScope();
-                });
-                if (templates.inverse) {
-                    dsl.jump(END);
-                    dsl.label('ELSE');
-                    dsl.evaluate('inverse');
-                }
-            });
-        };
-
-        return EachSyntax;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.default = EachSyntax;
-});
-
-enifed('glimmer-runtime/lib/syntax/builtins/if', ['exports', 'glimmer-runtime/lib/syntax'], function (exports, _glimmerRuntimeLibSyntax) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var IfSyntax = (function (_StatementSyntax) {
-        _inherits(IfSyntax, _StatementSyntax);
-
-        function IfSyntax(_ref) {
-            var args = _ref.args;
-            var templates = _ref.templates;
-
-            _classCallCheck(this, IfSyntax);
-
-            _StatementSyntax.call(this);
-            this.type = "if-statement";
-            this.isStatic = false;
-            this.args = args;
-            this.templates = templates;
-        }
-
-        IfSyntax.prototype.compile = function compile(dsl) {
-            //        Enter(BEGIN, END)
-            // BEGIN: Noop
-            //        PutArgs
-            //        Test(Environment)
-            //        JumpUnless(ELSE)
-            //        Evaluate(default)
-            //        Jump(END)
-            // ELSE:  Noop
-            //        Evalulate(inverse)
-            // END:   Noop
-            //        Exit
-            var args = this.args;
-            var templates = this.templates;
-
-            dsl.block({ templates: templates, args: args }, function (dsl, BEGIN, END) {
-                dsl.test('environment');
-                if (templates.inverse) {
-                    dsl.jumpUnless('ELSE');
-                    dsl.evaluate('default');
-                    dsl.jump(END);
-                    dsl.label('ELSE');
-                    dsl.evaluate('inverse');
-                } else {
-                    dsl.jumpUnless(END);
-                    dsl.evaluate('default');
-                }
-            });
-        };
-
-        return IfSyntax;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.default = IfSyntax;
-});
-
-enifed('glimmer-runtime/lib/syntax/builtins/partial', ['exports', 'glimmer-util', 'glimmer-runtime/lib/syntax', 'glimmer-runtime/lib/compiled/opcodes/vm'], function (exports, _glimmerUtil, _glimmerRuntimeLibSyntax, _glimmerRuntimeLibCompiledOpcodesVm) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var PartialSyntax = (function (_StatementSyntax) {
-        _inherits(PartialSyntax, _StatementSyntax);
-
-        function PartialSyntax(_ref) {
-            var args = _ref.args;
-
-            _classCallCheck(this, PartialSyntax);
-
-            _StatementSyntax.call(this);
-            this.type = "partial-statement";
-            this.isStatic = false;
-            this.args = args;
-        }
-
-        PartialSyntax.prototype.compile = function compile(compiler, env, block) {
-            /*
-            //        Enter(BEGIN, END)
-            // BEGIN: Noop
-            //        PutArgs
-            //        NameToPartial
-            //        Test
-            //        JumpUnless(END)
-            //        EvaluatePartial
-            // END:   Noop
-            //        Exit
-            */
-            _glimmerUtil.assert(this.args.positional.values.length > 0, 'Partial found with no arguments. You must specify a template.');
-            _glimmerUtil.assert(this.args.positional.values.length < 2, 'Partial found with more than one argument. You can only specify a single template.');
-            var compiledPartialNameExpression = this.args.positional.values[0].compile(compiler, env);
-            var BEGIN = new _glimmerRuntimeLibCompiledOpcodesVm.LabelOpcode("BEGIN");
-            var END = new _glimmerRuntimeLibCompiledOpcodesVm.LabelOpcode("END");
-            compiler.append(new _glimmerRuntimeLibCompiledOpcodesVm.EnterOpcode({ begin: BEGIN, end: END }));
-            compiler.append(BEGIN);
-            compiler.append(new _glimmerRuntimeLibCompiledOpcodesVm.PutArgsOpcode({ args: this.args.compile(compiler, env) }));
-            compiler.append(new _glimmerRuntimeLibCompiledOpcodesVm.NameToPartialOpcode());
-            compiler.append(new _glimmerRuntimeLibCompiledOpcodesVm.TestOpcode(_glimmerRuntimeLibCompiledOpcodesVm.SimpleTest));
-            compiler.append(new _glimmerRuntimeLibCompiledOpcodesVm.JumpUnlessOpcode({ target: END }));
-            compiler.append(new _glimmerRuntimeLibCompiledOpcodesVm.EvaluatePartialOpcode({
-                name: compiledPartialNameExpression,
-                symbolTable: block.symbolTable
-            }));
-            compiler.append(END);
-            compiler.append(new _glimmerRuntimeLibCompiledOpcodesVm.ExitOpcode());
-        };
-
-        return PartialSyntax;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.default = PartialSyntax;
-});
-
-enifed('glimmer-runtime/lib/syntax/builtins/unless', ['exports', 'glimmer-runtime/lib/syntax'], function (exports, _glimmerRuntimeLibSyntax) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var UnlessSyntax = (function (_StatementSyntax) {
-        _inherits(UnlessSyntax, _StatementSyntax);
-
-        function UnlessSyntax(_ref) {
-            var args = _ref.args;
-            var templates = _ref.templates;
-
-            _classCallCheck(this, UnlessSyntax);
-
-            _StatementSyntax.call(this);
-            this.type = "unless-statement";
-            this.isStatic = false;
-            this.args = args;
-            this.templates = templates;
-        }
-
-        UnlessSyntax.prototype.compile = function compile(dsl, env) {
-            //        Enter(BEGIN, END)
-            // BEGIN: Noop
-            //        PutArgs
-            //        Test(Environment)
-            //        JumpIf(ELSE)
-            //        Evaluate(default)
-            //        Jump(END)
-            // ELSE:  Noop
-            //        Evalulate(inverse)
-            // END:   Noop
-            //        Exit
-            var args = this.args;
-            var templates = this.templates;
-
-            dsl.block({ templates: templates, args: args }, function (dsl) {
-                dsl.test('environment');
-                if (templates.inverse) {
-                    dsl.jumpIf('ELSE');
-                    dsl.evaluate('default');
-                    dsl.jump('END');
-                    dsl.label('ELSE');
-                    dsl.evaluate('inverse');
-                } else {
-                    dsl.jumpIf('END');
-                    dsl.evaluate('default');
-                }
-            });
-        };
-
-        return UnlessSyntax;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.default = UnlessSyntax;
-});
-
-enifed('glimmer-runtime/lib/syntax/builtins/with', ['exports', 'glimmer-runtime/lib/syntax'], function (exports, _glimmerRuntimeLibSyntax) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var WithSyntax = (function (_StatementSyntax) {
-        _inherits(WithSyntax, _StatementSyntax);
-
-        function WithSyntax(_ref) {
-            var args = _ref.args;
-            var templates = _ref.templates;
-
-            _classCallCheck(this, WithSyntax);
-
-            _StatementSyntax.call(this);
-            this.type = "with-statement";
-            this.isStatic = false;
-            this.args = args;
-            this.templates = templates;
-        }
-
-        WithSyntax.prototype.compile = function compile(dsl, env) {
-            //        Enter(BEGIN, END)
-            // BEGIN: Noop
-            //        PutArgs
-            //        Test(Environment)
-            //        JumpUnless(ELSE)
-            //        Evaluate(default)
-            //        Jump(END)
-            // ELSE:  Noop
-            //        Evaluate(inverse)
-            // END:   Noop
-            //        Exit
-            var args = this.args;
-            var templates = this.templates;
-
-            dsl.block({ templates: templates, args: args }, function (dsl, BEGIN, END) {
-                dsl.test('environment');
-                if (templates.inverse) {
-                    dsl.jumpUnless('ELSE');
-                    dsl.evaluate('default');
-                    dsl.jump(END);
-                    dsl.label('ELSE');
-                    dsl.evaluate('inverse');
-                } else {
-                    dsl.jumpUnless(END);
-                    dsl.evaluate('default');
-                }
-            });
-        };
-
-        return WithSyntax;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.default = WithSyntax;
-});
-
-enifed('glimmer-runtime/lib/syntax/core', ['exports', 'glimmer-runtime/lib/syntax', 'glimmer-runtime/lib/opcodes', 'glimmer-runtime/lib/compiled/opcodes/vm', 'glimmer-runtime/lib/compiled/opcodes/component', 'glimmer-runtime/lib/compiled/opcodes/dom', 'glimmer-runtime/lib/syntax/expressions', 'glimmer-runtime/lib/compiled/expressions/args', 'glimmer-runtime/lib/compiled/expressions/value', 'glimmer-runtime/lib/compiled/expressions/ref', 'glimmer-runtime/lib/compiled/expressions/has-block', 'glimmer-runtime/lib/compiled/expressions/has-block-params', 'glimmer-runtime/lib/compiled/expressions/helper', 'glimmer-runtime/lib/compiled/expressions/concat', 'glimmer-util', 'glimmer-runtime/lib/compiled/opcodes/content'], function (exports, _glimmerRuntimeLibSyntax, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibCompiledOpcodesVm, _glimmerRuntimeLibCompiledOpcodesComponent, _glimmerRuntimeLibCompiledOpcodesDom, _glimmerRuntimeLibSyntaxExpressions, _glimmerRuntimeLibCompiledExpressionsArgs, _glimmerRuntimeLibCompiledExpressionsValue, _glimmerRuntimeLibCompiledExpressionsRef, _glimmerRuntimeLibCompiledExpressionsHasBlock, _glimmerRuntimeLibCompiledExpressionsHasBlockParams, _glimmerRuntimeLibCompiledExpressionsHelper, _glimmerRuntimeLibCompiledExpressionsConcat, _glimmerUtil, _glimmerRuntimeLibCompiledOpcodesContent) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    var Block = (function (_StatementSyntax) {
-        _inherits(Block, _StatementSyntax);
-
-        function Block(options) {
-            _classCallCheck(this, Block);
-
-            _StatementSyntax.call(this);
-            this.type = "block";
-            this.path = options.path;
-            this.args = options.args;
-            this.templates = options.templates;
-        }
-
-        Block.fromSpec = function fromSpec(sexp, children) {
-            var path = sexp[1];
-            var params = sexp[2];
-            var hash = sexp[3];
-            var templateId = sexp[4];
-            var inverseId = sexp[5];
-
-            return new Block({
-                path: path,
-                args: Args.fromSpec(params, hash),
-                templates: Templates.fromSpec([templateId, inverseId], children)
-            });
-        };
-
-        Block.build = function build(options) {
-            return new this(options);
-        };
-
-        Block.prototype.scan = function scan(scanner) {
-            var _templates = this.templates;
-            var _default = _templates.default;
-            var inverse = _templates.inverse;
-
-            if (_default) scanner.addChild(_default);
-            if (inverse) scanner.addChild(inverse);
-            return this;
-        };
-
-        Block.prototype.compile = function compile(ops) {
-            throw new Error("SyntaxError");
-        };
-
-        return Block;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.Block = Block;
-
-    var Unknown = (function (_ExpressionSyntax) {
-        _inherits(Unknown, _ExpressionSyntax);
-
-        function Unknown(options) {
-            _classCallCheck(this, Unknown);
-
-            _ExpressionSyntax.call(this);
-            this.type = "unknown";
-            this.ref = options.ref;
-            this.trustingMorph = !!options.unsafe;
-        }
-
-        Unknown.fromSpec = function fromSpec(sexp) {
-            var path = sexp[1];
-
-            return new Unknown({ ref: new Ref({ parts: path }) });
-        };
-
-        Unknown.build = function build(path, unsafe) {
-            return new this({ ref: Ref.build(path), unsafe: unsafe });
-        };
-
-        Unknown.prototype.compile = function compile(compiler, env, parentMeta) {
-            var ref = this.ref;
-
-            if (env.hasHelper(ref.parts, parentMeta)) {
-                return new _glimmerRuntimeLibCompiledExpressionsHelper.default({ name: ref.parts, helper: env.lookupHelper(ref.parts, parentMeta), args: _glimmerRuntimeLibCompiledExpressionsArgs.CompiledArgs.empty() });
-            } else {
-                return this.ref.compile(compiler);
-            }
-        };
-
-        Unknown.prototype.simplePath = function simplePath() {
-            return this.ref.simplePath();
-        };
-
-        return Unknown;
-    })(_glimmerRuntimeLibSyntax.Expression);
-
-    exports.Unknown = Unknown;
-
-    var Append = (function (_StatementSyntax2) {
-        _inherits(Append, _StatementSyntax2);
-
-        function Append(_ref) {
-            var value = _ref.value;
-            var trustingMorph = _ref.trustingMorph;
-
-            _classCallCheck(this, Append);
-
-            _StatementSyntax2.call(this);
-            this.value = value;
-            this.trustingMorph = trustingMorph;
-        }
-
-        Append.fromSpec = function fromSpec(sexp) {
-            var value = sexp[1];
-            var trustingMorph = sexp[2];
-
-            return new OptimizedAppend({ value: _glimmerRuntimeLibSyntaxExpressions.default(value), trustingMorph: trustingMorph });
-        };
-
-        return Append;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    var OptimizedAppend = (function (_Append) {
-        _inherits(OptimizedAppend, _Append);
-
-        function OptimizedAppend() {
-            _classCallCheck(this, OptimizedAppend);
-
-            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                args[_key] = arguments[_key];
-            }
-
-            _Append.call.apply(_Append, [this].concat(args));
-            this.type = "optimized-append";
-        }
-
-        OptimizedAppend.prototype.deopt = function deopt() {
-            return new UnoptimizedAppend(this);
-        };
-
-        OptimizedAppend.prototype.compile = function compile(compiler, env, block) {
-            compiler.append(new _glimmerRuntimeLibCompiledOpcodesVm.PutValueOpcode({ expression: this.value.compile(compiler, env, block.meta) }));
-            if (this.trustingMorph) {
-                compiler.append(new _glimmerRuntimeLibCompiledOpcodesContent.OptimizedTrustingAppendOpcode());
-            } else {
-                compiler.append(new _glimmerRuntimeLibCompiledOpcodesContent.OptimizedCautiousAppendOpcode());
-            }
-        };
-
-        return OptimizedAppend;
-    })(Append);
-
-    exports.OptimizedAppend = OptimizedAppend;
-
-    var UnoptimizedAppend = (function (_Append2) {
-        _inherits(UnoptimizedAppend, _Append2);
-
-        function UnoptimizedAppend() {
-            _classCallCheck(this, UnoptimizedAppend);
-
-            for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                args[_key2] = arguments[_key2];
-            }
-
-            _Append2.call.apply(_Append2, [this].concat(args));
-            this.type = "unoptimized-append";
-        }
-
-        UnoptimizedAppend.prototype.compile = function compile(compiler, env, block) {
-            var expression = this.value.compile(compiler, env, block.meta);
-            if (this.trustingMorph) {
-                compiler.append(new _glimmerRuntimeLibCompiledOpcodesContent.GuardedTrustingAppendOpcode(expression));
-            } else {
-                compiler.append(new _glimmerRuntimeLibCompiledOpcodesContent.GuardedCautiousAppendOpcode(expression));
-            }
-        };
-
-        return UnoptimizedAppend;
-    })(Append);
-
-    exports.UnoptimizedAppend = UnoptimizedAppend;
-    var MODIFIER_SYNTAX = "c0420397-8ff1-4241-882b-4b7a107c9632";
-    exports.MODIFIER_SYNTAX = MODIFIER_SYNTAX;
-
-    var Modifier = (function (_StatementSyntax3) {
-        _inherits(Modifier, _StatementSyntax3);
-
-        function Modifier(options) {
-            _classCallCheck(this, Modifier);
-
-            _StatementSyntax3.call(this);
-            this["c0420397-8ff1-4241-882b-4b7a107c9632"] = true;
-            this.type = "modifier";
-            this.path = options.path;
-            this.args = options.args;
-        }
-
-        Modifier.fromSpec = function fromSpec(node) {
-            var path = node[1];
-            var params = node[2];
-            var hash = node[3];
-
-            return new Modifier({
-                path: path,
-                args: Args.fromSpec(params, hash)
-            });
-        };
-
-        Modifier.build = function build(path, options) {
-            return new Modifier({
-                path: path,
-                params: options.params,
-                hash: options.hash
-            });
-        };
-
-        Modifier.prototype.compile = function compile(compiler, env) {
-            var args = this.args.compile(compiler, env);
-            if (env.hasModifier(this.path)) {
-                compiler.append(new _glimmerRuntimeLibCompiledOpcodesDom.ModifierOpcode({
-                    name: this.path[0],
-                    manager: env.lookupModifier(this.path),
-                    args: args
-                }));
-            } else {
-                throw new Error('Compile Error: ' + this.path.join('.') + ' is not a modifier');
-            }
-        };
-
-        return Modifier;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.Modifier = Modifier;
-
-    var StaticArg = (function (_ArgumentSyntax) {
-        _inherits(StaticArg, _ArgumentSyntax);
-
-        function StaticArg(_ref2) {
-            var name = _ref2.name;
-            var value = _ref2.value;
-
-            _classCallCheck(this, StaticArg);
-
-            _ArgumentSyntax.call(this);
-            this.type = "static-arg";
-            this.name = name;
-            this.value = value;
-        }
-
-        StaticArg.fromSpec = function fromSpec(node) {
-            var name = node[1];
-            var value = node[2];
-
-            return new StaticArg({ name: name, value: value });
-        };
-
-        StaticArg.build = function build(name, value) {
-            var namespace = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
-
-            return new this({ name: _glimmerUtil.intern(name), value: _glimmerUtil.intern(value) });
-        };
-
-        StaticArg.prototype.compile = function compile() {
-            throw new Error('Cannot compiler StaticArg "' + this.name + '" as it is a delegate for ValueSyntax<string>.');
-        };
-
-        StaticArg.prototype.valueSyntax = function valueSyntax() {
-            return Value.build(this.value);
-        };
-
-        return StaticArg;
-    })(_glimmerRuntimeLibSyntax.Argument);
-
-    exports.StaticArg = StaticArg;
-
-    var DynamicArg = (function (_ArgumentSyntax2) {
-        _inherits(DynamicArg, _ArgumentSyntax2);
-
-        function DynamicArg(_ref3) {
-            var name = _ref3.name;
-            var value = _ref3.value;
-            var _ref3$namespace = _ref3.namespace;
-            var namespace = _ref3$namespace === undefined ? null : _ref3$namespace;
-
-            _classCallCheck(this, DynamicArg);
-
-            _ArgumentSyntax2.call(this);
-            this.type = 'dynamic-arg';
-            this.name = name;
-            this.value = value;
-            this.namespace = namespace;
-        }
-
-        DynamicArg.fromSpec = function fromSpec(sexp) {
-            var name = sexp[1];
-            var value = sexp[2];
-
-            return new DynamicArg({
-                name: name,
-                value: _glimmerRuntimeLibSyntaxExpressions.default(value)
-            });
-        };
-
-        DynamicArg.build = function build(_name, value) {
-            var name = _glimmerUtil.intern(_name);
-            return new this({ name: name, value: value });
-        };
-
-        DynamicArg.prototype.compile = function compile() {
-            throw new Error('Cannot compile DynamicArg for "' + this.name + '" as it is delegate for ExpressionSyntax<Opaque>.');
-        };
-
-        DynamicArg.prototype.valueSyntax = function valueSyntax() {
-            return this.value;
-        };
-
-        return DynamicArg;
-    })(_glimmerRuntimeLibSyntax.Argument);
-
-    exports.DynamicArg = DynamicArg;
-
-    var TrustingAttr = (function () {
-        function TrustingAttr() {
-            _classCallCheck(this, TrustingAttr);
-        }
-
-        TrustingAttr.fromSpec = function fromSpec(sexp) {
-            var name = sexp[1];
-            var value = sexp[2];
-            var namespace = sexp[3];
-
-            return new DynamicAttr({
-                name: name,
-                namespace: namespace,
-                isTrusting: true,
-                value: _glimmerRuntimeLibSyntaxExpressions.default(value)
-            });
-        };
-
-        TrustingAttr.build = function build(_name, value, isTrusting) {
-            var _namespace = arguments.length <= 3 || arguments[3] === undefined ? null : arguments[3];
-
-            var name = _glimmerUtil.intern(_name);
-            var namespace = _namespace ? _glimmerUtil.intern(_namespace) : null;
-            return new DynamicAttr({ name: name, value: value, namespace: namespace, isTrusting: isTrusting });
-        };
-
-        TrustingAttr.prototype.compile = function compile() {
-            throw new Error('Attempting to compile a TrustingAttr which is just a delegate for DynamicAttr.');
-        };
-
-        return TrustingAttr;
-    })();
-
-    exports.TrustingAttr = TrustingAttr;
-
-    var StaticAttr = (function (_AttributeSyntax) {
-        _inherits(StaticAttr, _AttributeSyntax);
-
-        function StaticAttr(_ref4) {
-            var name = _ref4.name;
-            var value = _ref4.value;
-            var _ref4$namespace = _ref4.namespace;
-            var namespace = _ref4$namespace === undefined ? null : _ref4$namespace;
-
-            _classCallCheck(this, StaticAttr);
-
-            _AttributeSyntax.call(this);
-            this["e1185d30-7cac-4b12-b26a-35327d905d92"] = true;
-            this.type = "static-attr";
-            this.isTrusting = false;
-            this.name = name;
-            this.value = value;
-            this.namespace = namespace;
-        }
-
-        StaticAttr.fromSpec = function fromSpec(node) {
-            var name = node[1];
-            var value = node[2];
-            var namespace = node[3];
-
-            return new StaticAttr({ name: name, value: value, namespace: namespace });
-        };
-
-        StaticAttr.build = function build(name, value) {
-            var namespace = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
-
-            return new this({ name: _glimmerUtil.intern(name), value: _glimmerUtil.intern(value), namespace: namespace && _glimmerUtil.intern(namespace) });
-        };
-
-        StaticAttr.prototype.compile = function compile(compiler) {
-            compiler.append(new _glimmerRuntimeLibCompiledOpcodesDom.StaticAttrOpcode(this));
-        };
-
-        StaticAttr.prototype.valueSyntax = function valueSyntax() {
-            return Value.build(this.value);
-        };
-
-        return StaticAttr;
-    })(_glimmerRuntimeLibSyntax.Attribute);
-
-    exports.StaticAttr = StaticAttr;
-
-    var DynamicAttr = (function (_AttributeSyntax2) {
-        _inherits(DynamicAttr, _AttributeSyntax2);
-
-        function DynamicAttr(_ref5) {
-            var name = _ref5.name;
-            var value = _ref5.value;
-            var _ref5$isTrusting = _ref5.isTrusting;
-            var isTrusting = _ref5$isTrusting === undefined ? false : _ref5$isTrusting;
-            var _ref5$namespace = _ref5.namespace;
-            var namespace = _ref5$namespace === undefined ? null : _ref5$namespace;
-
-            _classCallCheck(this, DynamicAttr);
-
-            _AttributeSyntax2.call(this);
-            this["e1185d30-7cac-4b12-b26a-35327d905d92"] = true;
-            this.type = "dynamic-attr";
-            this.name = name;
-            this.value = value;
-            this.namespace = namespace;
-            this.isTrusting = isTrusting;
-        }
-
-        DynamicAttr.fromSpec = function fromSpec(sexp) {
-            var name = sexp[1];
-            var value = sexp[2];
-            var namespace = sexp[3];
-
-            return new DynamicAttr({
-                name: name,
-                namespace: namespace,
-                value: _glimmerRuntimeLibSyntaxExpressions.default(value)
-            });
-        };
-
-        DynamicAttr.build = function build(_name, value) {
-            var isTrusting = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
-
-            var _namespace = arguments.length <= 3 || arguments[3] === undefined ? null : arguments[3];
-
-            var name = _glimmerUtil.intern(_name);
-            var namespace = _namespace ? _glimmerUtil.intern(_namespace) : null;
-            return new this({ name: name, value: value, namespace: namespace, isTrusting: isTrusting });
-        };
-
-        DynamicAttr.prototype.compile = function compile(compiler, env) {
-            var namespace = this.namespace;
-            var value = this.value;
-
-            compiler.append(new _glimmerRuntimeLibCompiledOpcodesVm.PutValueOpcode({ expression: value.compile(compiler, env) }));
-            if (namespace) {
-                compiler.append(new _glimmerRuntimeLibCompiledOpcodesDom.DynamicAttrNSOpcode(this));
-            } else {
-                compiler.append(new _glimmerRuntimeLibCompiledOpcodesDom.DynamicAttrOpcode(this));
-            }
-        };
-
-        DynamicAttr.prototype.valueSyntax = function valueSyntax() {
-            return this.value;
-        };
-
-        return DynamicAttr;
-    })(_glimmerRuntimeLibSyntax.Attribute);
-
-    exports.DynamicAttr = DynamicAttr;
-
-    var CloseElement = (function (_StatementSyntax4) {
-        _inherits(CloseElement, _StatementSyntax4);
-
-        function CloseElement() {
-            _classCallCheck(this, CloseElement);
-
-            for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-                args[_key3] = arguments[_key3];
-            }
-
-            _StatementSyntax4.call.apply(_StatementSyntax4, [this].concat(args));
-            this.type = "close-element";
-        }
-
-        CloseElement.fromSpec = function fromSpec() {
-            return new CloseElement();
-        };
-
-        CloseElement.build = function build() {
-            return new this();
-        };
-
-        CloseElement.prototype.compile = function compile(compiler) {
-            compiler.append(new _glimmerRuntimeLibCompiledOpcodesDom.CloseElementOpcode());
-        };
-
-        return CloseElement;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.CloseElement = CloseElement;
-
-    var Text = (function (_StatementSyntax5) {
-        _inherits(Text, _StatementSyntax5);
-
-        function Text(options) {
-            _classCallCheck(this, Text);
-
-            _StatementSyntax5.call(this);
-            this.type = "text";
-            this.content = options.content;
-        }
-
-        Text.fromSpec = function fromSpec(node) {
-            var content = node[1];
-
-            return new Text({ content: content });
-        };
-
-        Text.build = function build(content) {
-            return new this({ content: content });
-        };
-
-        Text.prototype.compile = function compile(dsl) {
-            dsl.text(this.content);
-        };
-
-        return Text;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.Text = Text;
-
-    var Comment = (function (_StatementSyntax6) {
-        _inherits(Comment, _StatementSyntax6);
-
-        function Comment(options) {
-            _classCallCheck(this, Comment);
-
-            _StatementSyntax6.call(this);
-            this.type = "comment";
-            this.comment = options.value;
-        }
-
-        Comment.fromSpec = function fromSpec(sexp) {
-            var value = sexp[1];
-
-            return new Comment({ value: value });
-        };
-
-        Comment.build = function build(value) {
-            return new this({ value: _glimmerUtil.intern(value) });
-        };
-
-        Comment.prototype.compile = function compile(dsl) {
-            dsl.comment(this.comment);
-        };
-
-        return Comment;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.Comment = Comment;
-
-    var OpenElement = (function (_StatementSyntax7) {
-        _inherits(OpenElement, _StatementSyntax7);
-
-        function OpenElement(options) {
-            _classCallCheck(this, OpenElement);
-
-            _StatementSyntax7.call(this);
-            this.type = "open-element";
-            this.tag = options.tag;
-            this.blockParams = options.blockParams;
-        }
-
-        OpenElement.fromSpec = function fromSpec(sexp) {
-            var tag = sexp[1];
-            var blockParams = sexp[2];
-
-            return new OpenElement({
-                tag: tag,
-                blockParams: blockParams
-            });
-        };
-
-        OpenElement.build = function build(tag, blockParams) {
-            return new this({ tag: _glimmerUtil.intern(tag), blockParams: blockParams && blockParams.map(_glimmerUtil.intern) });
-        };
-
-        OpenElement.prototype.scan = function scan(scanner) {
-            var tag = this.tag;
-
-            if (scanner.env.hasComponentDefinition([tag])) {
-                var _parameters = this.parameters(scanner);
-
-                var args = _parameters.args;
-                var attrs = _parameters.attrs;
-
-                scanner.startBlock();
-                this.tagContents(scanner);
-                var template = scanner.endBlock();
-                return new Component({ tag: tag, args: args, attrs: attrs, template: template });
-            } else {
-                return new OpenPrimitiveElement({ tag: tag });
-            }
-        };
-
-        OpenElement.prototype.compile = function compile(list, env) {
-            list.append(new _glimmerRuntimeLibCompiledOpcodesDom.OpenPrimitiveElementOpcode(this));
-        };
-
-        OpenElement.prototype.toIdentity = function toIdentity() {
-            var tag = this.tag;
-
-            return new OpenPrimitiveElement({ tag: tag });
-        };
-
-        OpenElement.prototype.parameters = function parameters(scanner) {
-            var current = scanner.next();
-            var args = _glimmerUtil.dict();
-            var attrs = [];
-            while (current[_glimmerRuntimeLibSyntax.ATTRIBUTE] || current[MODIFIER_SYNTAX] || current[_glimmerRuntimeLibSyntax.ARGUMENT]) {
-                if (current[MODIFIER_SYNTAX]) {
-                    throw new Error('Compile Error: Element modifiers are not allowed in components');
-                }
-                var param = current;
-                if (current[_glimmerRuntimeLibSyntax.ATTRIBUTE]) {
-                    attrs.push(param.name);
-                }
-                args[param.name] = param.valueSyntax();
-                current = scanner.next();
-            }
-            scanner.unput(current);
-            return { args: Args.fromNamedArgs(NamedArgs.build(args)), attrs: attrs };
-        };
-
-        OpenElement.prototype.tagContents = function tagContents(scanner) {
-            var nesting = 1;
-            while (true) {
-                var current = scanner.next();
-                if (current instanceof CloseElement && --nesting === 0) {
-                    break;
-                }
-                scanner.addStatement(current);
-                if (current instanceof OpenElement || current instanceof OpenPrimitiveElement) {
-                    nesting++;
-                }
-            }
-        };
-
-        return OpenElement;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.OpenElement = OpenElement;
-
-    var Component = (function (_StatementSyntax8) {
-        _inherits(Component, _StatementSyntax8);
-
-        function Component(_ref6) {
-            var tag = _ref6.tag;
-            var args = _ref6.args;
-            var attrs = _ref6.attrs;
-            var template = _ref6.template;
-
-            _classCallCheck(this, Component);
-
-            _StatementSyntax8.call(this);
-            this.type = 'component';
-            this.tag = tag;
-            this.args = args;
-            this.attrs = attrs;
-            this.template = template;
-        }
-
-        Component.prototype.compile = function compile(list, env) {
-            var definition = env.getComponentDefinition([this.tag]);
-            var args = this.args.compile(list, env);
-            var shadow = this.attrs;
-            var templates = new Templates({ template: this.template, inverse: null });
-            list.append(new _glimmerRuntimeLibCompiledOpcodesComponent.PutComponentDefinitionOpcode({ args: args, definition: definition }));
-            list.append(new _glimmerRuntimeLibCompiledOpcodesComponent.OpenComponentOpcode({ shadow: shadow, templates: templates }));
-            list.append(new _glimmerRuntimeLibCompiledOpcodesComponent.CloseComponentOpcode());
-        };
-
-        return Component;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.Component = Component;
-
-    var OpenPrimitiveElement = (function (_StatementSyntax9) {
-        _inherits(OpenPrimitiveElement, _StatementSyntax9);
-
-        function OpenPrimitiveElement(options) {
-            _classCallCheck(this, OpenPrimitiveElement);
-
-            _StatementSyntax9.call(this);
-            this.type = "open-primitive-element";
-            this.tag = options.tag;
-        }
-
-        OpenPrimitiveElement.build = function build(tag) {
-            return new this({ tag: _glimmerUtil.intern(tag) });
-        };
-
-        OpenPrimitiveElement.prototype.compile = function compile(compiler) {
-            compiler.append(new _glimmerRuntimeLibCompiledOpcodesDom.OpenPrimitiveElementOpcode({ tag: this.tag }));
-        };
-
-        return OpenPrimitiveElement;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.OpenPrimitiveElement = OpenPrimitiveElement;
-
-    var Yield = (function (_StatementSyntax10) {
-        _inherits(Yield, _StatementSyntax10);
-
-        function Yield(_ref7) {
-            var to = _ref7.to;
-            var args = _ref7.args;
-
-            _classCallCheck(this, Yield);
-
-            _StatementSyntax10.call(this);
-            this.type = "yield";
-            this.to = to;
-            this.args = args;
-        }
-
-        Yield.fromSpec = function fromSpec(sexp) {
-            var to = sexp[1];
-            var params = sexp[2];
-
-            var args = Args.fromSpec(params, null);
-            return new Yield({ to: to, args: args });
-        };
-
-        Yield.build = function build(params, to) {
-            var args = Args.fromPositionalArgs(PositionalArgs.build(params));
-            return new this({ to: _glimmerUtil.intern(to), args: args });
-        };
-
-        Yield.prototype.compile = function compile(compiler, env) {
-            var to = compiler.getBlockSymbol(this.to);
-            var args = this.args.compile(compiler, env);
-            compiler.append(new OpenBlockOpcode({ to: to, label: this.to, args: args }));
-            compiler.append(new CloseBlockOpcode());
-        };
-
-        return Yield;
-    })(_glimmerRuntimeLibSyntax.Statement);
-
-    exports.Yield = Yield;
-
-    var OpenBlockOpcode = (function (_Opcode) {
-        _inherits(OpenBlockOpcode, _Opcode);
-
-        function OpenBlockOpcode(_ref8) {
-            var to = _ref8.to;
-            var label = _ref8.label;
-            var args = _ref8.args;
-
-            _classCallCheck(this, OpenBlockOpcode);
-
-            _Opcode.call(this);
-            this.type = "open-block";
-            this.to = to;
-            this.label = label;
-            this.args = args;
-        }
-
-        OpenBlockOpcode.prototype.evaluate = function evaluate(vm) {
-            var block = vm.scope().getBlock(this.to);
-            var args = undefined;
-            if (block) {
-                args = this.args.evaluate(vm);
-            }
-            // FIXME: can we avoid doing this when we don't have a block?
-            vm.pushCallerScope();
-            if (block) {
-                vm.invokeBlock(block, args);
-            }
-        };
-
-        return OpenBlockOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    var CloseBlockOpcode = (function (_Opcode2) {
-        _inherits(CloseBlockOpcode, _Opcode2);
-
-        function CloseBlockOpcode() {
-            _classCallCheck(this, CloseBlockOpcode);
-
-            for (var _len4 = arguments.length, args = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
-                args[_key4] = arguments[_key4];
-            }
-
-            _Opcode2.call.apply(_Opcode2, [this].concat(args));
-            this.type = "close-block";
-        }
-
-        CloseBlockOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.popScope();
-        };
-
-        return CloseBlockOpcode;
-    })(_glimmerRuntimeLibOpcodes.Opcode);
-
-    exports.CloseBlockOpcode = CloseBlockOpcode;
-
-    var Value = (function (_ExpressionSyntax2) {
-        _inherits(Value, _ExpressionSyntax2);
-
-        function Value(value) {
-            _classCallCheck(this, Value);
-
-            _ExpressionSyntax2.call(this);
-            this.type = "value";
-            this.value = value;
-        }
-
-        Value.fromSpec = function fromSpec(value) {
-            return new Value(value);
-        };
-
-        Value.build = function build(value) {
-            return new this(value);
-        };
-
-        Value.prototype.inner = function inner() {
-            return this.value;
-        };
-
-        Value.prototype.compile = function compile(compiler) {
-            return new _glimmerRuntimeLibCompiledExpressionsValue.default(this);
-        };
-
-        return Value;
-    })(_glimmerRuntimeLibSyntax.Expression);
-
-    exports.Value = Value;
-
-    var Get = (function (_ExpressionSyntax3) {
-        _inherits(Get, _ExpressionSyntax3);
-
-        function Get(options) {
-            _classCallCheck(this, Get);
-
-            _ExpressionSyntax3.call(this);
-            this.type = "get";
-            this.ref = options.ref;
-        }
-
-        Get.fromSpec = function fromSpec(sexp) {
-            var parts = sexp[1];
-
-            return new Get({ ref: new Ref({ parts: parts }) });
-        };
-
-        Get.build = function build(path) {
-            return new this({ ref: Ref.build(path) });
-        };
-
-        Get.prototype.compile = function compile(compiler) {
-            return this.ref.compile(compiler);
-        };
-
-        return Get;
-    })(_glimmerRuntimeLibSyntax.Expression);
-
-    exports.Get = Get;
-
-    var SelfGet = (function (_ExpressionSyntax4) {
-        _inherits(SelfGet, _ExpressionSyntax4);
-
-        function SelfGet(options) {
-            _classCallCheck(this, SelfGet);
-
-            _ExpressionSyntax4.call(this);
-            this.type = "self-get";
-            this.ref = options.ref;
-        }
-
-        SelfGet.fromSpec = function fromSpec(sexp) {
-            var parts = sexp[1];
-
-            return new SelfGet({ ref: new Ref({ parts: parts }) });
-        };
-
-        SelfGet.prototype.compile = function compile(compiler) {
-            return this.ref.compile(compiler);
-        };
-
-        return SelfGet;
-    })(_glimmerRuntimeLibSyntax.Expression);
-
-    exports.SelfGet = SelfGet;
-
-    var GetArgument = (function (_ExpressionSyntax5) {
-        _inherits(GetArgument, _ExpressionSyntax5);
-
-        function GetArgument(options) {
-            _classCallCheck(this, GetArgument);
-
-            _ExpressionSyntax5.call(this);
-            this.type = "get-argument";
-            this.parts = options.parts;
-        }
-
-        // intern paths because they will be used as keys
-
-        GetArgument.fromSpec = function fromSpec(sexp) {
-            var parts = sexp[1];
-
-            return new GetArgument({ parts: parts });
-        };
-
-        GetArgument.build = function build(path) {
-            return new this({ parts: path.split('.').map(_glimmerUtil.intern) });
-        };
-
-        GetArgument.prototype.compile = function compile(lookup) {
-            var parts = this.parts;
-
-            var head = parts[0];
-            var symbol = lookup.getNamedSymbol(head);
-            var path = parts.slice(1);
-            return new _glimmerRuntimeLibCompiledExpressionsRef.CompiledLocalRef({ debug: head, symbol: symbol, path: path });
-        };
-
-        return GetArgument;
-    })(_glimmerRuntimeLibSyntax.Expression);
-
-    exports.GetArgument = GetArgument;
-    function internPath(path) {
-        return path.split('.').map(_glimmerUtil.intern);
-    }
-    // this is separated out from Get because Unknown also has a ref, but it
-    // may turn out to be a helper
-
-    var Ref = (function (_ExpressionSyntax6) {
-        _inherits(Ref, _ExpressionSyntax6);
-
-        function Ref(_ref9) {
-            var parts = _ref9.parts;
-
-            _classCallCheck(this, Ref);
-
-            _ExpressionSyntax6.call(this);
-            this.type = "ref";
-            this.parts = parts;
-        }
-
-        Ref.build = function build(path) {
-            return new this({ parts: internPath(path) });
-        };
-
-        Ref.prototype.compile = function compile(lookup) {
-            var parts = this.parts;
-
-            var head = parts[0];
-            var path = parts.slice(1);
-            if (lookup.hasKeyword(head)) {
-                return new _glimmerRuntimeLibCompiledExpressionsRef.CompiledKeywordRef({ name: head, path: path });
-            }
-            if (lookup.hasLocalSymbol(head)) {
-                var symbol = lookup.getLocalSymbol(head);
-                return new _glimmerRuntimeLibCompiledExpressionsRef.CompiledLocalRef({ debug: head, symbol: symbol, path: path });
-            } else {
-                return new _glimmerRuntimeLibCompiledExpressionsRef.CompiledSelfRef({ parts: parts });
-            }
-        };
-
-        Ref.prototype.path = function path() {
-            return this.parts;
-        };
-
-        Ref.prototype.simplePath = function simplePath() {
-            if (this.parts.length === 1) {
-                return this.parts[0];
-            }
-        };
-
-        return Ref;
-    })(_glimmerRuntimeLibSyntax.Expression);
-
-    exports.Ref = Ref;
-
-    var Helper = (function (_ExpressionSyntax7) {
-        _inherits(Helper, _ExpressionSyntax7);
-
-        function Helper(options) {
-            _classCallCheck(this, Helper);
-
-            _ExpressionSyntax7.call(this);
-            this.type = "helper";
-            this.isStatic = false;
-            this.ref = options.ref;
-            this.args = options.args;
-        }
-
-        Helper.fromSpec = function fromSpec(sexp) {
-            var path = sexp[1];
-            var params = sexp[2];
-            var hash = sexp[3];
-
-            return new Helper({
-                ref: new Ref({ parts: path }),
-                args: Args.fromSpec(params, hash)
-            });
-        };
-
-        Helper.build = function build(path, positional, named) {
-            return new this({ ref: Ref.build(path), args: new Args({ positional: positional, named: named }) });
-        };
-
-        Helper.prototype.compile = function compile(compiler, env, parentMeta) {
-            if (env.hasHelper(this.ref.parts, parentMeta)) {
-                var args = this.args;
-                var ref = this.ref;
-
-                return new _glimmerRuntimeLibCompiledExpressionsHelper.default({ name: ref.parts, helper: env.lookupHelper(ref.parts, parentMeta), args: args.compile(compiler, env) });
-            } else {
-                throw new Error('Compile Error: ' + this.ref.path().join('.') + ' is not a helper');
-            }
-        };
-
-        Helper.prototype.simplePath = function simplePath() {
-            return this.ref.simplePath();
-        };
-
-        return Helper;
-    })(_glimmerRuntimeLibSyntax.Expression);
-
-    exports.Helper = Helper;
-
-    var HasBlock = (function (_ExpressionSyntax8) {
-        _inherits(HasBlock, _ExpressionSyntax8);
-
-        function HasBlock(_ref10) {
-            var blockName = _ref10.blockName;
-
-            _classCallCheck(this, HasBlock);
-
-            _ExpressionSyntax8.call(this);
-            this.type = "has-block";
-            this.blockName = blockName;
-        }
-
-        HasBlock.fromSpec = function fromSpec(sexp) {
-            var blockName = sexp[1];
-
-            return new HasBlock({
-                blockName: blockName
-            });
-        };
-
-        HasBlock.build = function build(blockName) {
-            return new this({ blockName: blockName });
-        };
-
-        HasBlock.prototype.compile = function compile(compiler, env) {
-            return new _glimmerRuntimeLibCompiledExpressionsHasBlock.default({
-                blockName: this.blockName,
-                blockSymbol: compiler.getBlockSymbol(this.blockName)
-            });
-        };
-
-        return HasBlock;
-    })(_glimmerRuntimeLibSyntax.Expression);
-
-    exports.HasBlock = HasBlock;
-
-    var HasBlockParams = (function (_ExpressionSyntax9) {
-        _inherits(HasBlockParams, _ExpressionSyntax9);
-
-        function HasBlockParams(_ref11) {
-            var blockName = _ref11.blockName;
-
-            _classCallCheck(this, HasBlockParams);
-
-            _ExpressionSyntax9.call(this);
-            this.type = "has-block-params";
-            this.blockName = blockName;
-        }
-
-        HasBlockParams.fromSpec = function fromSpec(sexp) {
-            var blockName = sexp[1];
-
-            return new HasBlockParams({
-                blockName: blockName
-            });
-        };
-
-        HasBlockParams.build = function build(blockName) {
-            return new this({ blockName: blockName });
-        };
-
-        HasBlockParams.prototype.compile = function compile(compiler, env) {
-            return new _glimmerRuntimeLibCompiledExpressionsHasBlockParams.default({
-                blockName: this.blockName,
-                blockSymbol: compiler.getBlockSymbol(this.blockName)
-            });
-        };
-
-        return HasBlockParams;
-    })(_glimmerRuntimeLibSyntax.Expression);
-
-    exports.HasBlockParams = HasBlockParams;
-
-    var Concat = (function () {
-        function Concat(_ref12) {
-            var parts = _ref12.parts;
-
-            _classCallCheck(this, Concat);
-
-            this.type = "concat";
-            this.isStatic = false;
-            this.parts = parts;
-        }
-
-        Concat.fromSpec = function fromSpec(sexp) {
-            var params = sexp[1];
-
-            return new Concat({ parts: params.map(_glimmerRuntimeLibSyntaxExpressions.default) });
-        };
-
-        Concat.build = function build(parts) {
-            return new this({ parts: parts });
-        };
-
-        Concat.prototype.compile = function compile(compiler, env) {
-            return new _glimmerRuntimeLibCompiledExpressionsConcat.default({ parts: this.parts.map(function (p) {
-                    return p.compile(compiler, env);
-                }) });
-        };
-
-        return Concat;
-    })();
-
-    exports.Concat = Concat;
-
-    var Args = (function () {
-        function Args(options) {
-            _classCallCheck(this, Args);
-
-            this.type = "args";
-            this.isStatic = false;
-            this.positional = options.positional;
-            this.named = options.named;
-        }
-
-        Args.fromSpec = function fromSpec(positional, named) {
-            return new Args({ positional: PositionalArgs.fromSpec(positional), named: NamedArgs.fromSpec(named) });
-        };
-
-        Args.empty = function empty() {
-            return this._empty = this._empty || new Args({ positional: PositionalArgs.empty(), named: NamedArgs.empty() });
-        };
-
-        Args.fromPositionalArgs = function fromPositionalArgs(positional) {
-            return new Args({ positional: positional, named: NamedArgs.empty() });
-        };
-
-        Args.fromNamedArgs = function fromNamedArgs(named) {
-            return new Args({ positional: PositionalArgs.empty(), named: named });
-        };
-
-        Args.build = function build(positional, named) {
-            return new this({ positional: positional, named: named });
-        };
-
-        Args.prototype.compile = function compile(compiler, env) {
-            var positional = this.positional;
-            var named = this.named;
-
-            return _glimmerRuntimeLibCompiledExpressionsArgs.CompiledArgs.create({ positional: positional.compile(compiler, env), named: named.compile(compiler, env) });
-        };
-
-        return Args;
-    })();
-
-    exports.Args = Args;
-
-    var PositionalArgs = (function () {
-        function PositionalArgs(exprs) {
-            _classCallCheck(this, PositionalArgs);
-
-            this.type = "positional";
-            this.isStatic = false;
-            this.values = exprs;
-            this.length = exprs.length;
-        }
-
-        PositionalArgs.fromSpec = function fromSpec(sexp) {
-            if (!sexp || sexp.length === 0) return PositionalArgs.empty();
-            return new PositionalArgs(sexp.map(_glimmerRuntimeLibSyntaxExpressions.default));
-        };
-
-        PositionalArgs.build = function build(exprs) {
-            return new this(exprs);
-        };
-
-        PositionalArgs.empty = function empty() {
-            return this._empty = this._empty || new PositionalArgs([]);
-        };
-
-        PositionalArgs.prototype.slice = function slice(start, end) {
-            return PositionalArgs.build(this.values.slice(start, end));
-        };
-
-        PositionalArgs.prototype.at = function at(index) {
-            return this.values[index];
-        };
-
-        PositionalArgs.prototype.compile = function compile(compiler, env) {
-            return _glimmerRuntimeLibCompiledExpressionsArgs.CompiledPositionalArgs.create({ values: this.values.map(function (v) {
-                    return v.compile(compiler, env);
-                }) });
-        };
-
-        return PositionalArgs;
-    })();
-
-    exports.PositionalArgs = PositionalArgs;
-
-    var NamedArgs = (function () {
-        function NamedArgs(_ref13) {
-            var map = _ref13.map;
-
-            _classCallCheck(this, NamedArgs);
-
-            this.type = "named";
-            this.isStatic = false;
-            this.map = map;
-        }
-
-        NamedArgs.fromSpec = function fromSpec(sexp) {
-            if (sexp === null || sexp === undefined) {
-                return NamedArgs.empty();
-            }
-            var keys = [];
-            var values = [];
-            var map = _glimmerUtil.dict();
-            Object.keys(sexp).forEach(function (key) {
-                keys.push(key);
-                var value = map[key] = _glimmerRuntimeLibSyntaxExpressions.default(sexp[key]);
-                values.push(value);
-            });
-            return new this({ map: map });
-        };
-
-        NamedArgs.build = function build(map) {
-            var keys = [];
-            var values = [];
-            Object.keys(map).forEach(function (k) {
-                var value = map[k];
-                keys.push(k);
-                values.push(value);
-            });
-            return new NamedArgs({ map: map });
-        };
-
-        NamedArgs.empty = function empty() {
-            return this._empty = this._empty || new NamedArgs({ map: _glimmerUtil.dict() });
-        };
-
-        NamedArgs.prototype.add = function add(key, value) {
-            this.map[key] = value;
-        };
-
-        NamedArgs.prototype.at = function at(key) {
-            return this.map[key];
-        };
-
-        NamedArgs.prototype.has = function has(key) {
-            return !!this.map[key];
-        };
-
-        NamedArgs.prototype.compile = function compile(compiler, env) {
-            var map = this.map;
-
-            var compiledMap = _glimmerUtil.dict();
-            Object.keys(map).forEach(function (key) {
-                compiledMap[key] = map[key].compile(compiler, env);
-            });
-            return _glimmerRuntimeLibCompiledExpressionsArgs.CompiledNamedArgs.create({ map: compiledMap });
-        };
-
-        return NamedArgs;
-    })();
-
-    exports.NamedArgs = NamedArgs;
-
-    var Templates = (function () {
-        function Templates(options) {
-            _classCallCheck(this, Templates);
-
-            this.type = "templates";
-            this.default = options.template;
-            this.inverse = options.inverse;
-        }
-
-        Templates.fromSpec = function fromSpec(_ref14, children) {
-            var templateId = _ref14[0];
-            var inverseId = _ref14[1];
-
-            return new Templates({
-                template: templateId === null ? null : children[templateId],
-                inverse: inverseId === null ? null : children[inverseId]
-            });
-        };
-
-        Templates.empty = function empty() {
-            return new Templates({ template: null, inverse: null });
-        };
-
-        Templates.build = function build(template) {
-            var inverse = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
-
-            return new this({ template: template, inverse: inverse });
-        };
-
-        return Templates;
-    })();
-
-    exports.Templates = Templates;
-});
-
-enifed('glimmer-runtime/lib/syntax/expressions', ['exports', 'glimmer-runtime/lib/syntax/core', 'glimmer-wire-format'], function (exports, _glimmerRuntimeLibSyntaxCore, _glimmerWireFormat) {
-    'use strict';
-
-    var isArg = _glimmerWireFormat.Expressions.isArg;
-    var isConcat = _glimmerWireFormat.Expressions.isConcat;
-    var isGet = _glimmerWireFormat.Expressions.isGet;
-    var isSelfGet = _glimmerWireFormat.Expressions.isSelfGet;
-    var isHasBlock = _glimmerWireFormat.Expressions.isHasBlock;
-    var isHasBlockParams = _glimmerWireFormat.Expressions.isHasBlockParams;
-    var isHelper = _glimmerWireFormat.Expressions.isHelper;
-    var isUnknown = _glimmerWireFormat.Expressions.isUnknown;
-    var isValue = _glimmerWireFormat.Expressions.isValue;
-
-    exports.default = function (sexp) {
-        if (isValue(sexp)) {
-            return _glimmerRuntimeLibSyntaxCore.Value.fromSpec(sexp);
-        } else {
-            if (isArg(sexp)) return _glimmerRuntimeLibSyntaxCore.GetArgument.fromSpec(sexp);
-            if (isConcat(sexp)) return _glimmerRuntimeLibSyntaxCore.Concat.fromSpec(sexp);
-            if (isGet(sexp)) return _glimmerRuntimeLibSyntaxCore.Get.fromSpec(sexp);
-            if (isSelfGet(sexp)) return _glimmerRuntimeLibSyntaxCore.SelfGet.fromSpec(sexp);
-            if (isHelper(sexp)) return _glimmerRuntimeLibSyntaxCore.Helper.fromSpec(sexp);
-            if (isUnknown(sexp)) return _glimmerRuntimeLibSyntaxCore.Unknown.fromSpec(sexp);
-            if (isHasBlock(sexp)) return _glimmerRuntimeLibSyntaxCore.HasBlock.fromSpec(sexp);
-            if (isHasBlockParams(sexp)) return _glimmerRuntimeLibSyntaxCore.HasBlockParams.fromSpec(sexp);
-        }
-    };
-
-    ;
-});
-
-enifed('glimmer-runtime/lib/syntax/statements', ['exports', 'glimmer-runtime/lib/syntax/core', 'glimmer-wire-format'], function (exports, _glimmerRuntimeLibSyntaxCore, _glimmerWireFormat) {
-    'use strict';
-
-    var isYield = _glimmerWireFormat.Statements.isYield;
-    var isBlock = _glimmerWireFormat.Statements.isBlock;
-    var isAppend = _glimmerWireFormat.Statements.isAppend;
-    var isDynamicAttr = _glimmerWireFormat.Statements.isDynamicAttr;
-    var isText = _glimmerWireFormat.Statements.isText;
-    var isComment = _glimmerWireFormat.Statements.isComment;
-    var isOpenElement = _glimmerWireFormat.Statements.isOpenElement;
-    var isCloseElement = _glimmerWireFormat.Statements.isCloseElement;
-    var isStaticAttr = _glimmerWireFormat.Statements.isStaticAttr;
-    var isModifier = _glimmerWireFormat.Statements.isModifier;
-    var isDynamicArg = _glimmerWireFormat.Statements.isDynamicArg;
-    var isStaticArg = _glimmerWireFormat.Statements.isStaticArg;
-    var isTrustingAttr = _glimmerWireFormat.Statements.isTrustingAttr;
-
-    exports.default = function (sexp, blocks) {
-        if (isYield(sexp)) return _glimmerRuntimeLibSyntaxCore.Yield.fromSpec(sexp);
-        if (isBlock(sexp)) return _glimmerRuntimeLibSyntaxCore.Block.fromSpec(sexp, blocks);
-        if (isAppend(sexp)) return _glimmerRuntimeLibSyntaxCore.OptimizedAppend.fromSpec(sexp);
-        if (isDynamicAttr(sexp)) return _glimmerRuntimeLibSyntaxCore.DynamicAttr.fromSpec(sexp);
-        if (isDynamicArg(sexp)) return _glimmerRuntimeLibSyntaxCore.DynamicArg.fromSpec(sexp);
-        if (isTrustingAttr(sexp)) return _glimmerRuntimeLibSyntaxCore.TrustingAttr.fromSpec(sexp);
-        if (isText(sexp)) return _glimmerRuntimeLibSyntaxCore.Text.fromSpec(sexp);
-        if (isComment(sexp)) return _glimmerRuntimeLibSyntaxCore.Comment.fromSpec(sexp);
-        if (isOpenElement(sexp)) return _glimmerRuntimeLibSyntaxCore.OpenElement.fromSpec(sexp);
-        if (isCloseElement(sexp)) return _glimmerRuntimeLibSyntaxCore.CloseElement.fromSpec();
-        if (isStaticAttr(sexp)) return _glimmerRuntimeLibSyntaxCore.StaticAttr.fromSpec(sexp);
-        if (isStaticArg(sexp)) return _glimmerRuntimeLibSyntaxCore.StaticArg.fromSpec(sexp);
-        if (isModifier(sexp)) return _glimmerRuntimeLibSyntaxCore.Modifier.fromSpec(sexp);
-    };
-
-    ;
-});
-
-enifed('glimmer-runtime/lib/template', ['exports', 'glimmer-runtime/lib/builder', 'glimmer-runtime/lib/vm', 'glimmer-runtime/lib/scanner'], function (exports, _glimmerRuntimeLibBuilder, _glimmerRuntimeLibVm, _glimmerRuntimeLibScanner) {
-    'use strict';
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var Template = (function () {
-        function Template(_ref) {
-            var raw = _ref.raw;
-
-            _classCallCheck(this, Template);
-
-            this.raw = raw;
-        }
-
-        Template.fromSpec = function fromSpec(spec, env) {
-            var scanner = new _glimmerRuntimeLibScanner.default(spec, env);
-            return new Template({
-                raw: scanner.scanEntryPoint()
-            });
-        };
-
-        Template.layoutFromSpec = function layoutFromSpec(spec, env) {
-            var scanner = new _glimmerRuntimeLibScanner.default(spec, env);
-            return scanner.scanLayout();
-        };
-
-        Template.prototype.render = function render(self, env, _ref2) {
-            var dynamicScope = _ref2.dynamicScope;
-            var appendTo = _ref2.appendTo;
-            var blockArguments = arguments.length <= 3 || arguments[3] === undefined ? null : arguments[3];
-
-            var elementStack = _glimmerRuntimeLibBuilder.ElementStack.forInitialRender(env, appendTo, null);
-            var compiled = this.raw.compile(env);
-            var vm = _glimmerRuntimeLibVm.VM.initial(env, { self: self, dynamicScope: dynamicScope, elementStack: elementStack, size: compiled.symbols });
-            return vm.execute(compiled.ops);
-        };
-
-        return Template;
-    })();
-
-    exports.default = Template;
-});
-
-enifed('glimmer-runtime/lib/upsert', ['exports', 'glimmer-runtime/lib/bounds'], function (exports, _glimmerRuntimeLibBounds) {
-    'use strict';
-
-    exports.isSafeString = isSafeString;
-    exports.isNode = isNode;
-    exports.isString = isString;
-    exports.cautiousInsert = cautiousInsert;
-    exports.trustingInsert = trustingInsert;
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    function isSafeString(value) {
-        return value && typeof value['toHTML'] === 'function';
-    }
-
-    function isNode(value) {
-        return value !== null && typeof value === 'object' && typeof value['nodeType'] === 'number';
-    }
-
-    function isString(value) {
-        return typeof value === 'string';
-    }
-
-    var Upsert = function Upsert(bounds) {
-        _classCallCheck(this, Upsert);
-
-        this.bounds = bounds;
-    };
-
-    exports.default = Upsert;
-
-    function cautiousInsert(dom, cursor, value) {
-        if (isString(value)) {
-            return TextUpsert.insert(dom, cursor, value);
-        }
-        if (isSafeString(value)) {
-            return SafeStringUpsert.insert(dom, cursor, value);
-        }
-        if (isNode(value)) {
-            return NodeUpsert.insert(dom, cursor, value);
-        }
-    }
-
-    function trustingInsert(dom, cursor, value) {
-        if (isString(value)) {
-            return HTMLUpsert.insert(dom, cursor, value);
-        }
-        if (isNode(value)) {
-            return NodeUpsert.insert(dom, cursor, value);
-        }
-    }
-
-    var TextUpsert = (function (_Upsert) {
-        _inherits(TextUpsert, _Upsert);
-
-        function TextUpsert(bounds, textNode) {
-            _classCallCheck(this, TextUpsert);
-
-            _Upsert.call(this, bounds);
-            this.textNode = textNode;
-        }
-
-        TextUpsert.insert = function insert(dom, cursor, value) {
-            var textNode = dom.insertTextBefore(cursor.element, cursor.nextSibling, value);
-            var bounds = new _glimmerRuntimeLibBounds.SingleNodeBounds(cursor.element, textNode);
-            return new TextUpsert(bounds, textNode);
-        };
-
-        TextUpsert.prototype.update = function update(dom, value) {
-            if (isString(value)) {
-                var textNode = this.textNode;
-
-                textNode.nodeValue = value;
-                return true;
-            } else {
-                return false;
-            }
-        };
-
-        return TextUpsert;
-    })(Upsert);
-
-    var HTMLUpsert = (function (_Upsert2) {
-        _inherits(HTMLUpsert, _Upsert2);
-
-        function HTMLUpsert() {
-            _classCallCheck(this, HTMLUpsert);
-
-            _Upsert2.apply(this, arguments);
-        }
-
-        HTMLUpsert.insert = function insert(dom, cursor, value) {
-            var bounds = dom.insertHTMLBefore(cursor.element, cursor.nextSibling, value);
-            return new HTMLUpsert(bounds);
-        };
-
-        HTMLUpsert.prototype.update = function update(dom, value) {
-            if (isString(value)) {
-                var bounds = this.bounds;
-
-                var parentElement = bounds.parentElement();
-                var nextSibling = _glimmerRuntimeLibBounds.clear(bounds);
-                this.bounds = dom.insertHTMLBefore(parentElement, nextSibling, value);
-                return true;
-            } else {
-                return false;
-            }
-        };
-
-        return HTMLUpsert;
-    })(Upsert);
-
-    var SafeStringUpsert = (function (_Upsert3) {
-        _inherits(SafeStringUpsert, _Upsert3);
-
-        function SafeStringUpsert(bounds, lastStringValue) {
-            _classCallCheck(this, SafeStringUpsert);
-
-            _Upsert3.call(this, bounds);
-            this.lastStringValue = lastStringValue;
-        }
-
-        SafeStringUpsert.insert = function insert(dom, cursor, value) {
-            var stringValue = value.toHTML();
-            var bounds = dom.insertHTMLBefore(cursor.element, cursor.nextSibling, stringValue);
-            return new SafeStringUpsert(bounds, stringValue);
-        };
-
-        SafeStringUpsert.prototype.update = function update(dom, value) {
-            if (isSafeString(value)) {
-                var stringValue = value.toHTML();
-                if (stringValue !== this.lastStringValue) {
-                    var bounds = this.bounds;
-
-                    var parentElement = bounds.parentElement();
-                    var nextSibling = _glimmerRuntimeLibBounds.clear(bounds);
-                    this.bounds = dom.insertHTMLBefore(parentElement, nextSibling, stringValue);
-                    this.lastStringValue = stringValue;
-                }
-                return true;
-            } else {
-                return false;
-            }
-        };
-
-        return SafeStringUpsert;
-    })(Upsert);
-
-    var NodeUpsert = (function (_Upsert4) {
-        _inherits(NodeUpsert, _Upsert4);
-
-        function NodeUpsert() {
-            _classCallCheck(this, NodeUpsert);
-
-            _Upsert4.apply(this, arguments);
-        }
-
-        NodeUpsert.insert = function insert(dom, cursor, node) {
-            var bounds = dom.insertNodeBefore(cursor.element, node, cursor.nextSibling);
-            return new NodeUpsert(bounds);
-        };
-
-        NodeUpsert.prototype.update = function update(dom, value) {
-            if (isNode(value)) {
-                var bounds = this.bounds;
-
-                var parentElement = bounds.parentElement();
-                var nextSibling = _glimmerRuntimeLibBounds.clear(bounds);
-                this.bounds = dom.insertNodeBefore(parentElement, value, nextSibling);
-                return true;
-            } else {
-                return false;
-            }
-        };
-
-        return NodeUpsert;
-    })(Upsert);
-});
-
-enifed('glimmer-runtime/lib/utils', ['exports', 'glimmer-util'], function (exports, _glimmerUtil) {
-    'use strict';
-
-    exports.symbol = symbol;
-    exports.turbocharge = turbocharge;
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var EMPTY_ARRAY = [];
-    exports.EMPTY_ARRAY = EMPTY_ARRAY;
-    var EMPTY_OBJECT = {};
-    exports.EMPTY_OBJECT = EMPTY_OBJECT;
-    var KEY = _glimmerUtil.intern('__glimmer' + +new Date());
-
-    function symbol(debugName) {
-        var num = Math.floor(Math.random() * +new Date());
-        return _glimmerUtil.intern(debugName + ' [id=' + KEY + num + ']');
-    }
-
-    function turbocharge(object) {
-        // function Constructor() {}
-        // Constructor.prototype = object;
-        return object;
-    }
-
-    var ListRange = (function () {
-        function ListRange(list, start, end) {
-            _classCallCheck(this, ListRange);
-
-            this.list = list;
-            this.start = start;
-            this.end = end;
-        }
-
-        ListRange.prototype.at = function at(index) {
-            if (index >= this.list.length) return null;
-            return this.list[index];
-        };
-
-        ListRange.prototype.min = function min() {
-            return this.start;
-        };
-
-        ListRange.prototype.max = function max() {
-            return this.end;
-        };
-
-        return ListRange;
-    })();
-
-    exports.ListRange = ListRange;
-});
-
-enifed('glimmer-runtime/lib/vm', ['exports', 'glimmer-runtime/lib/vm/append', 'glimmer-runtime/lib/vm/update', 'glimmer-runtime/lib/vm/render-result'], function (exports, _glimmerRuntimeLibVmAppend, _glimmerRuntimeLibVmUpdate, _glimmerRuntimeLibVmRenderResult) {
-  'use strict';
-
-  exports.VM = _glimmerRuntimeLibVmAppend.default;
-  exports.PublicVM = _glimmerRuntimeLibVmAppend.PublicVM;
-  exports.BindDynamicScopeCallback = _glimmerRuntimeLibVmAppend.BindDynamicScopeCallback;
-  exports.UpdatingVM = _glimmerRuntimeLibVmUpdate.default;
-  exports.RenderResult = _glimmerRuntimeLibVmRenderResult.default;
-});
-
-enifed('glimmer-runtime/lib/vm/append', ['exports', 'glimmer-runtime/lib/environment', 'glimmer-util', 'glimmer-reference', 'glimmer-runtime/lib/compiled/opcodes/vm', 'glimmer-runtime/lib/vm/update', 'glimmer-runtime/lib/vm/render-result', 'glimmer-runtime/lib/vm/frame'], function (exports, _glimmerRuntimeLibEnvironment, _glimmerUtil, _glimmerReference, _glimmerRuntimeLibCompiledOpcodesVm, _glimmerRuntimeLibVmUpdate, _glimmerRuntimeLibVmRenderResult, _glimmerRuntimeLibVmFrame) {
-    'use strict';
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var VM = (function () {
-        function VM(_ref) {
-            var env = _ref.env;
-            var scope = _ref.scope;
-            var dynamicScope = _ref.dynamicScope;
-            var elementStack = _ref.elementStack;
-
-            _classCallCheck(this, VM);
-
-            this.dynamicScopeStack = new _glimmerUtil.Stack();
-            this.scopeStack = new _glimmerUtil.Stack();
-            this.updatingOpcodeStack = new _glimmerUtil.Stack();
-            this.cacheGroups = new _glimmerUtil.Stack();
-            this.listBlockStack = new _glimmerUtil.Stack();
-            this.frame = new _glimmerRuntimeLibVmFrame.FrameStack();
-            this.env = env;
-            this.elementStack = elementStack;
-            this.scopeStack.push(scope);
-            this.dynamicScopeStack.push(dynamicScope);
-        }
-
-        VM.initial = function initial(env, _ref2) {
-            var elementStack = _ref2.elementStack;
-            var self = _ref2.self;
-            var dynamicScope = _ref2.dynamicScope;
-            var size = _ref2.size;
-
-            var scope = _glimmerRuntimeLibEnvironment.Scope.root(self, size);
-            return new VM({ env: env, scope: scope, dynamicScope: dynamicScope, elementStack: elementStack });
-        };
-
-        VM.prototype.capture = function capture() {
-            return {
-                env: this.env,
-                scope: this.scope(),
-                dynamicScope: this.dynamicScope(),
-                block: this.stack().block()
-            };
-        };
-
-        VM.prototype.goto = function goto(op) {
-            // assert(this.frame.getOps().contains(op), `Illegal jump to ${op.label}`);
-            this.frame.goto(op);
-        };
-
-        VM.prototype.beginCacheGroup = function beginCacheGroup() {
-            this.cacheGroups.push(this.updatingOpcodeStack.current.tail());
-        };
-
-        VM.prototype.commitCacheGroup = function commitCacheGroup() {
-            //        JumpIfNotModified(END)
-            //        (head)
-            //        (....)
-            //        (tail)
-            //        DidModify
-            // END:   Noop
-            var END = new _glimmerRuntimeLibCompiledOpcodesVm.LabelOpcode("END");
-            var opcodes = this.updatingOpcodeStack.current;
-            var marker = this.cacheGroups.pop();
-            var head = marker ? opcodes.nextNode(marker) : opcodes.head();
-            var tail = opcodes.tail();
-            var tag = _glimmerReference.combineSlice(new _glimmerUtil.ListSlice(head, tail));
-            var guard = new _glimmerRuntimeLibCompiledOpcodesVm.JumpIfNotModifiedOpcode({ tag: tag, target: END });
-            opcodes.insertBefore(guard, head);
-            opcodes.append(new _glimmerRuntimeLibCompiledOpcodesVm.DidModifyOpcode({ target: guard }));
-            opcodes.append(END);
-        };
-
-        VM.prototype.enter = function enter(ops) {
-            var updating = new _glimmerUtil.LinkedList();
-            this.stack().pushBlock();
-            var state = this.capture();
-            var tryOpcode = new _glimmerRuntimeLibVmUpdate.TryOpcode({ ops: ops, state: state, children: updating });
-            this.didEnter(tryOpcode, updating);
-        };
-
-        VM.prototype.enterWithKey = function enterWithKey(key, ops) {
-            var updating = new _glimmerUtil.LinkedList();
-            this.stack().pushBlock();
-            var state = this.capture();
-            var tryOpcode = new _glimmerRuntimeLibVmUpdate.TryOpcode({ ops: ops, state: state, children: updating });
-            this.listBlockStack.current.map[key] = tryOpcode;
-            this.didEnter(tryOpcode, updating);
-        };
-
-        VM.prototype.enterList = function enterList(ops) {
-            var updating = new _glimmerUtil.LinkedList();
-            this.stack().pushBlockList(updating);
-            var state = this.capture();
-            var artifacts = this.frame.getIterator().artifacts;
-            var opcode = new _glimmerRuntimeLibVmUpdate.ListBlockOpcode({ ops: ops, state: state, children: updating, artifacts: artifacts });
-            this.listBlockStack.push(opcode);
-            this.didEnter(opcode, updating);
-        };
-
-        VM.prototype.didEnter = function didEnter(opcode, updating) {
-            this.updateWith(opcode);
-            this.updatingOpcodeStack.push(updating);
-        };
-
-        VM.prototype.exit = function exit() {
-            this.stack().popBlock();
-            this.updatingOpcodeStack.pop();
-            var parent = this.updatingOpcodeStack.current.tail();
-            parent.didInitializeChildren();
-        };
-
-        VM.prototype.exitList = function exitList() {
-            this.exit();
-            this.listBlockStack.pop();
-        };
-
-        VM.prototype.updateWith = function updateWith(opcode) {
-            this.updatingOpcodeStack.current.append(opcode);
-        };
-
-        VM.prototype.stack = function stack() {
-            return this.elementStack;
-        };
-
-        VM.prototype.scope = function scope() {
-            return this.scopeStack.current;
-        };
-
-        VM.prototype.dynamicScope = function dynamicScope() {
-            return this.dynamicScopeStack.current;
-        };
-
-        VM.prototype.pushFrame = function pushFrame(_ref3) {
-            var block = _ref3.block;
-            var args = _ref3.args;
-            var blocks = _ref3.blocks;
-            var callerScope = _ref3.callerScope;
-
-            this.frame.push(block.ops);
-            if (args) this.frame.setArgs(args);
-            if (blocks) this.frame.setBlocks(blocks);
-            if (callerScope) this.frame.setCallerScope(callerScope);
-        };
-
-        VM.prototype.pushEvalFrame = function pushEvalFrame(ops) {
-            this.frame.push(ops);
-        };
-
-        VM.prototype.popFrame = function popFrame() {
-            var frame = this.frame;
-
-            frame.pop();
-            var current = frame.getCurrent();
-            if (current === null) return;
-        };
-
-        VM.prototype.pushChildScope = function pushChildScope() {
-            this.scopeStack.push(this.scopeStack.current.child());
-        };
-
-        VM.prototype.pushCallerScope = function pushCallerScope() {
-            this.scopeStack.push(this.scope().getCallerScope());
-        };
-
-        VM.prototype.pushDynamicScope = function pushDynamicScope() {
-            this.dynamicScopeStack.push(this.dynamicScopeStack.current.child());
-        };
-
-        VM.prototype.pushRootScope = function pushRootScope(self, size) {
-            var scope = _glimmerRuntimeLibEnvironment.Scope.root(self, size);
-            this.scopeStack.push(scope);
-            return scope;
-        };
-
-        VM.prototype.popScope = function popScope() {
-            this.scopeStack.pop();
-        };
-
-        VM.prototype.popDynamicScope = function popDynamicScope() {
-            this.dynamicScopeStack.pop();
-        };
-
-        VM.prototype.newDestroyable = function newDestroyable(d) {
-            this.stack().newDestroyable(d);
-        };
-
-        /// SCOPE HELPERS
-
-        VM.prototype.getSelf = function getSelf() {
-            return this.scope().getSelf();
-        };
-
-        VM.prototype.referenceForSymbol = function referenceForSymbol(symbol) {
-            return this.scope().getSymbol(symbol);
-        };
-
-        VM.prototype.getArgs = function getArgs() {
-            return this.frame.getArgs();
-        };
-
-        /// EXECUTION
-
-        VM.prototype.execute = function execute(opcodes, initialize) {
-            _glimmerUtil.LOGGER.debug("[VM] Begin program execution");
-            var elementStack = this.elementStack;
-            var frame = this.frame;
-            var updatingOpcodeStack = this.updatingOpcodeStack;
-            var env = this.env;
-
-            elementStack.pushBlock();
-            updatingOpcodeStack.push(new _glimmerUtil.LinkedList());
-            frame.push(opcodes);
-            if (initialize) initialize(this);
-            var opcode = undefined;
-            while (frame.hasOpcodes()) {
-                if (opcode = frame.nextStatement()) {
-                    _glimmerUtil.LOGGER.debug('[VM] OP ' + opcode.type);
-                    _glimmerUtil.LOGGER.trace(opcode);
-                    opcode.evaluate(this);
-                }
-            }
-            _glimmerUtil.LOGGER.debug("[VM] Completed program execution");
-            return new _glimmerRuntimeLibVmRenderResult.default({
-                env: env,
-                updating: updatingOpcodeStack.pop(),
-                bounds: elementStack.popBlock()
-            });
-        };
-
-        VM.prototype.evaluateOpcode = function evaluateOpcode(opcode) {
-            opcode.evaluate(this);
-        };
-
-        // Make sure you have opcodes that push and pop a scope around this opcode
-        // if you need to change the scope.
-
-        VM.prototype.invokeBlock = function invokeBlock(block, args) {
-            var compiled = block.compile(this.env);
-            this.pushFrame({ block: compiled, args: args });
-        };
-
-        VM.prototype.invokeLayout = function invokeLayout(_ref4) {
-            var args = _ref4.args;
-            var layout = _ref4.layout;
-            var templates = _ref4.templates;
-            var callerScope = _ref4.callerScope;
-
-            this.pushFrame({ block: layout, blocks: templates, callerScope: callerScope, args: args });
-        };
-
-        VM.prototype.evaluateOperand = function evaluateOperand(expr) {
-            this.frame.setOperand(expr.evaluate(this));
-        };
-
-        VM.prototype.evaluateArgs = function evaluateArgs(args) {
-            var evaledArgs = this.frame.setArgs(args.evaluate(this));
-            this.frame.setOperand(evaledArgs.positional.at(0));
-        };
-
-        VM.prototype.bindPositionalArgs = function bindPositionalArgs(entries) {
-            var args = this.frame.getArgs();
-            if (!args) return;
-            var positional = args.positional;
-
-            var scope = this.scope();
-            for (var i = 0; i < entries.length; i++) {
-                scope.bindSymbol(entries[i], positional.at(i));
-            }
-        };
-
-        VM.prototype.bindNamedArgs = function bindNamedArgs(entries) {
-            var args = this.frame.getArgs();
-            if (!args) return;
-            var named = args.named;
-
-            var keys = Object.keys(entries);
-            var scope = this.scope();
-            for (var i = 0; i < keys.length; i++) {
-                scope.bindSymbol(entries[keys[i]], named.get(keys[i]));
-            }
-        };
-
-        VM.prototype.bindBlocks = function bindBlocks(entries) {
-            var blocks = this.frame.getBlocks();
-            var callerScope = this.frame.getCallerScope();
-            var scope = this.scope();
-            scope.bindCallerScope(callerScope);
-            Object.keys(entries).forEach(function (name) {
-                scope.bindBlock(entries[name], blocks && blocks[name] || null);
-            });
-        };
-
-        VM.prototype.bindDynamicScope = function bindDynamicScope(callback) {
-            callback(this, this.dynamicScope());
-        };
-
-        return VM;
-    })();
-
-    exports.default = VM;
-});
-
-enifed("glimmer-runtime/lib/vm/frame", ["exports"], function (exports) {
-    "use strict";
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var Frame = function Frame(ops) {
-        _classCallCheck(this, Frame);
-
-        this.operand = null;
-        this.args = null;
-        this.callerScope = null;
-        this.blocks = null;
-        this.condition = null;
-        this.iterator = null;
-        this.key = null;
-        this.ops = ops;
-        this.op = ops.head();
-    };
-
-    var FrameStack = (function () {
-        function FrameStack() {
-            _classCallCheck(this, FrameStack);
-
-            this.frames = [];
-            this.frame = undefined;
-        }
-
-        FrameStack.prototype.push = function push(ops) {
-            var frame = this.frame === undefined ? this.frame = 0 : ++this.frame;
-            if (this.frames.length <= frame) {
-                this.frames.push(null);
-            }
-            this.frames[frame] = new Frame(ops);
-        };
-
-        FrameStack.prototype.pop = function pop() {
-            var frames = this.frames;
-            var frame = this.frame;
-
-            frames[frame] = null;
-            this.frame = frame === 0 ? undefined : frame - 1;
-        };
-
-        FrameStack.prototype.getOps = function getOps() {
-            return this.frames[this.frame].ops;
-        };
-
-        FrameStack.prototype.getCurrent = function getCurrent() {
-            return this.frames[this.frame].op;
-        };
-
-        FrameStack.prototype.setCurrent = function setCurrent(op) {
-            return this.frames[this.frame].op = op;
-        };
-
-        FrameStack.prototype.getOperand = function getOperand() {
-            return this.frames[this.frame].operand;
-        };
-
-        FrameStack.prototype.setOperand = function setOperand(operand) {
-            return this.frames[this.frame].operand = operand;
-        };
-
-        FrameStack.prototype.getArgs = function getArgs() {
-            return this.frames[this.frame].args;
-        };
-
-        FrameStack.prototype.setArgs = function setArgs(args) {
-            var frame = this.frames[this.frame];
-            return frame.args = args;
-        };
-
-        FrameStack.prototype.getCondition = function getCondition() {
-            return this.frames[this.frame].condition;
-        };
-
-        FrameStack.prototype.setCondition = function setCondition(condition) {
-            return this.frames[this.frame].condition = condition;
-        };
-
-        FrameStack.prototype.getIterator = function getIterator() {
-            return this.frames[this.frame].iterator;
-        };
-
-        FrameStack.prototype.setIterator = function setIterator(iterator) {
-            return this.frames[this.frame].iterator = iterator;
-        };
-
-        FrameStack.prototype.getKey = function getKey() {
-            return this.frames[this.frame].key;
-        };
-
-        FrameStack.prototype.setKey = function setKey(key) {
-            return this.frames[this.frame].key = key;
-        };
-
-        FrameStack.prototype.getBlocks = function getBlocks() {
-            return this.frames[this.frame].blocks;
-        };
-
-        FrameStack.prototype.setBlocks = function setBlocks(blocks) {
-            return this.frames[this.frame].blocks = blocks;
-        };
-
-        FrameStack.prototype.getCallerScope = function getCallerScope() {
-            return this.frames[this.frame].callerScope;
-        };
-
-        FrameStack.prototype.setCallerScope = function setCallerScope(callerScope) {
-            return this.frames[this.frame].callerScope = callerScope;
-        };
-
-        FrameStack.prototype.goto = function goto(op) {
-            this.setCurrent(op);
-        };
-
-        FrameStack.prototype.hasOpcodes = function hasOpcodes() {
-            return this.frame !== undefined;
-        };
-
-        FrameStack.prototype.nextStatement = function nextStatement() {
-            var op = this.frames[this.frame].op;
-            var ops = this.getOps();
-            if (op) {
-                this.setCurrent(ops.nextNode(op));
-                return op;
-            } else {
-                this.pop();
-                return null;
-            }
-        };
-
-        return FrameStack;
-    })();
-
-    exports.FrameStack = FrameStack;
-});
-
-enifed('glimmer-runtime/lib/vm/render-result', ['exports', 'glimmer-runtime/lib/bounds', 'glimmer-runtime/lib/vm/update'], function (exports, _glimmerRuntimeLibBounds, _glimmerRuntimeLibVmUpdate) {
-    'use strict';
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var RenderResult = (function () {
-        function RenderResult(_ref) {
-            var env = _ref.env;
-            var updating = _ref.updating;
-            var bounds = _ref.bounds;
-
-            _classCallCheck(this, RenderResult);
-
-            this.env = env;
-            this.updating = updating;
-            this.bounds = bounds;
-        }
-
-        RenderResult.prototype.rerender = function rerender() {
-            var _ref2 = arguments.length <= 0 || arguments[0] === undefined ? { alwaysRevalidate: false } : arguments[0];
-
-            var _ref2$alwaysRevalidate = _ref2.alwaysRevalidate;
-            var alwaysRevalidate = _ref2$alwaysRevalidate === undefined ? false : _ref2$alwaysRevalidate;
-            var env = this.env;
-            var updating = this.updating;
-
-            var vm = new _glimmerRuntimeLibVmUpdate.default(env, { alwaysRevalidate: alwaysRevalidate });
-            vm.execute(updating, this);
-        };
-
-        RenderResult.prototype.parentElement = function parentElement() {
-            return this.bounds.parentElement();
-        };
-
-        RenderResult.prototype.firstNode = function firstNode() {
-            return this.bounds.firstNode();
-        };
-
-        RenderResult.prototype.lastNode = function lastNode() {
-            return this.bounds.lastNode();
-        };
-
-        RenderResult.prototype.opcodes = function opcodes() {
-            return this.updating;
-        };
-
-        RenderResult.prototype.handleException = function handleException() {
-            throw "this should never happen";
-        };
-
-        RenderResult.prototype.destroy = function destroy() {
-            this.bounds.destroy();
-            _glimmerRuntimeLibBounds.clear(this.bounds);
-        };
-
-        return RenderResult;
-    })();
-
-    exports.default = RenderResult;
-});
-
-enifed('glimmer-runtime/lib/vm/update', ['exports', 'glimmer-runtime/lib/bounds', 'glimmer-runtime/lib/builder', 'glimmer-util', 'glimmer-reference', 'glimmer-runtime/lib/compiled/expressions/args', 'glimmer-runtime/lib/opcodes', 'glimmer-runtime/lib/vm/append'], function (exports, _glimmerRuntimeLibBounds, _glimmerRuntimeLibBuilder, _glimmerUtil, _glimmerReference, _glimmerRuntimeLibCompiledExpressionsArgs, _glimmerRuntimeLibOpcodes, _glimmerRuntimeLibVmAppend) {
-    'use strict';
-
-    function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-    function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var UpdatingVM = (function () {
-        function UpdatingVM(env, _ref) {
-            var _ref$alwaysRevalidate = _ref.alwaysRevalidate;
-            var alwaysRevalidate = _ref$alwaysRevalidate === undefined ? false : _ref$alwaysRevalidate;
-
-            _classCallCheck(this, UpdatingVM);
-
-            this.frameStack = new _glimmerUtil.Stack();
-            this.env = env;
-            this.dom = env.getDOM();
-            this.alwaysRevalidate = alwaysRevalidate;
-        }
-
-        UpdatingVM.prototype.execute = function execute(opcodes, handler) {
-            var frameStack = this.frameStack;
-
-            this.try(opcodes, handler);
-            while (true) {
-                if (frameStack.isEmpty()) break;
-                var opcode = this.frameStack.current.nextStatement();
-                if (opcode === null) {
-                    this.frameStack.pop();
-                    continue;
-                }
-                _glimmerUtil.LOGGER.debug('[VM] OP ' + opcode.type);
-                _glimmerUtil.LOGGER.trace(opcode);
-                opcode.evaluate(this);
-            }
-        };
-
-        UpdatingVM.prototype.goto = function goto(op) {
-            this.frameStack.current.goto(op);
-        };
-
-        UpdatingVM.prototype.try = function _try(ops, handler) {
-            this.frameStack.push(new UpdatingVMFrame(this, ops, handler));
-        };
-
-        UpdatingVM.prototype.throw = function _throw() {
-            this.frameStack.current.handleException();
-            this.frameStack.pop();
-        };
-
-        UpdatingVM.prototype.evaluateOpcode = function evaluateOpcode(opcode) {
-            opcode.evaluate(this);
-        };
-
-        return UpdatingVM;
-    })();
-
-    exports.default = UpdatingVM;
-
-    var BlockOpcode = (function (_UpdatingOpcode) {
-        _inherits(BlockOpcode, _UpdatingOpcode);
-
-        function BlockOpcode(_ref2) {
-            var ops = _ref2.ops;
-            var children = _ref2.children;
-            var state = _ref2.state;
-
-            _classCallCheck(this, BlockOpcode);
-
-            _UpdatingOpcode.call(this);
-            this.type = "block";
-            this.next = null;
-            this.prev = null;
-            var env = state.env;
-            var scope = state.scope;
-            var dynamicScope = state.dynamicScope;
-            var block = state.block;
-
-            this.ops = ops;
-            this.children = children;
-            this.env = env;
-            this.scope = scope;
-            this.dynamicScope = dynamicScope;
-            this.bounds = block;
-        }
-
-        BlockOpcode.prototype.parentElement = function parentElement() {
-            return this.bounds.parentElement();
-        };
-
-        BlockOpcode.prototype.firstNode = function firstNode() {
-            return this.bounds.firstNode();
-        };
-
-        BlockOpcode.prototype.lastNode = function lastNode() {
-            return this.bounds.lastNode();
-        };
-
-        BlockOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.try(this.children, null);
-        };
-
-        BlockOpcode.prototype.destroy = function destroy() {
-            this.bounds.destroy();
-        };
-
-        BlockOpcode.prototype.didDestroy = function didDestroy() {
-            this.env.didDestroy(this.bounds);
-        };
-
-        BlockOpcode.prototype.toJSON = function toJSON() {
-            var begin = this.ops.head();
-            var end = this.ops.tail();
-            var details = _glimmerUtil.dict();
-            details["guid"] = '' + this._guid;
-            details["begin"] = begin.inspect();
-            details["end"] = end.inspect();
-            return {
-                guid: this._guid,
-                type: this.type,
-                details: details,
-                children: this.children.toArray().map(function (op) {
-                    return op.toJSON();
-                })
-            };
-        };
-
-        return BlockOpcode;
-    })(_glimmerRuntimeLibOpcodes.UpdatingOpcode);
-
-    exports.BlockOpcode = BlockOpcode;
-
-    var TryOpcode = (function (_BlockOpcode) {
-        _inherits(TryOpcode, _BlockOpcode);
-
-        function TryOpcode(options) {
-            _classCallCheck(this, TryOpcode);
-
-            _BlockOpcode.call(this, options);
-            this.type = "try";
-            this.tag = this._tag = new _glimmerReference.UpdatableTag(_glimmerReference.CONSTANT_TAG);
-        }
-
-        TryOpcode.prototype.didInitializeChildren = function didInitializeChildren() {
-            this._tag.update(_glimmerReference.combineSlice(this.children));
-        };
-
-        TryOpcode.prototype.evaluate = function evaluate(vm) {
-            vm.try(this.children, this);
-        };
-
-        TryOpcode.prototype.handleException = function handleException() {
-            var env = this.env;
-            var scope = this.scope;
-            var dynamicScope = this.dynamicScope;
-
-            var elementStack = _glimmerRuntimeLibBuilder.ElementStack.resume(this.env, this.bounds, this.bounds.reset(env));
-            var vm = new _glimmerRuntimeLibVmAppend.default({ env: env, scope: scope, dynamicScope: dynamicScope, elementStack: elementStack });
-            var result = vm.execute(this.ops);
-            this.children = result.opcodes();
-            this.didInitializeChildren();
-        };
-
-        TryOpcode.prototype.toJSON = function toJSON() {
-            var json = _BlockOpcode.prototype.toJSON.call(this);
-            var begin = this.ops.head();
-            var end = this.ops.tail();
-            json["details"]["begin"] = JSON.stringify(begin.inspect());
-            json["details"]["end"] = JSON.stringify(end.inspect());
-            return _BlockOpcode.prototype.toJSON.call(this);
-        };
-
-        return TryOpcode;
-    })(BlockOpcode);
-
-    exports.TryOpcode = TryOpcode;
-
-    var ListRevalidationDelegate = (function () {
-        function ListRevalidationDelegate(opcode, marker) {
-            _classCallCheck(this, ListRevalidationDelegate);
-
-            this.didInsert = false;
-            this.didDelete = false;
-            this.opcode = opcode;
-            this.map = opcode.map;
-            this.updating = opcode['children'];
-            this.marker = marker;
-        }
-
-        ListRevalidationDelegate.prototype.insert = function insert(key, item, memo, before) {
-            var map = this.map;
-            var opcode = this.opcode;
-            var updating = this.updating;
-
-            var nextSibling = null;
-            var reference = null;
-            if (before) {
-                reference = map[before];
-                nextSibling = reference.bounds.firstNode();
-            } else {
-                nextSibling = this.marker;
-            }
-            var vm = opcode.vmForInsertion(nextSibling);
-            var tryOpcode = undefined;
-            vm.execute(opcode.ops, function (vm) {
-                vm.frame.setArgs(_glimmerRuntimeLibCompiledExpressionsArgs.EvaluatedArgs.positional([item, memo]));
-                vm.frame.setOperand(item);
-                vm.frame.setCondition(new _glimmerReference.ConstReference(true));
-                vm.frame.setKey(key);
-                var state = vm.capture();
-                tryOpcode = new TryOpcode({
-                    state: state,
-                    ops: opcode.ops,
-                    children: vm.updatingOpcodeStack.current
-                });
-            });
-            updating.insertBefore(tryOpcode, reference);
-            map[key] = tryOpcode;
-            this.didInsert = true;
-        };
-
-        ListRevalidationDelegate.prototype.retain = function retain(key, item, memo) {};
-
-        ListRevalidationDelegate.prototype.move = function move(key, item, memo, before) {
-            var map = this.map;
-            var updating = this.updating;
-
-            var entry = map[key];
-            var reference = map[before] || null;
-            if (before) {
-                _glimmerRuntimeLibBounds.move(entry, reference.firstNode());
-            } else {
-                _glimmerRuntimeLibBounds.move(entry, this.marker);
-            }
-            updating.remove(entry);
-            updating.insertBefore(entry, reference);
-        };
-
-        ListRevalidationDelegate.prototype.delete = function _delete(key) {
-            var map = this.map;
-
-            var opcode = map[key];
-            _glimmerRuntimeLibBounds.clear(opcode);
-            opcode.didDestroy();
-            this.updating.remove(opcode);
-            delete map[key];
-            this.didDelete = true;
-        };
-
-        ListRevalidationDelegate.prototype.done = function done() {
-            if (this.didInsert || this.didDelete) {
-                this.opcode.didInitializeChildren();
-            }
-        };
-
-        return ListRevalidationDelegate;
-    })();
-
-    exports.ListRevalidationDelegate = ListRevalidationDelegate;
-
-    var ListBlockOpcode = (function (_BlockOpcode2) {
-        _inherits(ListBlockOpcode, _BlockOpcode2);
-
-        function ListBlockOpcode(options) {
-            _classCallCheck(this, ListBlockOpcode);
-
-            _BlockOpcode2.call(this, options);
-            this.type = "list-block";
-            this.map = _glimmerUtil.dict();
-            this.artifacts = options.artifacts;
-            this.tag = this._tag = new _glimmerReference.UpdatableTag(_glimmerReference.CONSTANT_TAG);
-        }
-
-        ListBlockOpcode.prototype.didInitializeChildren = function didInitializeChildren() {
-            this._tag.update(_glimmerReference.combineSlice(this.children));
-        };
-
-        ListBlockOpcode.prototype.evaluate = function evaluate(vm) {
-            var artifacts = this.artifacts;
-            var bounds = this.bounds;
-            var dom = vm.dom;
-
-            var marker = dom.createComment('');
-            dom.insertAfter(bounds.parentElement(), marker, bounds.lastNode());
-            var target = new ListRevalidationDelegate(this, marker);
-            var synchronizer = new _glimmerReference.IteratorSynchronizer({ target: target, artifacts: artifacts });
-            synchronizer.sync();
-            this.parentElement().removeChild(marker);
-            // Run now-updated updating opcodes
-            _BlockOpcode2.prototype.evaluate.call(this, vm);
-        };
-
-        ListBlockOpcode.prototype.vmForInsertion = function vmForInsertion(nextSibling) {
-            var env = this.env;
-            var scope = this.scope;
-            var dynamicScope = this.dynamicScope;
-
-            var elementStack = _glimmerRuntimeLibBuilder.ElementStack.forInitialRender(this.env, this.bounds.parentElement(), nextSibling);
-            return new _glimmerRuntimeLibVmAppend.default({ env: env, scope: scope, dynamicScope: dynamicScope, elementStack: elementStack });
-        };
-
-        ListBlockOpcode.prototype.toJSON = function toJSON() {
-            var json = _BlockOpcode2.prototype.toJSON.call(this);
-            var map = this.map;
-            var inner = Object.keys(map).map(function (key) {
-                return JSON.stringify(key) + ': ' + map[key]._guid;
-            }).join(", ");
-            json["details"]["map"] = '{' + inner + '}';
-            return json;
-        };
-
-        return ListBlockOpcode;
-    })(BlockOpcode);
-
-    exports.ListBlockOpcode = ListBlockOpcode;
-
-    var UpdatingVMFrame = (function () {
-        function UpdatingVMFrame(vm, ops, handler) {
-            _classCallCheck(this, UpdatingVMFrame);
-
-            this.vm = vm;
-            this.ops = ops;
-            this.current = ops.head();
-            this.exceptionHandler = handler;
-        }
-
-        UpdatingVMFrame.prototype.goto = function goto(op) {
-            this.current = op;
-        };
-
-        UpdatingVMFrame.prototype.nextStatement = function nextStatement() {
-            var current = this.current;
-            var ops = this.ops;
-
-            if (current) this.current = ops.nextNode(current);
-            return current;
-        };
-
-        UpdatingVMFrame.prototype.handleException = function handleException() {
-            this.exceptionHandler.handleException();
-        };
-
-        return UpdatingVMFrame;
-    })();
-
-    exports.UpdatingVMFrame = UpdatingVMFrame;
-});
-
-enifed('glimmer-syntax/index', ['exports', 'glimmer-syntax/lib/syntax', 'glimmer-syntax/lib/utils', 'glimmer-syntax/lib/parser'], function (exports, _glimmerSyntaxLibSyntax, _glimmerSyntaxLibUtils, _glimmerSyntaxLibParser) {
-  'use strict';
-
-  function _interopExportWildcard(obj, defaults) { var newObj = defaults({}, obj); delete newObj['default']; return newObj; }
-
-  function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-  _defaults(exports, _interopExportWildcard(_glimmerSyntaxLibSyntax, _defaults));
-
-  exports.isHelper = _glimmerSyntaxLibUtils.isHelper;
-  exports.isSelfGet = _glimmerSyntaxLibUtils.isSelfGet;
-  exports.preprocess = _glimmerSyntaxLibParser.preprocess;
-});
-
-enifed("glimmer-syntax/lib/builders", ["exports"], function (exports) {
-    // Statements
-    "use strict";
-
-    exports.buildMustache = buildMustache;
-    exports.buildBlock = buildBlock;
-    exports.buildElementModifier = buildElementModifier;
-    exports.buildPartial = buildPartial;
-    exports.buildComment = buildComment;
-    exports.buildConcat = buildConcat;
-    exports.buildElement = buildElement;
-    exports.buildAttr = buildAttr;
-    exports.buildText = buildText;
-    exports.buildSexpr = buildSexpr;
-    exports.buildPath = buildPath;
-    exports.buildString = buildString;
-    exports.buildBoolean = buildBoolean;
-    exports.buildNumber = buildNumber;
-    exports.buildNull = buildNull;
-    exports.buildUndefined = buildUndefined;
-    exports.buildHash = buildHash;
-    exports.buildPair = buildPair;
-    exports.buildProgram = buildProgram;
-    exports.buildPosition = buildPosition;
-
-    function buildMustache(path, params, hash, raw, loc) {
-        return {
-            type: "MustacheStatement",
-            path: buildPath(path),
-            params: params || [],
-            hash: hash || buildHash([]),
-            escaped: !raw,
-            loc: buildLoc(loc)
-        };
-    }
-
-    function buildBlock(path, params, hash, program, inverse, loc) {
-        return {
-            type: "BlockStatement",
-            path: buildPath(path),
-            params: params ? params.map(buildPath) : [],
-            hash: hash || buildHash([]),
-            program: program || null,
-            inverse: inverse || null,
-            loc: buildLoc(loc)
-        };
-    }
-
-    function buildElementModifier(path, params, hash, loc) {
-        return {
-            type: "ElementModifierStatement",
-            path: buildPath(path),
-            params: params || [],
-            hash: hash || buildHash([]),
-            loc: buildLoc(loc)
-        };
-    }
-
-    function buildPartial(name, params, hash, indent) {
-        return {
-            type: "PartialStatement",
-            name: name,
-            params: params || [],
-            hash: hash || buildHash([]),
-            indent: indent
-        };
-    }
-
-    function buildComment(value) {
-        return {
-            type: "CommentStatement",
-            value: value
-        };
-    }
-
-    function buildConcat(parts) {
-        return {
-            type: "ConcatStatement",
-            parts: parts || []
-        };
-    }
-
-    // Nodes
-
-    function buildElement(tag, attributes, modifiers, children, loc) {
-        return {
-            type: "ElementNode",
-            tag: tag || "",
-            attributes: attributes || [],
-            blockParams: [],
-            modifiers: modifiers || [],
-            children: children || [],
-            loc: buildLoc(loc)
-        };
-    }
-
-    function buildAttr(name, value, loc) {
-        return {
-            type: "AttrNode",
-            name: name,
-            value: value,
-            loc: buildLoc(loc)
-        };
-    }
-
-    function buildText(chars, loc) {
-        return {
-            type: "TextNode",
-            chars: chars || "",
-            loc: buildLoc(loc)
-        };
-    }
-
-    // Expressions
-
-    function buildSexpr(path, params, hash, loc) {
-        return {
-            type: "SubExpression",
-            path: buildPath(path),
-            params: params || [],
-            hash: hash || buildHash([]),
-            loc: buildLoc(loc)
-        };
-    }
-
-    function buildPath(original, loc) {
-        if (typeof original !== 'string') return original;
-        return {
-            type: "PathExpression",
-            original: original,
-            parts: original.split('.'),
-            data: false,
-            loc: buildLoc(loc)
-        };
-    }
-
-    function buildString(value) {
-        return {
-            type: "StringLiteral",
-            value: value,
-            original: value
-        };
-    }
-
-    function buildBoolean(value) {
-        return {
-            type: "BooleanLiteral",
-            value: value,
-            original: value
-        };
-    }
-
-    function buildNumber(value) {
-        return {
-            type: "NumberLiteral",
-            value: value,
-            original: value
-        };
-    }
-
-    function buildNull() {
-        return {
-            type: "NullLiteral",
-            value: null,
-            original: null
-        };
-    }
-
-    function buildUndefined() {
-        return {
-            type: "UndefinedLiteral",
-            value: undefined,
-            original: undefined
-        };
-    }
-
-    // Miscellaneous
-
-    function buildHash(pairs) {
-        return {
-            type: "Hash",
-            pairs: pairs || []
-        };
-    }
-
-    function buildPair(key, value) {
-        return {
-            type: "HashPair",
-            key: key,
-            value: value
-        };
-    }
-
-    function buildProgram(body, blockParams, loc) {
-        return {
-            type: "Program",
-            body: body || [],
-            blockParams: blockParams || [],
-            loc: buildLoc(loc)
-        };
-    }
-
-    function buildSource(source) {
-        return source || null;
-    }
-
-    function buildPosition(line, column) {
-        return {
-            line: typeof line === 'number' ? line : null,
-            column: typeof column === 'number' ? column : null
-        };
-    }
-
-    function buildLoc() {
-        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-            args[_key] = arguments[_key];
-        }
-
-        if (args.length === 1) {
-            var loc = args[0];
-            if (typeof loc === 'object') {
-                return {
-                    source: buildSource(loc.source),
-                    start: buildPosition(loc.start.line, loc.start.column),
-                    end: buildPosition(loc.end.line, loc.end.column)
-                };
-            } else {
-                return null;
-            }
-        } else {
-            var startLine = args[0];
-            var startColumn = args[1];
-            var endLine = args[2];
-            var endColumn = args[3];
-            var source = args[4];
-
-            return {
-                source: buildSource(source),
-                start: buildPosition(startLine, startColumn),
-                end: buildPosition(endLine, endColumn)
-            };
-        }
-    }
-    exports.default = {
-        mustache: buildMustache,
-        block: buildBlock,
-        partial: buildPartial,
-        comment: buildComment,
-        element: buildElement,
-        elementModifier: buildElementModifier,
-        attr: buildAttr,
-        text: buildText,
-        sexpr: buildSexpr,
-        path: buildPath,
-        string: buildString,
-        boolean: buildBoolean,
-        number: buildNumber,
-        undefined: buildUndefined,
-        null: buildNull,
-        concat: buildConcat,
-        hash: buildHash,
-        pair: buildPair,
-        program: buildProgram,
-        loc: buildLoc,
-        pos: buildPosition
-    };
-});
-
-enifed('glimmer-syntax/lib/generation/print', ['exports'], function (exports) {
-    'use strict';
-
-    exports.default = build;
-
-    function build(ast) {
-        if (!ast) {
-            return '';
-        }
-        var output = [];
-        switch (ast.type) {
-            case 'Program':
-                {
-                    var chainBlock = ast.chained && ast.body[0];
-                    if (chainBlock) {
-                        chainBlock.chained = true;
-                    }
-                    var body = buildEach(ast.body).join('');
-                    output.push(body);
-                }
-                break;
-            case 'ElementNode':
-                output.push('<', ast.tag);
-                if (ast.attributes.length) {
-                    output.push(' ', buildEach(ast.attributes).join(' '));
-                }
-                if (ast.modifiers.length) {
-                    output.push(' ', buildEach(ast.modifiers).join(' '));
-                }
-                output.push('>');
-                output.push.apply(output, buildEach(ast.children));
-                output.push('</', ast.tag, '>');
-                break;
-            case 'AttrNode':
-                output.push(ast.name, '=');
-                var value = build(ast.value);
-                if (ast.value.type === 'TextNode') {
-                    output.push('"', value, '"');
-                } else {
-                    output.push(value);
-                }
-                break;
-            case 'ConcatStatement':
-                output.push('"');
-                ast.parts.forEach(function (node) {
-                    if (node.type === 'StringLiteral') {
-                        output.push(node.original);
-                    } else {
-                        output.push(build(node));
-                    }
-                });
-                output.push('"');
-                break;
-            case 'TextNode':
-                output.push(ast.chars);
-                break;
-            case 'MustacheStatement':
-                {
-                    output.push(compactJoin(['{{', pathParams(ast), '}}']));
-                }
-                break;
-            case 'ElementModifierStatement':
-                {
-                    output.push(compactJoin(['{{', pathParams(ast), '}}']));
-                }
-                break;
-            case 'PathExpression':
-                output.push(ast.original);
-                break;
-            case 'SubExpression':
-                {
-                    output.push('(', pathParams(ast), ')');
-                }
-                break;
-            case 'BooleanLiteral':
-                output.push(ast.value ? 'true' : false);
-                break;
-            case 'BlockStatement':
-                {
-                    var lines = [];
-                    if (ast.chained) {
-                        lines.push(['{{else ', pathParams(ast), '}}'].join(''));
-                    } else {
-                        lines.push(openBlock(ast));
-                    }
-                    lines.push(build(ast.program));
-                    if (ast.inverse) {
-                        if (!ast.inverse.chained) {
-                            lines.push('{{else}}');
-                        }
-                        lines.push(build(ast.inverse));
-                    }
-                    if (!ast.chained) {
-                        lines.push(closeBlock(ast));
-                    }
-                    output.push(lines.join(''));
-                }
-                break;
-            case 'PartialStatement':
-                {
-                    output.push(compactJoin(['{{>', pathParams(ast), '}}']));
-                }
-                break;
-            case 'CommentStatement':
-                {
-                    output.push(compactJoin(['<!--', ast.value, '-->']));
-                }
-                break;
-            case 'StringLiteral':
-                {
-                    output.push('"' + ast.value + '"');
-                }
-                break;
-            case 'NumberLiteral':
-                {
-                    output.push(ast.value);
-                }
-                break;
-            case 'UndefinedLiteral':
-                {
-                    output.push('undefined');
-                }
-                break;
-            case 'NullLiteral':
-                {
-                    output.push('null');
-                }
-                break;
-            case 'Hash':
-                {
-                    output.push(ast.pairs.map(function (pair) {
-                        return build(pair);
-                    }).join(' '));
-                }
-                break;
-            case 'HashPair':
-                {
-                    output.push(ast.key + '=' + build(ast.value));
-                }
-                break;
-        }
-        return output.join('');
-    }
-
-    function compact(array) {
-        var newArray = [];
-        array.forEach(function (a) {
-            if (typeof a !== 'undefined' && a !== null && a !== '') {
-                newArray.push(a);
-            }
-        });
-        return newArray;
-    }
-    function buildEach(asts) {
-        var output = [];
-        asts.forEach(function (node) {
-            output.push(build(node));
-        });
-        return output;
-    }
-    function pathParams(ast) {
-        var name = build(ast.name);
-        var path = build(ast.path);
-        var params = buildEach(ast.params).join(' ');
-        var hash = build(ast.hash);
-        return compactJoin([name, path, params, hash], ' ');
-    }
-    function compactJoin(array, delimiter) {
-        return compact(array).join(delimiter || '');
-    }
-    function blockParams(block) {
-        var params = block.program.blockParams;
-        if (params.length) {
-            return ' as |' + params.join(',') + '|';
-        }
-    }
-    function openBlock(block) {
-        return ['{{#', pathParams(block), blockParams(block), '}}'].join('');
-    }
-    function closeBlock(block) {
-        return ['{{/', build(block.path), '}}'].join('');
-    }
-});
-
-enifed("glimmer-syntax/lib/parser", ["exports", "handlebars/compiler/base", "glimmer-syntax/lib/syntax", "simple-html-tokenizer/evented-tokenizer", "simple-html-tokenizer/entity-parser", "simple-html-tokenizer/html5-named-char-refs", "glimmer-syntax/lib/parser/handlebars-node-visitors", "glimmer-syntax/lib/parser/tokenizer-event-handlers"], function (exports, _handlebarsCompilerBase, _glimmerSyntaxLibSyntax, _simpleHtmlTokenizerEventedTokenizer, _simpleHtmlTokenizerEntityParser, _simpleHtmlTokenizerHtml5NamedCharRefs, _glimmerSyntaxLibParserHandlebarsNodeVisitors, _glimmerSyntaxLibParserTokenizerEventHandlers) {
-    "use strict";
-
-    exports.preprocess = preprocess;
-    exports.Parser = Parser;
-
-    function preprocess(html, options) {
-        var ast = typeof html === 'object' ? html : _handlebarsCompilerBase.parse(html);
-        var combined = new Parser(html, options).acceptNode(ast);
-        if (options && options.plugins && options.plugins.ast) {
-            for (var i = 0, l = options.plugins.ast.length; i < l; i++) {
-                var plugin = new options.plugins.ast[i](options);
-                plugin.syntax = _glimmerSyntaxLibSyntax;
-                combined = plugin.transform(combined);
-            }
-        }
-        return combined;
-    }
-
-    exports.default = preprocess;
-
-    var entityParser = new _simpleHtmlTokenizerEntityParser.default(_simpleHtmlTokenizerHtml5NamedCharRefs.default);
-
-    function Parser(source, options) {
-        this.options = options || {};
-        this.elementStack = [];
-        this.tokenizer = new _simpleHtmlTokenizerEventedTokenizer.default(this, entityParser);
-        this.currentNode = null;
-        this.currentAttribute = null;
-        if (typeof source === 'string') {
-            this.source = source.split(/(?:\r\n?|\n)/g);
-        }
-    }
-
-    for (var key in _glimmerSyntaxLibParserHandlebarsNodeVisitors.default) {
-        Parser.prototype[key] = _glimmerSyntaxLibParserHandlebarsNodeVisitors.default[key];
-    }
-    for (var key in _glimmerSyntaxLibParserTokenizerEventHandlers.default) {
-        Parser.prototype[key] = _glimmerSyntaxLibParserTokenizerEventHandlers.default[key];
-    }
-    Parser.prototype.acceptNode = function (node) {
-        return this[node.type](node);
-    };
-    Parser.prototype.currentElement = function () {
-        return this.elementStack[this.elementStack.length - 1];
-    };
-    Parser.prototype.sourceForMustache = function (mustache) {
-        var firstLine = mustache.loc.start.line - 1;
-        var lastLine = mustache.loc.end.line - 1;
-        var currentLine = firstLine - 1;
-        var firstColumn = mustache.loc.start.column + 2;
-        var lastColumn = mustache.loc.end.column - 2;
-        var string = [];
-        var line = undefined;
-        if (!this.source) {
-            return '{{' + mustache.path.id.original + '}}';
-        }
-        while (currentLine < lastLine) {
-            currentLine++;
-            line = this.source[currentLine];
-            if (currentLine === firstLine) {
-                if (firstLine === lastLine) {
-                    string.push(line.slice(firstColumn, lastColumn));
-                } else {
-                    string.push(line.slice(firstColumn));
-                }
-            } else if (currentLine === lastLine) {
-                string.push(line.slice(0, lastColumn));
-            } else {
-                string.push(line);
-            }
-        }
-        return string.join('\n');
-    };
-});
-
-enifed("glimmer-syntax/lib/parser/handlebars-node-visitors", ["exports", "glimmer-syntax/lib/builders", "glimmer-syntax/lib/utils"], function (exports, _glimmerSyntaxLibBuilders, _glimmerSyntaxLibUtils) {
-    "use strict";
-
-    exports.default = {
-        Program: function (program) {
-            var body = [];
-            var node = _glimmerSyntaxLibBuilders.default.program(body, program.blockParams, program.loc);
-            var i = undefined,
-                l = program.body.length;
-            this.elementStack.push(node);
-            if (l === 0) {
-                return this.elementStack.pop();
-            }
-            for (i = 0; i < l; i++) {
-                this.acceptNode(program.body[i]);
-            }
-            // Ensure that that the element stack is balanced properly.
-            var poppedNode = this.elementStack.pop();
-            if (poppedNode !== node) {
-                throw new Error("Unclosed element `" + poppedNode.tag + "` (on line " + poppedNode.loc.start.line + ").");
-            }
-            return node;
-        },
-        BlockStatement: function (block) {
-            delete block.inverseStrip;
-            delete block.openString;
-            delete block.closeStrip;
-            if (this.tokenizer.state === 'comment') {
-                this.appendToCommentData('{{' + this.sourceForMustache(block) + '}}');
-                return;
-            }
-            if (this.tokenizer.state !== 'comment' && this.tokenizer.state !== 'data' && this.tokenizer.state !== 'beforeData') {
-                throw new Error("A block may only be used inside an HTML element or another block.");
-            }
-            block = acceptCommonNodes(this, block);
-            var program = block.program ? this.acceptNode(block.program) : null;
-            var inverse = block.inverse ? this.acceptNode(block.inverse) : null;
-            var node = _glimmerSyntaxLibBuilders.default.block(block.path, block.params, block.hash, program, inverse, block.loc);
-            var parentProgram = this.currentElement();
-            _glimmerSyntaxLibUtils.appendChild(parentProgram, node);
-        },
-        MustacheStatement: function (rawMustache) {
-            var tokenizer = this.tokenizer;
-            var path = rawMustache.path;
-            var params = rawMustache.params;
-            var hash = rawMustache.hash;
-            var escaped = rawMustache.escaped;
-            var loc = rawMustache.loc;
-
-            var mustache = _glimmerSyntaxLibBuilders.default.mustache(path, params, hash, !escaped, loc);
-            if (tokenizer.state === 'comment') {
-                this.appendToCommentData('{{' + this.sourceForMustache(mustache) + '}}');
-                return;
-            }
-            acceptCommonNodes(this, mustache);
-            switch (tokenizer.state) {
-                // Tag helpers
-                case "tagName":
-                    addElementModifier(this.currentNode, mustache);
-                    tokenizer.state = "beforeAttributeName";
-                    break;
-                case "beforeAttributeName":
-                    addElementModifier(this.currentNode, mustache);
-                    break;
-                case "attributeName":
-                case "afterAttributeName":
-                    this.beginAttributeValue(false);
-                    this.finishAttributeValue();
-                    addElementModifier(this.currentNode, mustache);
-                    tokenizer.state = "beforeAttributeName";
-                    break;
-                case "afterAttributeValueQuoted":
-                    addElementModifier(this.currentNode, mustache);
-                    tokenizer.state = "beforeAttributeName";
-                    break;
-                // Attribute values
-                case "beforeAttributeValue":
-                    appendDynamicAttributeValuePart(this.currentAttribute, mustache);
-                    tokenizer.state = 'attributeValueUnquoted';
-                    break;
-                case "attributeValueDoubleQuoted":
-                case "attributeValueSingleQuoted":
-                case "attributeValueUnquoted":
-                    appendDynamicAttributeValuePart(this.currentAttribute, mustache);
-                    break;
-                // TODO: Only append child when the tokenizer state makes
-                // sense to do so, otherwise throw an error.
-                default:
-                    _glimmerSyntaxLibUtils.appendChild(this.currentElement(), mustache);
-            }
-            return mustache;
-        },
-        ContentStatement: function (content) {
-            updateTokenizerLocation(this.tokenizer, content);
-            this.tokenizer.tokenizePart(content.value);
-            this.tokenizer.flushData();
-        },
-        CommentStatement: function (comment) {
-            return comment;
-        },
-        PartialStatement: function (partial) {
-            _glimmerSyntaxLibUtils.appendChild(this.currentElement(), partial);
-            return partial;
-        },
-        SubExpression: function (sexpr) {
-            return acceptCommonNodes(this, sexpr);
-        },
-        PathExpression: function (path) {
-            var original = path.original;
-            var loc = path.loc;
-
-            if (original.indexOf('/') !== -1) {
-                // TODO add a SyntaxError with loc info
-                if (original.slice(0, 2) === './') {
-                    throw new Error("Using \"./\" is not supported in Glimmer and unnecessary: \"" + path.original + "\" on line " + loc.start.line + ".");
-                }
-                if (original.slice(0, 3) === '../') {
-                    throw new Error("Changing context using \"../\" is not supported in Glimmer: \"" + path.original + "\" on line " + loc.start.line + ".");
-                }
-                if (original.indexOf('.') !== -1) {
-                    throw new Error("Mixing '.' and '/' in paths is not supported in Glimmer; use only '.' to separate property paths: \"" + path.original + "\" on line " + loc.start.line + ".");
-                }
-                path.parts = [path.parts.join('/')];
-            }
-            delete path.depth;
-            return path;
-        },
-        Hash: function (hash) {
-            for (var i = 0; i < hash.pairs.length; i++) {
-                this.acceptNode(hash.pairs[i].value);
-            }
-            return hash;
-        },
-        StringLiteral: function () {},
-        BooleanLiteral: function () {},
-        NumberLiteral: function () {},
-        UndefinedLiteral: function () {},
-        NullLiteral: function () {}
-    };
-
-    function calculateRightStrippedOffsets(original, value) {
-        if (value === '') {
-            // if it is empty, just return the count of newlines
-            // in original
-            return {
-                lines: original.split("\n").length - 1,
-                columns: 0
-            };
-        }
-        // otherwise, return the number of newlines prior to
-        // `value`
-        var difference = original.split(value)[0];
-        var lines = difference.split(/\n/);
-        var lineCount = lines.length - 1;
-        return {
-            lines: lineCount,
-            columns: lines[lineCount].length
-        };
-    }
-    function updateTokenizerLocation(tokenizer, content) {
-        var line = content.loc.start.line;
-        var column = content.loc.start.column;
-        if (content.rightStripped) {
-            var offsets = calculateRightStrippedOffsets(content.original, content.value);
-            line = line + offsets.lines;
-            if (offsets.lines) {
-                column = offsets.columns;
-            } else {
-                column = column + offsets.columns;
-            }
-        }
-        tokenizer.line = line;
-        tokenizer.column = column;
-    }
-    function acceptCommonNodes(compiler, node) {
-        compiler.acceptNode(node.path);
-        if (node.params) {
-            for (var i = 0; i < node.params.length; i++) {
-                compiler.acceptNode(node.params[i]);
-            }
-        } else {
-            node.params = [];
-        }
-        if (node.hash) {
-            compiler.acceptNode(node.hash);
-        } else {
-            node.hash = _glimmerSyntaxLibBuilders.default.hash();
-        }
-        return node;
-    }
-    function addElementModifier(element, mustache) {
-        var path = mustache.path;
-        var params = mustache.params;
-        var hash = mustache.hash;
-        var loc = mustache.loc;
-
-        var modifier = _glimmerSyntaxLibBuilders.default.elementModifier(path, params, hash, loc);
-        element.modifiers.push(modifier);
-    }
-    function appendDynamicAttributeValuePart(attribute, part) {
-        attribute.isDynamic = true;
-        attribute.parts.push(part);
-    }
-});
-
-enifed("glimmer-syntax/lib/parser/tokenizer-event-handlers", ["exports", "glimmer-util", "glimmer-syntax/lib/builders", "glimmer-syntax/lib/utils"], function (exports, _glimmerUtil, _glimmerSyntaxLibBuilders, _glimmerSyntaxLibUtils) {
-    "use strict";
-
-    exports.default = {
-        reset: function () {
-            this.currentNode = null;
-        },
-        // Comment
-        beginComment: function () {
-            this.currentNode = _glimmerSyntaxLibBuilders.default.comment("");
-            this.currentNode.loc = {
-                source: null,
-                start: _glimmerSyntaxLibBuilders.default.pos(this.tagOpenLine, this.tagOpenColumn),
-                end: null
-            };
-        },
-        appendToCommentData: function (char) {
-            this.currentNode.value += char;
-        },
-        finishComment: function () {
-            this.currentNode.loc.end = _glimmerSyntaxLibBuilders.default.pos(this.tokenizer.line, this.tokenizer.column);
-            _glimmerSyntaxLibUtils.appendChild(this.currentElement(), this.currentNode);
-        },
-        // Data
-        beginData: function () {
-            this.currentNode = _glimmerSyntaxLibBuilders.default.text();
-            this.currentNode.loc = {
-                source: null,
-                start: _glimmerSyntaxLibBuilders.default.pos(this.tokenizer.line, this.tokenizer.column),
-                end: null
-            };
-        },
-        appendToData: function (char) {
-            this.currentNode.chars += char;
-        },
-        finishData: function () {
-            this.currentNode.loc.end = _glimmerSyntaxLibBuilders.default.pos(this.tokenizer.line, this.tokenizer.column);
-            _glimmerSyntaxLibUtils.appendChild(this.currentElement(), this.currentNode);
-        },
-        // Tags - basic
-        tagOpen: function () {
-            this.tagOpenLine = this.tokenizer.line;
-            this.tagOpenColumn = this.tokenizer.column;
-        },
-        beginStartTag: function () {
-            this.currentNode = {
-                type: 'StartTag',
-                name: "",
-                attributes: [],
-                modifiers: [],
-                selfClosing: false,
-                loc: null
-            };
-        },
-        beginEndTag: function () {
-            this.currentNode = {
-                type: 'EndTag',
-                name: "",
-                attributes: [],
-                modifiers: [],
-                selfClosing: false,
-                loc: null
-            };
-        },
-        finishTag: function () {
-            var _tokenizer = this.tokenizer;
-            var line = _tokenizer.line;
-            var column = _tokenizer.column;
-
-            var tag = this.currentNode;
-            tag.loc = _glimmerSyntaxLibBuilders.default.loc(this.tagOpenLine, this.tagOpenColumn, line, column);
-            if (tag.type === 'StartTag') {
-                this.finishStartTag();
-                if (_glimmerUtil.voidMap.hasOwnProperty(tag.name) || tag.selfClosing) {
-                    this.finishEndTag(true);
-                }
-            } else if (tag.type === 'EndTag') {
-                this.finishEndTag(false);
-            }
-        },
-        finishStartTag: function () {
-            var _currentNode = this.currentNode;
-            var name = _currentNode.name;
-            var attributes = _currentNode.attributes;
-            var modifiers = _currentNode.modifiers;
-
-            var loc = _glimmerSyntaxLibBuilders.default.loc(this.tagOpenLine, this.tagOpenColumn);
-            var element = _glimmerSyntaxLibBuilders.default.element(name, attributes, modifiers, [], loc);
-            this.elementStack.push(element);
-        },
-        finishEndTag: function (isVoid) {
-            var tag = this.currentNode;
-            var element = this.elementStack.pop();
-            var parent = this.currentElement();
-            validateEndTag(tag, element, isVoid);
-            element.loc.end.line = this.tokenizer.line;
-            element.loc.end.column = this.tokenizer.column;
-            _glimmerSyntaxLibUtils.parseElementBlockParams(element);
-            _glimmerSyntaxLibUtils.appendChild(parent, element);
-        },
-        markTagAsSelfClosing: function () {
-            this.currentNode.selfClosing = true;
-        },
-        // Tags - name
-        appendToTagName: function (char) {
-            this.currentNode.name += char;
-        },
-        // Tags - attributes
-        beginAttribute: function () {
-            var tag = this.currentNode;
-            if (tag.type === 'EndTag') {
-                throw new Error("Invalid end tag: closing tag must not have attributes, " + ("in `" + tag.name + "` (on line " + this.tokenizer.line + ")."));
-            }
-            this.currentAttribute = {
-                name: "",
-                parts: [],
-                isQuoted: false,
-                isDynamic: false,
-                start: _glimmerSyntaxLibBuilders.default.pos(this.tokenizer.line, this.tokenizer.column),
-                valueStartLine: null,
-                valueStartColumn: null
-            };
-        },
-        appendToAttributeName: function (char) {
-            this.currentAttribute.name += char;
-        },
-        beginAttributeValue: function (isQuoted) {
-            this.currentAttribute.isQuoted = isQuoted;
-            this.currentAttribute.valueStartLine = this.tokenizer.line;
-            this.currentAttribute.valueStartColumn = this.tokenizer.column;
-        },
-        appendToAttributeValue: function (char) {
-            var parts = this.currentAttribute.parts;
-            if (typeof parts[parts.length - 1] === 'string') {
-                parts[parts.length - 1] += char;
-            } else {
-                parts.push(char);
-            }
-        },
-        finishAttributeValue: function () {
-            var _currentAttribute = this.currentAttribute;
-            var name = _currentAttribute.name;
-            var parts = _currentAttribute.parts;
-            var isQuoted = _currentAttribute.isQuoted;
-            var isDynamic = _currentAttribute.isDynamic;
-            var valueStartLine = _currentAttribute.valueStartLine;
-            var valueStartColumn = _currentAttribute.valueStartColumn;
-
-            var value = assembleAttributeValue(parts, isQuoted, isDynamic, this.tokenizer.line);
-            value.loc = _glimmerSyntaxLibBuilders.default.loc(valueStartLine, valueStartColumn, this.tokenizer.line, this.tokenizer.column);
-            var loc = _glimmerSyntaxLibBuilders.default.loc(this.currentAttribute.start.line, this.currentAttribute.start.column, this.tokenizer.line, this.tokenizer.column);
-            var attribute = _glimmerSyntaxLibBuilders.default.attr(name, value, loc);
-            this.currentNode.attributes.push(attribute);
-        }
-    };
-
-    function assembleAttributeValue(parts, isQuoted, isDynamic, line) {
-        if (isDynamic) {
-            if (isQuoted) {
-                return assembleConcatenatedValue(parts);
-            } else {
-                if (parts.length === 1) {
-                    return parts[0];
-                } else {
-                    throw new Error("An unquoted attribute value must be a string or a mustache, " + "preceeded by whitespace or a '=' character, and " + ("followed by whitespace or a '>' character (on line " + line + ")"));
-                }
-            }
-        } else {
-            return _glimmerSyntaxLibBuilders.default.text(parts.length > 0 ? parts[0] : "");
-        }
-    }
-    function assembleConcatenatedValue(parts) {
-        for (var i = 0; i < parts.length; i++) {
-            var part = parts[i];
-            if (typeof part === 'string') {
-                parts[i] = _glimmerSyntaxLibBuilders.default.text(parts[i]);
-            } else {
-                if (part.type !== 'MustacheStatement') {
-                    throw new Error("Unsupported node in quoted attribute value: " + part.type);
-                }
-            }
-        }
-        return _glimmerSyntaxLibBuilders.default.concat(parts);
-    }
-    function validateEndTag(tag, element, selfClosing) {
-        var error = undefined;
-        if (_glimmerUtil.voidMap[tag.name] && !selfClosing) {
-            // EngTag is also called by StartTag for void and self-closing tags (i.e.
-            // <input> or <br />, so we need to check for that here. Otherwise, we would
-            // throw an error for those cases.
-            error = "Invalid end tag " + formatEndTagInfo(tag) + " (void elements cannot have end tags).";
-        } else if (element.tag === undefined) {
-            error = "Closing tag " + formatEndTagInfo(tag) + " without an open tag.";
-        } else if (element.tag !== tag.name) {
-            error = "Closing tag " + formatEndTagInfo(tag) + " did not match last open tag `" + element.tag + "` (on line " + element.loc.start.line + ").";
-        }
-        if (error) {
-            throw new Error(error);
-        }
-    }
-    function formatEndTagInfo(tag) {
-        return "`" + tag.name + "` (on line " + tag.loc.end.line + ")";
-    }
-});
-
-enifed("glimmer-syntax/lib/syntax", ["exports", "glimmer-syntax/lib/builders", "glimmer-syntax/lib/parser", "glimmer-syntax/lib/generation/print", "glimmer-syntax/lib/traversal/traverse", "glimmer-syntax/lib/traversal/walker"], function (exports, _glimmerSyntaxLibBuilders, _glimmerSyntaxLibParser, _glimmerSyntaxLibGenerationPrint, _glimmerSyntaxLibTraversalTraverse, _glimmerSyntaxLibTraversalWalker) {
+enifed("htmlbars-compiler/fragment-javascript-compiler", ["exports", "htmlbars-compiler/utils", "htmlbars-util/quoting"], function (exports, _htmlbarsCompilerUtils, _htmlbarsUtilQuoting) {
   "use strict";
 
-  exports.builders = _glimmerSyntaxLibBuilders.default;
-  exports.parse = _glimmerSyntaxLibParser.default;
-  exports.print = _glimmerSyntaxLibGenerationPrint.default;
-  exports.traverse = _glimmerSyntaxLibTraversalTraverse.default;
-  exports.Walker = _glimmerSyntaxLibTraversalWalker.default;
-});
+  var svgNamespace = "http://www.w3.org/2000/svg",
 
-enifed("glimmer-syntax/lib/traversal/errors", ["exports"], function (exports) {
-    "use strict";
+  // http://www.w3.org/html/wg/drafts/html/master/syntax.html#html-integration-point
+  svgHTMLIntegrationPoints = { 'foreignObject': true, 'desc': true, 'title': true };
 
-    exports.cannotRemoveNode = cannotRemoveNode;
-    exports.cannotReplaceNode = cannotReplaceNode;
-    exports.cannotReplaceOrRemoveInKeyHandlerYet = cannotReplaceOrRemoveInKeyHandlerYet;
-    function TraversalError(message, node, parent, key) {
-        this.name = "TraversalError";
-        this.message = message;
-        this.node = node;
-        this.parent = parent;
-        this.key = key;
+  function FragmentJavaScriptCompiler() {
+    this.source = [];
+    this.depth = -1;
+  }
+
+  exports.default = FragmentJavaScriptCompiler;
+
+  FragmentJavaScriptCompiler.prototype.compile = function (opcodes, options) {
+    this.source.length = 0;
+    this.depth = -1;
+    this.indent = options && options.indent || "";
+    this.namespaceFrameStack = [{ namespace: null, depth: null }];
+    this.domNamespace = null;
+
+    this.source.push('function buildFragment(dom) {\n');
+    _htmlbarsCompilerUtils.processOpcodes(this, opcodes);
+    this.source.push(this.indent + '}');
+
+    return this.source.join('');
+  };
+
+  FragmentJavaScriptCompiler.prototype.createFragment = function () {
+    var el = 'el' + ++this.depth;
+    this.source.push(this.indent + '  var ' + el + ' = dom.createDocumentFragment();\n');
+  };
+
+  FragmentJavaScriptCompiler.prototype.createElement = function (tagName) {
+    var el = 'el' + ++this.depth;
+    if (tagName === 'svg') {
+      this.pushNamespaceFrame({ namespace: svgNamespace, depth: this.depth });
     }
-    TraversalError.prototype = Object.create(Error.prototype);
-    TraversalError.prototype.constructor = TraversalError;
-    exports.default = TraversalError;
-
-    function cannotRemoveNode(node, parent, key) {
-        return new TraversalError("Cannot remove a node unless it is part of an array", node, parent, key);
+    this.ensureNamespace();
+    this.source.push(this.indent + '  var ' + el + ' = dom.createElement(' + _htmlbarsUtilQuoting.string(tagName) + ');\n');
+    if (svgHTMLIntegrationPoints[tagName]) {
+      this.pushNamespaceFrame({ namespace: null, depth: this.depth });
     }
+  };
 
-    function cannotReplaceNode(node, parent, key) {
-        return new TraversalError("Cannot replace a node with multiple nodes unless it is part of an array", node, parent, key);
-    }
+  FragmentJavaScriptCompiler.prototype.createText = function (str) {
+    var el = 'el' + ++this.depth;
+    this.source.push(this.indent + '  var ' + el + ' = dom.createTextNode(' + _htmlbarsUtilQuoting.string(str) + ');\n');
+  };
 
-    function cannotReplaceOrRemoveInKeyHandlerYet(node, key) {
-        return new TraversalError("Replacing and removing in key handlers is not yet supported.", node, null, key);
-    }
-});
+  FragmentJavaScriptCompiler.prototype.createComment = function (str) {
+    var el = 'el' + ++this.depth;
+    this.source.push(this.indent + '  var ' + el + ' = dom.createComment(' + _htmlbarsUtilQuoting.string(str) + ');\n');
+  };
 
-enifed('glimmer-syntax/lib/traversal/traverse', ['exports', 'glimmer-syntax/lib/types/visitor-keys', 'glimmer-syntax/lib/traversal/errors'], function (exports, _glimmerSyntaxLibTypesVisitorKeys, _glimmerSyntaxLibTraversalErrors) {
-    'use strict';
+  FragmentJavaScriptCompiler.prototype.returnNode = function () {
+    var el = 'el' + this.depth;
+    this.source.push(this.indent + '  return ' + el + ';\n');
+  };
 
-    exports.default = traverse;
-    exports.normalizeVisitor = normalizeVisitor;
-
-    function visitNode(visitor, node) {
-        var handler = visitor[node.type] || visitor.All;
-        var result = undefined;
-        if (handler && handler.enter) {
-            result = handler.enter.call(null, node);
-        }
-        if (result === undefined) {
-            var keys = _glimmerSyntaxLibTypesVisitorKeys.default[node.type];
-            for (var i = 0; i < keys.length; i++) {
-                visitKey(visitor, handler, node, keys[i]);
-            }
-            if (handler && handler.exit) {
-                result = handler.exit.call(null, node);
-            }
-        }
-        return result;
-    }
-    function visitKey(visitor, handler, node, key) {
-        var value = node[key];
-        if (!value) {
-            return;
-        }
-        var keyHandler = handler && (handler.keys[key] || handler.keys.All);
-        var result = undefined;
-        if (keyHandler && keyHandler.enter) {
-            result = keyHandler.enter.call(null, node, key);
-            if (result !== undefined) {
-                throw _glimmerSyntaxLibTraversalErrors.cannotReplaceOrRemoveInKeyHandlerYet(node, key);
-            }
-        }
-        if (Array.isArray(value)) {
-            visitArray(visitor, value);
-        } else {
-            var _result = visitNode(visitor, value);
-            if (_result !== undefined) {
-                assignKey(node, key, _result);
-            }
-        }
-        if (keyHandler && keyHandler.exit) {
-            result = keyHandler.exit.call(null, node, key);
-            if (result !== undefined) {
-                throw _glimmerSyntaxLibTraversalErrors.cannotReplaceOrRemoveInKeyHandlerYet(node, key);
-            }
-        }
-    }
-    function visitArray(visitor, array) {
-        for (var i = 0; i < array.length; i++) {
-            var result = visitNode(visitor, array[i]);
-            if (result !== undefined) {
-                i += spliceArray(array, i, result) - 1;
-            }
-        }
-    }
-    function assignKey(node, key, result) {
-        if (result === null) {
-            throw _glimmerSyntaxLibTraversalErrors.cannotRemoveNode(node[key], node, key);
-        } else if (Array.isArray(result)) {
-            if (result.length === 1) {
-                node[key] = result[0];
-            } else {
-                if (result.length === 0) {
-                    throw _glimmerSyntaxLibTraversalErrors.cannotRemoveNode(node[key], node, key);
-                } else {
-                    throw _glimmerSyntaxLibTraversalErrors.cannotReplaceNode(node[key], node, key);
-                }
-            }
-        } else {
-            node[key] = result;
-        }
-    }
-    function spliceArray(array, index, result) {
-        if (result === null) {
-            array.splice(index, 1);
-            return 0;
-        } else if (Array.isArray(result)) {
-            array.splice.apply(array, [index, 1].concat(result));
-            return result.length;
-        } else {
-            array.splice(index, 1, result);
-            return 1;
-        }
-    }
-
-    function traverse(node, visitor) {
-        visitNode(normalizeVisitor(visitor), node);
-    }
-
-    function normalizeVisitor(visitor) {
-        var normalizedVisitor = {};
-        for (var type in visitor) {
-            var handler = visitor[type] || visitor.All;
-            var normalizedKeys = {};
-            if (typeof handler === 'object') {
-                var keys = handler.keys;
-                if (keys) {
-                    for (var key in keys) {
-                        var keyHandler = keys[key];
-                        if (typeof keyHandler === 'object') {
-                            normalizedKeys[key] = {
-                                enter: typeof keyHandler.enter === 'function' ? keyHandler.enter : null,
-                                exit: typeof keyHandler.exit === 'function' ? keyHandler.exit : null
-                            };
-                        } else if (typeof keyHandler === 'function') {
-                            normalizedKeys[key] = {
-                                enter: keyHandler,
-                                exit: null
-                            };
-                        }
-                    }
-                }
-                normalizedVisitor[type] = {
-                    enter: typeof handler.enter === 'function' ? handler.enter : null,
-                    exit: typeof handler.exit === 'function' ? handler.exit : null,
-                    keys: normalizedKeys
-                };
-            } else if (typeof handler === 'function') {
-                normalizedVisitor[type] = {
-                    enter: handler,
-                    exit: null,
-                    keys: normalizedKeys
-                };
-            }
-        }
-        return normalizedVisitor;
-    }
-});
-
-enifed('glimmer-syntax/lib/traversal/walker', ['exports'], function (exports) {
-    'use strict';
-
-    function Walker() {
-        var order = arguments.length <= 0 || arguments[0] === undefined ? undefined : arguments[0];
-
-        this.order = order;
-        this.stack = [];
-    }
-    exports.default = Walker;
-
-    Walker.prototype.visit = function (node, callback) {
-        if (!node) {
-            return;
-        }
-        this.stack.push(node);
-        if (this.order === 'post') {
-            this.children(node, callback);
-            callback(node, this);
-        } else {
-            callback(node, this);
-            this.children(node, callback);
-        }
-        this.stack.pop();
-    };
-    var visitors = {
-        Program: function (walker, node, callback) {
-            for (var i = 0; i < node.body.length; i++) {
-                walker.visit(node.body[i], callback);
-            }
-        },
-        ElementNode: function (walker, node, callback) {
-            for (var i = 0; i < node.children.length; i++) {
-                walker.visit(node.children[i], callback);
-            }
-        },
-        BlockStatement: function (walker, node, callback) {
-            walker.visit(node.program, callback);
-            walker.visit(node.inverse, callback);
-        }
-    };
-    Walker.prototype.children = function (node, callback) {
-        var visitor = visitors[node.type];
-        if (visitor) {
-            visitor(this, node, callback);
-        }
-    };
-});
-
-enifed('glimmer-syntax/lib/types/visitor-keys', ['exports'], function (exports) {
-    'use strict';
-
-    exports.default = {
-        Program: ['body'],
-        MustacheStatement: ['path', 'params', 'hash'],
-        BlockStatement: ['path', 'params', 'hash', 'program', 'inverse'],
-        ElementModifierStatement: ['path', 'params', 'hash'],
-        PartialStatement: ['name', 'params', 'hash'],
-        CommentStatement: [],
-        ElementNode: ['attributes', 'modifiers', 'children'],
-        AttrNode: ['value'],
-        TextNode: [],
-        ConcatStatement: ['parts'],
-        SubExpression: ['path', 'params', 'hash'],
-        PathExpression: [],
-        StringLiteral: [],
-        BooleanLiteral: [],
-        NumberLiteral: [],
-        NullLiteral: [],
-        UndefinedLiteral: [],
-        Hash: ['pairs'],
-        HashPair: ['value']
-    };
-});
-
-enifed('glimmer-syntax/lib/utils', ['exports', 'glimmer-util'], function (exports, _glimmerUtil) {
-    'use strict';
-
-    exports.parseElementBlockParams = parseElementBlockParams;
-    exports.childrenFor = childrenFor;
-    exports.appendChild = appendChild;
-    exports.isHelper = isHelper;
-    exports.isSelfGet = isSelfGet;
-    exports.unwrapMustache = unwrapMustache;
-
-    // Regex to validate the identifier for block parameters.
-    // Based on the ID validation regex in Handlebars.
-    var ID_INVERSE_PATTERN = /[!"#%-,\.\/;->@\[-\^`\{-~]/;
-    // Checks the element's attributes to see if it uses block params.
-    // If it does, registers the block params with the program and
-    // removes the corresponding attributes from the element.
-
-    function parseElementBlockParams(element) {
-        var params = parseBlockParams(element);
-        if (params) element.blockParams = params;
-    }
-
-    function parseBlockParams(element) {
-        var l = element.attributes.length;
-        var attrNames = [];
-        for (var i = 0; i < l; i++) {
-            attrNames.push(element.attributes[i].name);
-        }
-        var asIndex = _glimmerUtil.indexOfArray(attrNames, 'as');
-        if (asIndex !== -1 && l > asIndex && attrNames[asIndex + 1].charAt(0) === '|') {
-            // Some basic validation, since we're doing the parsing ourselves
-            var paramsString = attrNames.slice(asIndex).join(' ');
-            if (paramsString.charAt(paramsString.length - 1) !== '|' || paramsString.match(/\|/g).length !== 2) {
-                throw new Error('Invalid block parameters syntax: \'' + paramsString + '\'');
-            }
-            var params = [];
-            for (var i = asIndex + 1; i < l; i++) {
-                var param = attrNames[i].replace(/\|/g, '');
-                if (param !== '') {
-                    if (ID_INVERSE_PATTERN.test(param)) {
-                        throw new Error('Invalid identifier for block parameters: \'' + param + '\' in \'' + paramsString + '\'');
-                    }
-                    params.push(param);
-                }
-            }
-            if (params.length === 0) {
-                throw new Error('Cannot use zero block parameters: \'' + paramsString + '\'');
-            }
-            element.attributes = element.attributes.slice(0, asIndex);
-            return params;
-        }
-    }
-
-    function childrenFor(node) {
-        if (node.type === 'Program') {
-            return node.body;
-        }
-        if (node.type === 'ElementNode') {
-            return node.children;
-        }
-    }
-
-    function appendChild(parent, node) {
-        childrenFor(parent).push(node);
-    }
-
-    function isHelper(mustache) {
-        return mustache.params && mustache.params.length > 0 || mustache.hash && mustache.hash.pairs.length > 0;
-    }
-
-    function isSelfGet(mustache) {
-        var isSimple = (!mustache.params || mustache.params.length === 0) && (!mustache.hash || mustache.hash.pairs.length === 0);
-        return isSimple && mustache.path.original.match(/^this./);
-    }
-
-    function unwrapMustache(mustache) {
-        if (isHelper(mustache)) {
-            return mustache;
-        } else {
-            return mustache.path;
-        }
-    }
-});
-
-enifed('glimmer-util/index', ['exports', 'glimmer-util/lib/object-utils', 'glimmer-util/lib/namespaces', 'glimmer-util/lib/platform-utils', 'glimmer-util/lib/assert', 'glimmer-util/lib/array-utils', 'glimmer-util/lib/void-tag-names', 'glimmer-util/lib/logger', 'glimmer-util/lib/guid', 'glimmer-util/lib/collections', 'glimmer-util/lib/list-utils'], function (exports, _glimmerUtilLibObjectUtils, _glimmerUtilLibNamespaces, _glimmerUtilLibPlatformUtils, _glimmerUtilLibAssert, _glimmerUtilLibArrayUtils, _glimmerUtilLibVoidTagNames, _glimmerUtilLibLogger, _glimmerUtilLibGuid, _glimmerUtilLibCollections, _glimmerUtilLibListUtils) {
-  /*globals console*/
-  'use strict';
-
-  exports.getAttrNamespace = _glimmerUtilLibNamespaces.getAttrNamespace;
-  exports.LITERAL = _glimmerUtilLibPlatformUtils.LITERAL;
-  exports.InternedString = _glimmerUtilLibPlatformUtils.InternedString;
-  exports.Opaque = _glimmerUtilLibPlatformUtils.Opaque;
-  exports.opaque = _glimmerUtilLibPlatformUtils.opaque;
-  exports.symbol = _glimmerUtilLibPlatformUtils.symbol;
-  exports.intern = _glimmerUtilLibPlatformUtils.intern;
-  exports.numberKey = _glimmerUtilLibPlatformUtils.numberKey;
-  exports.assert = _glimmerUtilLibAssert.default;
-  exports.forEach = _glimmerUtilLibArrayUtils.forEach;
-  exports.map = _glimmerUtilLibArrayUtils.map;
-  exports.isArray = _glimmerUtilLibArrayUtils.isArray;
-  exports.indexOfArray = _glimmerUtilLibArrayUtils.indexOfArray;
-  exports.voidMap = _glimmerUtilLibVoidTagNames.default;
-  exports.LOGGER = _glimmerUtilLibLogger.default;
-  exports.Logger = _glimmerUtilLibLogger.Logger;
-  exports.LogLevel = _glimmerUtilLibLogger.LogLevel;
-
-  /* tslint:enable:no-unused-variable */
-  exports.merge = _glimmerUtilLibObjectUtils.merge;
-  exports.assign = _glimmerUtilLibObjectUtils.assign;
-  exports.ensureGuid = _glimmerUtilLibGuid.ensureGuid;
-  exports.initializeGuid = _glimmerUtilLibGuid.initializeGuid;
-  exports.HasGuid = _glimmerUtilLibGuid.HasGuid;
-  exports.types = _glimmerUtilLibObjectUtils;
-  exports.Stack = _glimmerUtilLibCollections.Stack;
-  exports.Dict = _glimmerUtilLibCollections.Dict;
-  exports.DictWithNumberKeys = _glimmerUtilLibCollections.DictWithNumberKeys;
-  exports.Set = _glimmerUtilLibCollections.Set;
-  exports.DictSet = _glimmerUtilLibCollections.DictSet;
-  exports.dict = _glimmerUtilLibCollections.dict;
-  exports.EMPTY_SLICE = _glimmerUtilLibListUtils.EMPTY_SLICE;
-  exports.LinkedList = _glimmerUtilLibListUtils.LinkedList;
-  exports.LinkedListNode = _glimmerUtilLibListUtils.LinkedListNode;
-  exports.ListNode = _glimmerUtilLibListUtils.ListNode;
-  exports.CloneableListNode = _glimmerUtilLibListUtils.CloneableListNode;
-  exports.ListSlice = _glimmerUtilLibListUtils.ListSlice;
-  exports.Slice = _glimmerUtilLibListUtils.Slice;
-});
-
-enifed('glimmer-util/lib/array-utils', ['exports'], function (exports) {
-    'use strict';
-
-    exports.forEach = forEach;
-    exports.map = map;
-
-    function forEach(array, callback) {
-        var binding = arguments.length <= 2 || arguments[2] === undefined ? undefined : arguments[2];
-
-        var i = undefined,
-            l = undefined;
-        if (binding === undefined) {
-            for (i = 0, l = array.length; i < l; i++) {
-                callback(array[i], i, array);
-            }
-        } else {
-            for (i = 0, l = array.length; i < l; i++) {
-                callback.call(binding, array[i], i, array);
-            }
-        }
-    }
-
-    function map(array, callback) {
-        var output = [];
-        var i = undefined,
-            l = undefined;
-        for (i = 0, l = array.length; i < l; i++) {
-            output.push(callback(array[i], i, array));
-        }
-        return output;
-    }
-
-    var getIdx = undefined;
-    if (Array.prototype.indexOf) {
-        getIdx = function (array, obj, from) {
-            return array.indexOf(obj, from);
-        };
+  FragmentJavaScriptCompiler.prototype.setAttribute = function (name, value, namespace) {
+    var el = 'el' + this.depth;
+    if (namespace) {
+      this.source.push(this.indent + '  dom.setAttributeNS(' + el + ',' + _htmlbarsUtilQuoting.string(namespace) + ',' + _htmlbarsUtilQuoting.string(name) + ',' + _htmlbarsUtilQuoting.string(value) + ');\n');
     } else {
-        getIdx = function (array, obj, from) {
-            if (from === undefined || from === null) {
-                from = 0;
-            } else if (from < 0) {
-                from = Math.max(0, array.length + from);
-            }
-            for (var i = from, l = array.length; i < l; i++) {
-                if (array[i] === obj) {
-                    return i;
-                }
-            }
-            return -1;
-        };
+      this.source.push(this.indent + '  dom.setAttribute(' + el + ',' + _htmlbarsUtilQuoting.string(name) + ',' + _htmlbarsUtilQuoting.string(value) + ');\n');
     }
-    var isArray = Array.isArray || function (array) {
-        return Object.prototype.toString.call(array) === '[object Array]';
-    };
-    exports.isArray = isArray;
-    var indexOfArray = getIdx;
-    exports.indexOfArray = indexOfArray;
+  };
+
+  FragmentJavaScriptCompiler.prototype.appendChild = function () {
+    if (this.depth === this.getCurrentNamespaceFrame().depth) {
+      this.popNamespaceFrame();
+    }
+    var child = 'el' + this.depth--;
+    var el = 'el' + this.depth;
+    this.source.push(this.indent + '  dom.appendChild(' + el + ', ' + child + ');\n');
+  };
+
+  FragmentJavaScriptCompiler.prototype.getCurrentNamespaceFrame = function () {
+    return this.namespaceFrameStack[this.namespaceFrameStack.length - 1];
+  };
+
+  FragmentJavaScriptCompiler.prototype.pushNamespaceFrame = function (frame) {
+    this.namespaceFrameStack.push(frame);
+  };
+
+  FragmentJavaScriptCompiler.prototype.popNamespaceFrame = function () {
+    return this.namespaceFrameStack.pop();
+  };
+
+  FragmentJavaScriptCompiler.prototype.ensureNamespace = function () {
+    var correctNamespace = this.getCurrentNamespaceFrame().namespace;
+    if (this.domNamespace !== correctNamespace) {
+      this.source.push(this.indent + '  dom.setNamespace(' + (correctNamespace ? _htmlbarsUtilQuoting.string(correctNamespace) : 'null') + ');\n');
+      this.domNamespace = correctNamespace;
+    }
+  };
 });
-
-enifed("glimmer-util/lib/assert", ["exports"], function (exports) {
-    // import Logger from './logger';
-    // let alreadyWarned = false;
-    "use strict";
-
-    exports.debugAssert = debugAssert;
-    exports.prodAssert = prodAssert;
-
-    function debugAssert(test, msg) {
-        // if (!alreadyWarned) {
-        //   alreadyWarned = true;
-        //   Logger.warn("Don't leave debug assertions on in public builds");
-        // }
-        if (!test) {
-            throw new Error(msg || "assertion failure");
-        }
-    }
-
-    function prodAssert() {}
-
-    exports.default = debugAssert;
-});
-
-enifed('glimmer-util/lib/collections', ['exports', 'glimmer-util/lib/guid'], function (exports, _glimmerUtilLibGuid) {
-    'use strict';
-
-    exports.dict = dict;
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-    var proto = Object.create(null, {
-        // without this, we will always still end up with (new
-        // EmptyObject()).constructor === Object
-        constructor: {
-            value: undefined,
-            enumerable: false,
-            writable: true
-        }
-    });
-    function EmptyObject() {}
-    EmptyObject.prototype = proto;
-
-    function dict() {
-        // let d = Object.create(null);
-        // d.x = 1;
-        // delete d.x;
-        // return d;
-        return new EmptyObject();
-    }
-
-    var DictSet = (function () {
-        function DictSet() {
-            _classCallCheck(this, DictSet);
-
-            this.dict = dict();
-        }
-
-        DictSet.prototype.add = function add(obj) {
-            if (typeof obj === 'string') this.dict[obj] = obj;else this.dict[_glimmerUtilLibGuid.ensureGuid(obj)] = obj;
-            return this;
-        };
-
-        DictSet.prototype.delete = function _delete(obj) {
-            if (typeof obj === 'string') delete this.dict[obj];else if (obj._guid) delete this.dict[obj._guid];
-        };
-
-        DictSet.prototype.forEach = function forEach(callback) {
-            var dict = this.dict;
-
-            Object.keys(dict).forEach(function (key) {
-                return callback(dict[key]);
-            });
-        };
-
-        DictSet.prototype.toArray = function toArray() {
-            return Object.keys(this.dict);
-        };
-
-        return DictSet;
-    })();
-
-    exports.DictSet = DictSet;
-
-    var Stack = (function () {
-        function Stack() {
-            _classCallCheck(this, Stack);
-
-            this.stack = [];
-            this.current = null;
-        }
-
-        Stack.prototype.push = function push(item) {
-            this.current = item;
-            this.stack.push(item);
-        };
-
-        Stack.prototype.pop = function pop() {
-            var item = this.stack.pop();
-            var len = this.stack.length;
-            this.current = len === 0 ? null : this.stack[len - 1];
-            return item;
-        };
-
-        Stack.prototype.isEmpty = function isEmpty() {
-            return this.stack.length === 0;
-        };
-
-        return Stack;
-    })();
-
-    exports.Stack = Stack;
-});
-
-enifed("glimmer-util/lib/guid", ["exports"], function (exports) {
-    "use strict";
-
-    exports.initializeGuid = initializeGuid;
-    exports.ensureGuid = ensureGuid;
-    var GUID = 0;
-
-    function initializeGuid(object) {
-        return object._guid = ++GUID;
-    }
-
-    function ensureGuid(object) {
-        return object._guid || initializeGuid(object);
-    }
-});
-
-enifed("glimmer-util/lib/list-utils", ["exports"], function (exports) {
-    "use strict";
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var ListNode = function ListNode(value) {
-        _classCallCheck(this, ListNode);
-
-        this.next = null;
-        this.prev = null;
-        this.value = value;
-    };
-
-    exports.ListNode = ListNode;
-
-    var LinkedList = (function () {
-        function LinkedList() {
-            _classCallCheck(this, LinkedList);
-
-            this.clear();
-        }
-
-        LinkedList.fromSlice = function fromSlice(slice) {
-            var list = new LinkedList();
-            slice.forEachNode(function (n) {
-                return list.append(n.clone());
-            });
-            return list;
-        };
-
-        LinkedList.prototype.head = function head() {
-            return this._head;
-        };
-
-        LinkedList.prototype.tail = function tail() {
-            return this._tail;
-        };
-
-        LinkedList.prototype.clear = function clear() {
-            this._head = this._tail = null;
-        };
-
-        LinkedList.prototype.isEmpty = function isEmpty() {
-            return this._head === null;
-        };
-
-        LinkedList.prototype.toArray = function toArray() {
-            var out = [];
-            this.forEachNode(function (n) {
-                return out.push(n);
-            });
-            return out;
-        };
-
-        LinkedList.prototype.splice = function splice(start, end, reference) {
-            var before = undefined;
-            if (reference === null) {
-                before = this._tail;
-                this._tail = end;
-            } else {
-                before = reference.prev;
-                end.next = reference;
-                reference.prev = end;
-            }
-            if (before) {
-                before.next = start;
-                start.prev = before;
-            }
-        };
-
-        LinkedList.prototype.spliceList = function spliceList(list, reference) {
-            if (list.isEmpty()) return;
-            this.splice(list.head(), list.tail(), reference);
-        };
-
-        LinkedList.prototype.nextNode = function nextNode(node) {
-            return node.next;
-        };
-
-        LinkedList.prototype.prevNode = function prevNode(node) {
-            return node.prev;
-        };
-
-        LinkedList.prototype.forEachNode = function forEachNode(callback) {
-            var node = this._head;
-            while (node !== null) {
-                callback(node);
-                node = node.next;
-            }
-        };
-
-        LinkedList.prototype.contains = function contains(needle) {
-            var node = this._head;
-            while (node !== null) {
-                if (node === needle) return true;
-                node = node.next;
-            }
-            return false;
-        };
-
-        LinkedList.prototype.insertBefore = function insertBefore(node) {
-            var reference = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
-
-            if (reference === null) return this.append(node);
-            if (reference.prev) reference.prev.next = node;else this._head = node;
-            node.prev = reference.prev;
-            node.next = reference;
-            reference.prev = node;
-            return node;
-        };
-
-        LinkedList.prototype.append = function append(node) {
-            var tail = this._tail;
-            if (tail) {
-                tail.next = node;
-                node.prev = tail;
-                node.next = null;
-            } else {
-                this._head = node;
-            }
-            return this._tail = node;
-        };
-
-        LinkedList.prototype.pop = function pop() {
-            if (this._tail) return this.remove(this._tail);
-            return null;
-        };
-
-        LinkedList.prototype.prepend = function prepend(node) {
-            if (this._head) return this.insertBefore(node, this._head);
-            return this._head = this._tail = node;
-        };
-
-        LinkedList.prototype.remove = function remove(node) {
-            if (node.prev) node.prev.next = node.next;else this._head = node.next;
-            if (node.next) node.next.prev = node.prev;else this._tail = node.prev;
-            return node;
-        };
-
-        return LinkedList;
-    })();
-
-    exports.LinkedList = LinkedList;
-
-    var LinkedListRemover = (function () {
-        function LinkedListRemover(node) {
-            _classCallCheck(this, LinkedListRemover);
-
-            this.node = node;
-        }
-
-        LinkedListRemover.prototype.destroy = function destroy() {
-            var _node = this.node;
-            var prev = _node.prev;
-            var next = _node.next;
-
-            prev.next = next;
-            next.prev = prev;
-        };
-
-        return LinkedListRemover;
-    })();
-
-    var ListSlice = (function () {
-        function ListSlice(head, tail) {
-            _classCallCheck(this, ListSlice);
-
-            this._head = head;
-            this._tail = tail;
-        }
-
-        ListSlice.toList = function toList(slice) {
-            var list = new LinkedList();
-            slice.forEachNode(function (n) {
-                return list.append(n.clone());
-            });
-            return list;
-        };
-
-        ListSlice.prototype.forEachNode = function forEachNode(callback) {
-            var node = this._head;
-            while (node !== null) {
-                callback(node);
-                node = this.nextNode(node);
-            }
-        };
-
-        ListSlice.prototype.contains = function contains(needle) {
-            var node = this._head;
-            while (node !== null) {
-                if (node === needle) return true;
-                node = node.next;
-            }
-            return false;
-        };
-
-        ListSlice.prototype.head = function head() {
-            return this._head;
-        };
-
-        ListSlice.prototype.tail = function tail() {
-            return this._tail;
-        };
-
-        ListSlice.prototype.toArray = function toArray() {
-            var out = [];
-            this.forEachNode(function (n) {
-                return out.push(n);
-            });
-            return out;
-        };
-
-        ListSlice.prototype.nextNode = function nextNode(node) {
-            if (node === this._tail) return null;
-            return node.next;
-        };
-
-        ListSlice.prototype.prevNode = function prevNode(node) {
-            if (node === this._head) return null;
-            return node.prev;
-        };
-
-        ListSlice.prototype.isEmpty = function isEmpty() {
-            return false;
-        };
-
-        return ListSlice;
-    })();
-
-    exports.ListSlice = ListSlice;
-    var EMPTY_SLICE = new ListSlice(null, null);
-    exports.EMPTY_SLICE = EMPTY_SLICE;
-});
-
-enifed("glimmer-util/lib/logger", ["exports"], function (exports) {
-    "use strict";
-
-    function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-    var LogLevel;
-    exports.LogLevel = LogLevel;
-    (function (LogLevel) {
-        LogLevel[LogLevel["Trace"] = 0] = "Trace";
-        LogLevel[LogLevel["Debug"] = 1] = "Debug";
-        LogLevel[LogLevel["Warn"] = 2] = "Warn";
-        LogLevel[LogLevel["Error"] = 3] = "Error";
-    })(LogLevel || (exports.LogLevel = LogLevel = {}));
-
-    var NullConsole = (function () {
-        function NullConsole() {
-            _classCallCheck(this, NullConsole);
-        }
-
-        NullConsole.prototype.log = function log(message) {};
-
-        NullConsole.prototype.warn = function warn(message) {};
-
-        NullConsole.prototype.error = function error(message) {};
-
-        NullConsole.prototype.trace = function trace() {};
-
-        return NullConsole;
-    })();
-
-    var Logger = (function () {
-        function Logger(_ref) {
-            var console = _ref.console;
-            var level = _ref.level;
-
-            _classCallCheck(this, Logger);
-
-            this.f = ALWAYS;
-            this.force = ALWAYS;
-            this.console = console;
-            this.level = level;
-        }
-
-        Logger.prototype.skipped = function skipped(level) {
-            return level < this.level;
-        };
-
-        Logger.prototype.trace = function trace(message) {
-            var _ref2 = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-            var _ref2$stackTrace = _ref2.stackTrace;
-            var stackTrace = _ref2$stackTrace === undefined ? false : _ref2$stackTrace;
-
-            if (this.skipped(LogLevel.Trace)) return;
-            this.console.log(message);
-            if (stackTrace) this.console.trace();
-        };
-
-        Logger.prototype.debug = function debug(message) {
-            var _ref3 = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-            var _ref3$stackTrace = _ref3.stackTrace;
-            var stackTrace = _ref3$stackTrace === undefined ? false : _ref3$stackTrace;
-
-            if (this.skipped(LogLevel.Debug)) return;
-            this.console.log(message);
-            if (stackTrace) this.console.trace();
-        };
-
-        Logger.prototype.warn = function warn(message) {
-            var _ref4 = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-            var _ref4$stackTrace = _ref4.stackTrace;
-            var stackTrace = _ref4$stackTrace === undefined ? false : _ref4$stackTrace;
-
-            if (this.skipped(LogLevel.Warn)) return;
-            this.console.warn(message);
-            if (stackTrace) this.console.trace();
-        };
-
-        Logger.prototype.error = function error(message) {
-            if (this.skipped(LogLevel.Error)) return;
-            this.console.error(message);
-        };
-
-        return Logger;
-    })();
-
-    exports.Logger = Logger;
-
-    var _console = typeof console === 'undefined' ? new NullConsole() : console;
-    var ALWAYS = new Logger({ console: _console, level: LogLevel.Trace });
-    var LOG_LEVEL = LogLevel.Warn;
-    exports.default = new Logger({ console: _console, level: LOG_LEVEL });
-});
-
-enifed('glimmer-util/lib/namespaces', ['exports'], function (exports) {
-    // There is a small whitelist of namespaced attributes specially
-    // enumerated in
-    // https://www.w3.org/TR/html/syntax.html#attributes-0
-    //
-    // > When a foreign element has one of the namespaced attributes given by
-    // > the local name and namespace of the first and second cells of a row
-    // > from the following table, it must be written using the name given by
-    // > the third cell from the same row.
-    //
-    // In all other cases, colons are interpreted as a regular character
-    // with no special meaning:
-    //
-    // > No other namespaced attribute can be expressed in the HTML syntax.
-    'use strict';
-
-    exports.getAttrNamespace = getAttrNamespace;
-    var XLINK = 'http://www.w3.org/1999/xlink';
-    var XML = 'http://www.w3.org/XML/1998/namespace';
-    var XMLNS = 'http://www.w3.org/2000/xmlns/';
-    var WHITELIST = {
-        'xlink:actuate': XLINK,
-        'xlink:arcrole': XLINK,
-        'xlink:href': XLINK,
-        'xlink:role': XLINK,
-        'xlink:show': XLINK,
-        'xlink:title': XLINK,
-        'xlink:type': XLINK,
-        'xml:base': XML,
-        'xml:lang': XML,
-        'xml:space': XML,
-        'xmlns': XMLNS,
-        'xmlns:xlink': XMLNS
-    };
-
-    function getAttrNamespace(attrName) {
-        return WHITELIST[attrName] || null;
-    }
-});
-
-enifed("glimmer-util/lib/object-utils", ["exports"], function (exports) {
-    /*globals console*/
-    "use strict";
-
-    exports.merge = merge;
-    exports.assign = assign;
-    exports.shallowCopy = shallowCopy;
-    exports.keySet = keySet;
-    exports.keyLength = keyLength;
-
-    function merge(options, defaults) {
-        for (var prop in defaults) {
-            if (options.hasOwnProperty(prop)) {
-                continue;
-            }
-            options[prop] = defaults[prop];
-        }
-        return options;
-    }
-
-    function assign(obj) {
-        for (var _len = arguments.length, assignments = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-            assignments[_key - 1] = arguments[_key];
-        }
-
-        return assignments.reduce(function (obj, extensions) {
-            Object.keys(extensions).forEach(function (key) {
-                return obj[key] = extensions[key];
-            });
-            return obj;
-        }, obj);
-    }
-
-    function shallowCopy(obj) {
-        return merge({}, obj);
-    }
-
-    function keySet(obj) {
-        var set = {};
-        for (var prop in obj) {
-            if (obj.hasOwnProperty(prop)) {
-                set[prop] = true;
-            }
-        }
-        return set;
-    }
-
-    function keyLength(obj) {
-        var count = 0;
-        for (var prop in obj) {
-            if (obj.hasOwnProperty(prop)) {
-                count++;
-            }
-        }
-        return count;
-    }
-});
-
-enifed('glimmer-util/lib/platform-utils', ['exports'], function (exports) {
-    'use strict';
-
-    exports.intern = intern;
-    exports.opaque = opaque;
-    exports.numberKey = numberKey;
-    exports.LITERAL = LITERAL;
-    exports.symbol = symbol;
-
-    function intern(str) {
-        return str;
-        // let obj = {};
-        // obj[str] = 1;
-        // for (let key in obj) return <InternedString>key;
-    }
-
-    function opaque(value) {
-        return value;
-    }
-
-    function numberKey(num) {
-        return String(num);
-    }
-
-    function LITERAL(str) {
-        return str;
-    }
-
-    var BASE_KEY = intern('__glimmer{+ new Date()}');
-
-    function symbol(debugName) {
-        var number = +new Date();
-        return intern(debugName + ' [id=' + BASE_KEY + Math.floor(Math.random() * number) + ']');
-    }
-});
-
-enifed("glimmer-util/lib/quoting", ["exports"], function (exports) {
-    "use strict";
-
-    exports.hash = hash;
-    exports.repeat = repeat;
-    function escapeString(str) {
-        str = str.replace(/\\/g, "\\\\");
-        str = str.replace(/"/g, '\\"');
-        str = str.replace(/\n/g, "\\n");
-        return str;
-    }
-    exports.escapeString = escapeString;
-
-    function string(str) {
-        return '"' + escapeString(str) + '"';
-    }
-    exports.string = string;
-
-    function array(a) {
-        return "[" + a + "]";
-    }
-    exports.array = array;
-
-    function hash(pairs) {
-        return "{" + pairs.join(", ") + "}";
-    }
-
-    function repeat(chars, times) {
-        var str = "";
-        while (times--) {
-            str += chars;
-        }
-        return str;
-    }
-});
-
-enifed("glimmer-util/lib/void-tag-names", ["exports", "glimmer-util/lib/array-utils"], function (exports, _glimmerUtilLibArrayUtils) {
+enifed("htmlbars-compiler/fragment-opcode-compiler", ["exports", "htmlbars-compiler/template-visitor", "htmlbars-compiler/utils", "htmlbars-util", "htmlbars-util/array-utils"], function (exports, _htmlbarsCompilerTemplateVisitor, _htmlbarsCompilerUtils, _htmlbarsUtil, _htmlbarsUtilArrayUtils) {
   "use strict";
 
-  // The HTML elements in this list are speced by
-  // http://www.w3.org/TR/html-markup/syntax.html#syntax-elements,
-  // and will be forced to close regardless of if they have a
-  // self-closing /> at the end.
-  var voidTagNames = "area base br col command embed hr img input keygen link meta param source track wbr";
-  var voidMap = {};
-  _glimmerUtilLibArrayUtils.forEach(voidTagNames.split(" "), function (tagName) {
-    return voidMap[tagName] = true;
-  });
-  exports.default = voidMap;
-});
+  function FragmentOpcodeCompiler() {
+    this.opcodes = [];
+  }
 
-enifed('glimmer-wire-format/index', ['exports'], function (exports) {
-    'use strict';
+  exports.default = FragmentOpcodeCompiler;
 
-    function is(variant) {
-        return function (value) {
-            return value[0] === variant;
-        };
+  FragmentOpcodeCompiler.prototype.compile = function (ast) {
+    var templateVisitor = new _htmlbarsCompilerTemplateVisitor.default();
+    templateVisitor.visit(ast);
+
+    _htmlbarsCompilerUtils.processOpcodes(this, templateVisitor.actions);
+
+    return this.opcodes;
+  };
+
+  FragmentOpcodeCompiler.prototype.opcode = function (type, params) {
+    this.opcodes.push([type, params]);
+  };
+
+  FragmentOpcodeCompiler.prototype.text = function (text) {
+    this.opcode('createText', [text.chars]);
+    this.opcode('appendChild');
+  };
+
+  FragmentOpcodeCompiler.prototype.comment = function (comment) {
+    this.opcode('createComment', [comment.value]);
+    this.opcode('appendChild');
+  };
+
+  FragmentOpcodeCompiler.prototype.openElement = function (element) {
+    this.opcode('createElement', [element.tag]);
+    _htmlbarsUtilArrayUtils.forEach(element.attributes, this.attribute, this);
+  };
+
+  FragmentOpcodeCompiler.prototype.closeElement = function () {
+    this.opcode('appendChild');
+  };
+
+  FragmentOpcodeCompiler.prototype.startProgram = function () {
+    this.opcodes.length = 0;
+    this.opcode('createFragment');
+  };
+
+  FragmentOpcodeCompiler.prototype.endProgram = function () {
+    this.opcode('returnNode');
+  };
+
+  FragmentOpcodeCompiler.prototype.mustache = function () {
+    this.pushMorphPlaceholderNode();
+  };
+
+  FragmentOpcodeCompiler.prototype.component = function () {
+    this.pushMorphPlaceholderNode();
+  };
+
+  FragmentOpcodeCompiler.prototype.block = function () {
+    this.pushMorphPlaceholderNode();
+  };
+
+  FragmentOpcodeCompiler.prototype.pushMorphPlaceholderNode = function () {
+    this.opcode('createComment', [""]);
+    this.opcode('appendChild');
+  };
+
+  FragmentOpcodeCompiler.prototype.attribute = function (attr) {
+    if (attr.value.type === 'TextNode') {
+      var namespace = _htmlbarsUtil.getAttrNamespace(attr.name);
+      this.opcode('setAttribute', [attr.name, attr.value.chars, namespace]);
     }
-    var Expressions;
-    exports.Expressions = Expressions;
-    (function (Expressions) {
-        Expressions.isUnknown = is('unknown');
-        Expressions.isArg = is('arg');
-        Expressions.isGet = is('get');
-        Expressions.isSelfGet = is('self-get');
-        Expressions.isConcat = is('concat');
-        Expressions.isHelper = is('helper');
-        Expressions.isHasBlock = is('hasBlock');
-        Expressions.isHasBlockParams = is('hasBlockParams');
-        function isValue(value) {
-            return value !== null && typeof value !== 'object';
-        }
-        Expressions.isValue = isValue;
-    })(Expressions || (exports.Expressions = Expressions = {}));
-    var Statements;
-    exports.Statements = Statements;
-    (function (Statements) {
-        Statements.isText = is('text');
-        Statements.isAppend = is('append');
-        Statements.isComment = is('comment');
-        Statements.isModifier = is('modifier');
-        Statements.isBlock = is('block');
-        Statements.isOpenElement = is('openElement');
-        Statements.isCloseElement = is('closeElement');
-        Statements.isStaticAttr = is('staticAttr');
-        Statements.isDynamicAttr = is('dynamicAttr');
-        Statements.isYield = is('yield');
-        Statements.isDynamicArg = is('dynamicArg');
-        Statements.isStaticArg = is('staticArg');
-        Statements.isTrustingAttr = is('trustingAttr');
-    })(Statements || (exports.Statements = Statements = {}));
-});
+  };
 
-enifed('handlebars/compiler/ast', ['exports'], function (exports) {
+  FragmentOpcodeCompiler.prototype.setNamespace = function (namespace) {
+    this.opcode('setNamespace', [namespace]);
+  };
+});
+enifed("htmlbars-compiler/hydration-javascript-compiler", ["exports", "htmlbars-compiler/utils", "htmlbars-util/quoting", "htmlbars-util/template-utils"], function (exports, _htmlbarsCompilerUtils, _htmlbarsUtilQuoting, _htmlbarsUtilTemplateUtils) {
+  "use strict";
+
+  function HydrationJavaScriptCompiler() {
+    this.stack = [];
+    this.source = [];
+    this.mustaches = [];
+    this.parents = [['fragment']];
+    this.parentCount = 0;
+    this.morphs = [];
+    this.fragmentProcessing = [];
+    this.hooks = undefined;
+  }
+
+  exports.default = HydrationJavaScriptCompiler;
+
+  var prototype = HydrationJavaScriptCompiler.prototype;
+
+  prototype.compile = function (opcodes, options) {
+    this.stack.length = 0;
+    this.mustaches.length = 0;
+    this.source.length = 0;
+    this.parents.length = 1;
+    this.parents[0] = ['fragment'];
+    this.morphs.length = 0;
+    this.fragmentProcessing.length = 0;
+    this.parentCount = 0;
+    this.indent = options && options.indent || "";
+    this.hooks = {};
+    this.hasOpenBoundary = false;
+    this.hasCloseBoundary = false;
+    this.statements = [];
+    this.expressionStack = [];
+    this.locals = [];
+    this.hasOpenBoundary = false;
+    this.hasCloseBoundary = false;
+
+    _htmlbarsCompilerUtils.processOpcodes(this, opcodes);
+
+    if (this.hasOpenBoundary) {
+      this.source.unshift(this.indent + "  dom.insertBoundary(fragment, 0);\n");
+    }
+
+    if (this.hasCloseBoundary) {
+      this.source.unshift(this.indent + "  dom.insertBoundary(fragment, null);\n");
+    }
+
+    var i, l;
+
+    var indent = this.indent;
+
+    var morphs;
+
+    var result = {
+      createMorphsProgram: '',
+      hydrateMorphsProgram: '',
+      fragmentProcessingProgram: '',
+      statements: this.statements,
+      locals: this.locals,
+      hasMorphs: false
+    };
+
+    result.hydrateMorphsProgram = this.source.join('');
+
+    if (this.morphs.length) {
+      result.hasMorphs = true;
+      morphs = indent + '  var morphs = new Array(' + this.morphs.length + ');\n';
+
+      for (i = 0, l = this.morphs.length; i < l; ++i) {
+        var morph = this.morphs[i];
+        morphs += indent + '  morphs[' + i + '] = ' + morph + ';\n';
+      }
+    }
+
+    if (this.fragmentProcessing.length) {
+      var processing = "";
+      for (i = 0, l = this.fragmentProcessing.length; i < l; ++i) {
+        processing += this.indent + '  ' + this.fragmentProcessing[i] + '\n';
+      }
+      result.fragmentProcessingProgram = processing;
+    }
+
+    var createMorphsProgram;
+    if (result.hasMorphs) {
+      createMorphsProgram = 'function buildRenderNodes(dom, fragment, contextualElement) {\n' + result.fragmentProcessingProgram + morphs;
+
+      if (this.hasOpenBoundary) {
+        createMorphsProgram += indent + "  dom.insertBoundary(fragment, 0);\n";
+      }
+
+      if (this.hasCloseBoundary) {
+        createMorphsProgram += indent + "  dom.insertBoundary(fragment, null);\n";
+      }
+
+      createMorphsProgram += indent + '  return morphs;\n' + indent + '}';
+    } else {
+      createMorphsProgram = 'function buildRenderNodes() { return []; }';
+    }
+
+    result.createMorphsProgram = createMorphsProgram;
+
+    return result;
+  };
+
+  prototype.prepareArray = function (length) {
+    var values = [];
+
+    for (var i = 0; i < length; i++) {
+      values.push(this.expressionStack.pop());
+    }
+
+    this.expressionStack.push(values);
+  };
+
+  prototype.prepareObject = function (size) {
+    var pairs = [];
+
+    for (var i = 0; i < size; i++) {
+      pairs.push(this.expressionStack.pop(), this.expressionStack.pop());
+    }
+
+    this.expressionStack.push(pairs);
+  };
+
+  prototype.openBoundary = function () {
+    this.hasOpenBoundary = true;
+  };
+
+  prototype.closeBoundary = function () {
+    this.hasCloseBoundary = true;
+  };
+
+  prototype.pushLiteral = function (value) {
+    this.expressionStack.push(value);
+  };
+
+  prototype.pushGetHook = function (path, meta) {
+    this.expressionStack.push(_htmlbarsUtilTemplateUtils.buildStatement('get', path, meta));
+  };
+
+  prototype.pushSexprHook = function (meta) {
+    var statement = _htmlbarsUtilTemplateUtils.buildStatement('subexpr', this.expressionStack.pop(), this.expressionStack.pop(), this.expressionStack.pop(), meta);
+
+    this.expressionStack.push(statement);
+  };
+
+  prototype.pushConcatHook = function () {
+    this.expressionStack.push(_htmlbarsUtilTemplateUtils.buildStatement('concat', this.expressionStack.pop()));
+  };
+
+  prototype.printSetHook = function (name) {
+    this.locals.push(name);
+  };
+
+  prototype.printBlockHook = function (templateId, inverseId, meta) {
+    this.pushStatement('block', this.expressionStack.pop(), // path
+    this.expressionStack.pop(), // params
+    this.expressionStack.pop(), // hash
+    templateId, inverseId, meta);
+  };
+
+  prototype.printInlineHook = function (meta) {
+    var path = this.expressionStack.pop();
+    var params = this.expressionStack.pop();
+    var hash = this.expressionStack.pop();
+
+    this.pushStatement('inline', path, params, hash, meta);
+  };
+
+  prototype.printContentHook = function (meta) {
+    this.pushStatement('content', this.expressionStack.pop(), meta);
+  };
+
+  prototype.printComponentHook = function (templateId) {
+    this.pushStatement('component', this.expressionStack.pop(), // path
+    this.expressionStack.pop(), // attrs
+    templateId);
+  };
+
+  prototype.printAttributeHook = function () {
+    this.pushStatement('attribute', this.expressionStack.pop(), // name
+    this.expressionStack.pop() // value;
+    );
+  };
+
+  prototype.printElementHook = function (meta) {
+    this.pushStatement('element', this.expressionStack.pop(), // path
+    this.expressionStack.pop(), // params
+    this.expressionStack.pop(), // hash
+    meta);
+  };
+
+  prototype.createMorph = function (morphNum, parentPath, startIndex, endIndex, escaped) {
+    var isRoot = parentPath.length === 0;
+    var parent = this.getParent();
+
+    var morphMethod = escaped ? 'createMorphAt' : 'createUnsafeMorphAt';
+    var morph = "dom." + morphMethod + "(" + parent + "," + (startIndex === null ? "-1" : startIndex) + "," + (endIndex === null ? "-1" : endIndex) + (isRoot ? ",contextualElement)" : ")");
+
+    this.morphs[morphNum] = morph;
+  };
+
+  prototype.createAttrMorph = function (attrMorphNum, elementNum, name, escaped, namespace) {
+    var morphMethod = escaped ? 'createAttrMorph' : 'createUnsafeAttrMorph';
+    var morph = "dom." + morphMethod + "(element" + elementNum + ", '" + name + (namespace ? "', '" + namespace : '') + "')";
+    this.morphs[attrMorphNum] = morph;
+  };
+
+  prototype.createElementMorph = function (morphNum, elementNum) {
+    var morphMethod = 'createElementMorph';
+    var morph = "dom." + morphMethod + "(element" + elementNum + ")";
+    this.morphs[morphNum] = morph;
+  };
+
+  prototype.repairClonedNode = function (blankChildTextNodes, isElementChecked) {
+    var parent = this.getParent(),
+        processing = 'if (this.cachedFragment) { dom.repairClonedNode(' + parent + ',' + _htmlbarsUtilQuoting.array(blankChildTextNodes) + (isElementChecked ? ',true' : '') + '); }';
+    this.fragmentProcessing.push(processing);
+  };
+
+  prototype.shareElement = function (elementNum) {
+    var elementNodesName = "element" + elementNum;
+    this.fragmentProcessing.push('var ' + elementNodesName + ' = ' + this.getParent() + ';');
+    this.parents[this.parents.length - 1] = [elementNodesName];
+  };
+
+  prototype.consumeParent = function (i) {
+    var newParent = this.lastParent().slice();
+    newParent.push(i);
+
+    this.parents.push(newParent);
+  };
+
+  prototype.popParent = function () {
+    this.parents.pop();
+  };
+
+  prototype.getParent = function () {
+    var last = this.lastParent().slice();
+    var frag = last.shift();
+
+    if (!last.length) {
+      return frag;
+    }
+
+    return 'dom.childAt(' + frag + ', [' + last.join(', ') + '])';
+  };
+
+  prototype.lastParent = function () {
+    return this.parents[this.parents.length - 1];
+  };
+
+  prototype.pushStatement = function () {
+    this.statements.push(_htmlbarsUtilTemplateUtils.buildStatement.apply(undefined, arguments));
+  };
+});
+enifed("htmlbars-compiler/hydration-opcode-compiler", ["exports", "htmlbars-compiler/template-visitor", "htmlbars-compiler/utils", "htmlbars-util", "htmlbars-util/array-utils", "htmlbars-syntax/utils"], function (exports, _htmlbarsCompilerTemplateVisitor, _htmlbarsCompilerUtils, _htmlbarsUtil, _htmlbarsUtilArrayUtils, _htmlbarsSyntaxUtils) {
+  "use strict";
+
+  function detectIsElementChecked(element) {
+    for (var i = 0, len = element.attributes.length; i < len; i++) {
+      if (element.attributes[i].name === 'checked') {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function HydrationOpcodeCompiler() {
+    this.opcodes = [];
+    this.paths = [];
+    this.templateId = 0;
+    this.currentDOMChildIndex = 0;
+    this.morphs = [];
+    this.morphNum = 0;
+    this.element = null;
+    this.elementNum = -1;
+  }
+
+  exports.default = HydrationOpcodeCompiler;
+
+  HydrationOpcodeCompiler.prototype.compile = function (ast) {
+    var templateVisitor = new _htmlbarsCompilerTemplateVisitor.default();
+    templateVisitor.visit(ast);
+
+    _htmlbarsCompilerUtils.processOpcodes(this, templateVisitor.actions);
+
+    return this.opcodes;
+  };
+
+  HydrationOpcodeCompiler.prototype.accept = function (node) {
+    this[node.type](node);
+  };
+
+  HydrationOpcodeCompiler.prototype.opcode = function (type) {
+    var params = [].slice.call(arguments, 1);
+    this.opcodes.push([type, params]);
+  };
+
+  HydrationOpcodeCompiler.prototype.startProgram = function (program, c, blankChildTextNodes) {
+    this.opcodes.length = 0;
+    this.paths.length = 0;
+    this.morphs.length = 0;
+    this.templateId = 0;
+    this.currentDOMChildIndex = -1;
+    this.morphNum = 0;
+
+    var blockParams = program.blockParams || [];
+
+    for (var i = 0; i < blockParams.length; i++) {
+      this.opcode('printSetHook', blockParams[i], i);
+    }
+
+    if (blankChildTextNodes.length > 0) {
+      this.opcode('repairClonedNode', blankChildTextNodes);
+    }
+  };
+
+  HydrationOpcodeCompiler.prototype.insertBoundary = function (first) {
+    this.opcode(first ? 'openBoundary' : 'closeBoundary');
+  };
+
+  HydrationOpcodeCompiler.prototype.endProgram = function () {
+    distributeMorphs(this.morphs, this.opcodes);
+  };
+
+  HydrationOpcodeCompiler.prototype.text = function () {
+    ++this.currentDOMChildIndex;
+  };
+
+  HydrationOpcodeCompiler.prototype.comment = function () {
+    ++this.currentDOMChildIndex;
+  };
+
+  HydrationOpcodeCompiler.prototype.openElement = function (element, pos, len, mustacheCount, blankChildTextNodes) {
+    distributeMorphs(this.morphs, this.opcodes);
+    ++this.currentDOMChildIndex;
+
+    this.element = this.currentDOMChildIndex;
+
+    this.opcode('consumeParent', this.currentDOMChildIndex);
+
+    // If our parent reference will be used more than once, cache its reference.
+    if (mustacheCount > 1) {
+      shareElement(this);
+    }
+
+    var isElementChecked = detectIsElementChecked(element);
+    if (blankChildTextNodes.length > 0 || isElementChecked) {
+      this.opcode('repairClonedNode', blankChildTextNodes, isElementChecked);
+    }
+
+    this.paths.push(this.currentDOMChildIndex);
+    this.currentDOMChildIndex = -1;
+
+    _htmlbarsUtilArrayUtils.forEach(element.attributes, this.attribute, this);
+    _htmlbarsUtilArrayUtils.forEach(element.modifiers, this.elementModifier, this);
+  };
+
+  HydrationOpcodeCompiler.prototype.closeElement = function () {
+    distributeMorphs(this.morphs, this.opcodes);
+    this.opcode('popParent');
+    this.currentDOMChildIndex = this.paths.pop();
+  };
+
+  HydrationOpcodeCompiler.prototype.mustache = function (mustache, childIndex, childCount) {
+    this.pushMorphPlaceholderNode(childIndex, childCount);
+
+    var opcode;
+
+    if (_htmlbarsSyntaxUtils.isHelper(mustache)) {
+      prepareHash(this, mustache.hash);
+      prepareParams(this, mustache.params);
+      preparePath(this, mustache.path);
+      opcode = 'printInlineHook';
+    } else {
+      preparePath(this, mustache.path);
+      opcode = 'printContentHook';
+    }
+
+    var morphNum = this.morphNum++;
+    var start = this.currentDOMChildIndex;
+    var end = this.currentDOMChildIndex;
+    this.morphs.push([morphNum, this.paths.slice(), start, end, mustache.escaped]);
+
+    this.opcode(opcode, meta(mustache));
+  };
+
+  function meta(node) {
+    var loc = node.loc;
+    if (!loc) {
+      return [];
+    }
+
+    var source = loc.source;
+    var start = loc.start;
+    var end = loc.end;
+
+    return ['loc', [source || null, [start.line, start.column], [end.line, end.column]]];
+  }
+
+  HydrationOpcodeCompiler.prototype.block = function (block, childIndex, childCount) {
+    this.pushMorphPlaceholderNode(childIndex, childCount);
+
+    prepareHash(this, block.hash);
+    prepareParams(this, block.params);
+    preparePath(this, block.path);
+
+    var morphNum = this.morphNum++;
+    var start = this.currentDOMChildIndex;
+    var end = this.currentDOMChildIndex;
+    this.morphs.push([morphNum, this.paths.slice(), start, end, true]);
+
+    var templateId = this.templateId++;
+    var inverseId = block.inverse === null ? null : this.templateId++;
+
+    this.opcode('printBlockHook', templateId, inverseId, meta(block));
+  };
+
+  HydrationOpcodeCompiler.prototype.component = function (component, childIndex, childCount) {
+    this.pushMorphPlaceholderNode(childIndex, childCount, component.isStatic);
+
+    var program = component.program || {};
+    var blockParams = program.blockParams || [];
+
+    var attrs = component.attributes;
+    for (var i = attrs.length - 1; i >= 0; i--) {
+      var name = attrs[i].name;
+      var value = attrs[i].value;
+
+      // TODO: Introduce context specific AST nodes to avoid switching here.
+      if (value.type === 'TextNode') {
+        this.opcode('pushLiteral', value.chars);
+      } else if (value.type === 'MustacheStatement') {
+        this.accept(_htmlbarsSyntaxUtils.unwrapMustache(value));
+      } else if (value.type === 'ConcatStatement') {
+        prepareParams(this, value.parts);
+        this.opcode('pushConcatHook', this.morphNum);
+      }
+
+      this.opcode('pushLiteral', name);
+    }
+
+    var morphNum = this.morphNum++;
+    var start = this.currentDOMChildIndex;
+    var end = this.currentDOMChildIndex;
+    this.morphs.push([morphNum, this.paths.slice(), start, end, true]);
+
+    this.opcode('prepareObject', attrs.length);
+    this.opcode('pushLiteral', component.tag);
+    this.opcode('printComponentHook', this.templateId++, blockParams.length, meta(component));
+  };
+
+  HydrationOpcodeCompiler.prototype.attribute = function (attr) {
+    var value = attr.value;
+    var escaped = true;
+    var namespace = _htmlbarsUtil.getAttrNamespace(attr.name);
+
+    // TODO: Introduce context specific AST nodes to avoid switching here.
+    if (value.type === 'TextNode') {
+      return;
+    } else if (value.type === 'MustacheStatement') {
+      escaped = value.escaped;
+      this.accept(_htmlbarsSyntaxUtils.unwrapMustache(value));
+    } else if (value.type === 'ConcatStatement') {
+      prepareParams(this, value.parts);
+      this.opcode('pushConcatHook', this.morphNum);
+    }
+
+    this.opcode('pushLiteral', attr.name);
+
+    var attrMorphNum = this.morphNum++;
+
+    if (this.element !== null) {
+      shareElement(this);
+    }
+
+    this.opcode('createAttrMorph', attrMorphNum, this.elementNum, attr.name, escaped, namespace);
+    this.opcode('printAttributeHook');
+  };
+
+  HydrationOpcodeCompiler.prototype.elementModifier = function (modifier) {
+    prepareHash(this, modifier.hash);
+    prepareParams(this, modifier.params);
+    preparePath(this, modifier.path);
+
+    // If we have a helper in a node, and this element has not been cached, cache it
+    if (this.element !== null) {
+      shareElement(this);
+    }
+
+    publishElementMorph(this);
+    this.opcode('printElementHook', meta(modifier));
+  };
+
+  HydrationOpcodeCompiler.prototype.pushMorphPlaceholderNode = function (childIndex, childCount, skipBoundaryNodes) {
+    if (!skipBoundaryNodes) {
+      if (this.paths.length === 0) {
+        if (childIndex === 0) {
+          this.opcode('openBoundary');
+        }
+        if (childIndex === childCount - 1) {
+          this.opcode('closeBoundary');
+        }
+      }
+    }
+
+    this.comment();
+  };
+
+  HydrationOpcodeCompiler.prototype.MustacheStatement = function (mustache) {
+    prepareHash(this, mustache.hash);
+    prepareParams(this, mustache.params);
+    preparePath(this, mustache.path);
+    this.opcode('pushSexprHook', meta(mustache));
+  };
+
+  HydrationOpcodeCompiler.prototype.SubExpression = function (sexpr) {
+    prepareHash(this, sexpr.hash);
+    prepareParams(this, sexpr.params);
+    preparePath(this, sexpr.path);
+    this.opcode('pushSexprHook', meta(sexpr));
+  };
+
+  HydrationOpcodeCompiler.prototype.PathExpression = function (path) {
+    this.opcode('pushGetHook', path.original, meta(path));
+  };
+
+  HydrationOpcodeCompiler.prototype.StringLiteral = function (node) {
+    this.opcode('pushLiteral', node.value);
+  };
+
+  HydrationOpcodeCompiler.prototype.BooleanLiteral = function (node) {
+    this.opcode('pushLiteral', node.value);
+  };
+
+  HydrationOpcodeCompiler.prototype.NumberLiteral = function (node) {
+    this.opcode('pushLiteral', node.value);
+  };
+
+  HydrationOpcodeCompiler.prototype.UndefinedLiteral = function (node) {
+    this.opcode('pushLiteral', node.value);
+  };
+
+  HydrationOpcodeCompiler.prototype.NullLiteral = function (node) {
+    this.opcode('pushLiteral', node.value);
+  };
+
+  function preparePath(compiler, path) {
+    compiler.opcode('pushLiteral', path.original);
+  }
+
+  function prepareParams(compiler, params) {
+    for (var i = params.length - 1; i >= 0; i--) {
+      var param = params[i];
+      compiler[param.type](param);
+    }
+
+    compiler.opcode('prepareArray', params.length);
+  }
+
+  function prepareHash(compiler, hash) {
+    var pairs = hash.pairs;
+
+    for (var i = pairs.length - 1; i >= 0; i--) {
+      var key = pairs[i].key;
+      var value = pairs[i].value;
+
+      compiler[value.type](value);
+      compiler.opcode('pushLiteral', key);
+    }
+
+    compiler.opcode('prepareObject', pairs.length);
+  }
+
+  function shareElement(compiler) {
+    compiler.opcode('shareElement', ++compiler.elementNum);
+    compiler.element = null; // Set element to null so we don't cache it twice
+  }
+
+  function publishElementMorph(compiler) {
+    var morphNum = compiler.morphNum++;
+    compiler.opcode('createElementMorph', morphNum, compiler.elementNum);
+  }
+
+  function distributeMorphs(morphs, opcodes) {
+    if (morphs.length === 0) {
+      return;
+    }
+
+    // Splice morphs after the most recent shareParent/consumeParent.
+    var o;
+    for (o = opcodes.length - 1; o >= 0; --o) {
+      var opcode = opcodes[o][0];
+      if (opcode === 'shareElement' || opcode === 'consumeParent' || opcode === 'popParent') {
+        break;
+      }
+    }
+
+    var spliceArgs = [o + 1, 0];
+    for (var i = 0; i < morphs.length; ++i) {
+      spliceArgs.push(['createMorph', morphs[i].slice()]);
+    }
+    opcodes.splice.apply(opcodes, spliceArgs);
+    morphs.length = 0;
+  }
+});
+enifed('htmlbars-compiler/template-compiler', ['exports', 'htmlbars-compiler/fragment-opcode-compiler', 'htmlbars-compiler/fragment-javascript-compiler', 'htmlbars-compiler/hydration-opcode-compiler', 'htmlbars-compiler/hydration-javascript-compiler', 'htmlbars-compiler/template-visitor', 'htmlbars-compiler/utils', 'htmlbars-util/quoting', 'htmlbars-util/array-utils'], function (exports, _htmlbarsCompilerFragmentOpcodeCompiler, _htmlbarsCompilerFragmentJavascriptCompiler, _htmlbarsCompilerHydrationOpcodeCompiler, _htmlbarsCompilerHydrationJavascriptCompiler, _htmlbarsCompilerTemplateVisitor, _htmlbarsCompilerUtils, _htmlbarsUtilQuoting, _htmlbarsUtilArrayUtils) {
+  'use strict';
+
+  function TemplateCompiler(options) {
+    this.options = options || {};
+    this.consumerBuildMeta = this.options.buildMeta || function () {};
+    this.fragmentOpcodeCompiler = new _htmlbarsCompilerFragmentOpcodeCompiler.default();
+    this.fragmentCompiler = new _htmlbarsCompilerFragmentJavascriptCompiler.default();
+    this.hydrationOpcodeCompiler = new _htmlbarsCompilerHydrationOpcodeCompiler.default();
+    this.hydrationCompiler = new _htmlbarsCompilerHydrationJavascriptCompiler.default();
+    this.templates = [];
+    this.childTemplates = [];
+  }
+
+  exports.default = TemplateCompiler;
+
+  TemplateCompiler.prototype.compile = function (ast) {
+    var templateVisitor = new _htmlbarsCompilerTemplateVisitor.default();
+    templateVisitor.visit(ast);
+
+    _htmlbarsCompilerUtils.processOpcodes(this, templateVisitor.actions);
+
+    return this.templates.pop();
+  };
+
+  TemplateCompiler.prototype.startProgram = function (program, childTemplateCount, blankChildTextNodes) {
+    this.fragmentOpcodeCompiler.startProgram(program, childTemplateCount, blankChildTextNodes);
+    this.hydrationOpcodeCompiler.startProgram(program, childTemplateCount, blankChildTextNodes);
+
+    this.childTemplates.length = 0;
+    while (childTemplateCount--) {
+      this.childTemplates.push(this.templates.pop());
+    }
+  };
+
+  TemplateCompiler.prototype.insertBoundary = function (first) {
+    this.hydrationOpcodeCompiler.insertBoundary(first);
+  };
+
+  TemplateCompiler.prototype.getChildTemplateVars = function (indent) {
+    var vars = '';
+    if (this.childTemplates) {
+      for (var i = 0; i < this.childTemplates.length; i++) {
+        vars += indent + 'var child' + i + ' = ' + this.childTemplates[i] + ';\n';
+      }
+    }
+    return vars;
+  };
+
+  TemplateCompiler.prototype.getHydrationHooks = function (indent, hooks) {
+    var hookVars = [];
+    for (var hook in hooks) {
+      hookVars.push(hook + ' = hooks.' + hook);
+    }
+
+    if (hookVars.length > 0) {
+      return indent + 'var hooks = env.hooks, ' + hookVars.join(', ') + ';\n';
+    } else {
+      return '';
+    }
+  };
+
+  TemplateCompiler.prototype.endProgram = function (program, programDepth) {
+    this.fragmentOpcodeCompiler.endProgram(program);
+    this.hydrationOpcodeCompiler.endProgram(program);
+
+    var indent = _htmlbarsUtilQuoting.repeat("  ", programDepth);
+    var options = {
+      indent: indent + "    "
+    };
+
+    // function build(dom) { return fragment; }
+    var fragmentProgram = this.fragmentCompiler.compile(this.fragmentOpcodeCompiler.opcodes, options);
+
+    // function hydrate(fragment) { return mustaches; }
+    var hydrationPrograms = this.hydrationCompiler.compile(this.hydrationOpcodeCompiler.opcodes, options);
+
+    var blockParams = program.blockParams || [];
+
+    var templateSignature = 'context, rootNode, env, options';
+    if (blockParams.length > 0) {
+      templateSignature += ', blockArguments';
+    }
+
+    var statements = _htmlbarsUtilArrayUtils.map(hydrationPrograms.statements, function (s) {
+      return indent + '      ' + JSON.stringify(s);
+    }).join(",\n");
+
+    var locals = JSON.stringify(hydrationPrograms.locals);
+
+    var templates = _htmlbarsUtilArrayUtils.map(this.childTemplates, function (_, index) {
+      return 'child' + index;
+    }).join(', ');
+
+    var template = '(function() {\n' + this.getChildTemplateVars(indent + '  ') + indent + '  return {\n' + this.buildMeta(indent + '    ', program) + indent + '    isEmpty: ' + (program.body.length ? 'false' : 'true') + ',\n' + indent + '    arity: ' + blockParams.length + ',\n' + indent + '    cachedFragment: null,\n' + indent + '    hasRendered: false,\n' + indent + '    buildFragment: ' + fragmentProgram + ',\n' + indent + '    buildRenderNodes: ' + hydrationPrograms.createMorphsProgram + ',\n' + indent + '    statements: [\n' + statements + '\n' + indent + '    ],\n' + indent + '    locals: ' + locals + ',\n' + indent + '    templates: [' + templates + ']\n' + indent + '  };\n' + indent + '}())';
+
+    this.templates.push(template);
+  };
+
+  TemplateCompiler.prototype.buildMeta = function (indent, program) {
+    var meta = this.consumerBuildMeta(program) || {};
+
+    var head = indent + 'meta: ';
+    var stringMeta = JSON.stringify(meta, null, 2).replace(/\n/g, '\n' + indent);
+    var tail = ',\n';
+
+    return head + stringMeta + tail;
+  };
+
+  TemplateCompiler.prototype.openElement = function (element, i, l, r, c, b) {
+    this.fragmentOpcodeCompiler.openElement(element, i, l, r, c, b);
+    this.hydrationOpcodeCompiler.openElement(element, i, l, r, c, b);
+  };
+
+  TemplateCompiler.prototype.closeElement = function (element, i, l, r) {
+    this.fragmentOpcodeCompiler.closeElement(element, i, l, r);
+    this.hydrationOpcodeCompiler.closeElement(element, i, l, r);
+  };
+
+  TemplateCompiler.prototype.component = function (component, i, l, s) {
+    this.fragmentOpcodeCompiler.component(component, i, l, s);
+    this.hydrationOpcodeCompiler.component(component, i, l, s);
+  };
+
+  TemplateCompiler.prototype.block = function (block, i, l, s) {
+    this.fragmentOpcodeCompiler.block(block, i, l, s);
+    this.hydrationOpcodeCompiler.block(block, i, l, s);
+  };
+
+  TemplateCompiler.prototype.text = function (string, i, l, r) {
+    this.fragmentOpcodeCompiler.text(string, i, l, r);
+    this.hydrationOpcodeCompiler.text(string, i, l, r);
+  };
+
+  TemplateCompiler.prototype.comment = function (string, i, l, r) {
+    this.fragmentOpcodeCompiler.comment(string, i, l, r);
+    this.hydrationOpcodeCompiler.comment(string, i, l, r);
+  };
+
+  TemplateCompiler.prototype.mustache = function (mustache, i, l, s) {
+    this.fragmentOpcodeCompiler.mustache(mustache, i, l, s);
+    this.hydrationOpcodeCompiler.mustache(mustache, i, l, s);
+  };
+
+  TemplateCompiler.prototype.setNamespace = function (namespace) {
+    this.fragmentOpcodeCompiler.setNamespace(namespace);
+  };
+});
+enifed('htmlbars-compiler/template-visitor', ['exports'], function (exports) {
+  'use strict';
+
+  var push = Array.prototype.push;
+
+  function Frame() {
+    this.parentNode = null;
+    this.children = null;
+    this.childIndex = null;
+    this.childCount = null;
+    this.childTemplateCount = 0;
+    this.mustacheCount = 0;
+    this.actions = [];
+  }
+
+  /**
+   * Takes in an AST and outputs a list of actions to be consumed
+   * by a compiler. For example, the template
+   *
+   *     foo{{bar}}<div>baz</div>
+   *
+   * produces the actions
+   *
+   *     [['startProgram', [programNode, 0]],
+   *      ['text', [textNode, 0, 3]],
+   *      ['mustache', [mustacheNode, 1, 3]],
+   *      ['openElement', [elementNode, 2, 3, 0]],
+   *      ['text', [textNode, 0, 1]],
+   *      ['closeElement', [elementNode, 2, 3],
+   *      ['endProgram', [programNode]]]
+   *
+   * This visitor walks the AST depth first and backwards. As
+   * a result the bottom-most child template will appear at the
+   * top of the actions list whereas the root template will appear
+   * at the bottom of the list. For example,
+   *
+   *     <div>{{#if}}foo{{else}}bar<b></b>{{/if}}</div>
+   *
+   * produces the actions
+   *
+   *     [['startProgram', [programNode, 0]],
+   *      ['text', [textNode, 0, 2, 0]],
+   *      ['openElement', [elementNode, 1, 2, 0]],
+   *      ['closeElement', [elementNode, 1, 2]],
+   *      ['endProgram', [programNode]],
+   *      ['startProgram', [programNode, 0]],
+   *      ['text', [textNode, 0, 1]],
+   *      ['endProgram', [programNode]],
+   *      ['startProgram', [programNode, 2]],
+   *      ['openElement', [elementNode, 0, 1, 1]],
+   *      ['block', [blockNode, 0, 1]],
+   *      ['closeElement', [elementNode, 0, 1]],
+   *      ['endProgram', [programNode]]]
+   *
+   * The state of the traversal is maintained by a stack of frames.
+   * Whenever a node with children is entered (either a ProgramNode
+   * or an ElementNode) a frame is pushed onto the stack. The frame
+   * contains information about the state of the traversal of that
+   * node. For example,
+   *
+   *   - index of the current child node being visited
+   *   - the number of mustaches contained within its child nodes
+   *   - the list of actions generated by its child nodes
+   */
+
+  function TemplateVisitor() {
+    this.frameStack = [];
+    this.actions = [];
+    this.programDepth = -1;
+  }
+
+  // Traversal methods
+
+  TemplateVisitor.prototype.visit = function (node) {
+    this[node.type](node);
+  };
+
+  TemplateVisitor.prototype.Program = function (program) {
+    this.programDepth++;
+
+    var parentFrame = this.getCurrentFrame();
+    var programFrame = this.pushFrame();
+
+    programFrame.parentNode = program;
+    programFrame.children = program.body;
+    programFrame.childCount = program.body.length;
+    programFrame.blankChildTextNodes = [];
+    programFrame.actions.push(['endProgram', [program, this.programDepth]]);
+
+    for (var i = program.body.length - 1; i >= 0; i--) {
+      programFrame.childIndex = i;
+      this.visit(program.body[i]);
+    }
+
+    programFrame.actions.push(['startProgram', [program, programFrame.childTemplateCount, programFrame.blankChildTextNodes.reverse()]]);
+    this.popFrame();
+
+    this.programDepth--;
+
+    // Push the completed template into the global actions list
+    if (parentFrame) {
+      parentFrame.childTemplateCount++;
+    }
+    push.apply(this.actions, programFrame.actions.reverse());
+  };
+
+  TemplateVisitor.prototype.ElementNode = function (element) {
+    var parentFrame = this.getCurrentFrame();
+    var elementFrame = this.pushFrame();
+
+    elementFrame.parentNode = element;
+    elementFrame.children = element.children;
+    elementFrame.childCount = element.children.length;
+    elementFrame.mustacheCount += element.modifiers.length;
+    elementFrame.blankChildTextNodes = [];
+
+    var actionArgs = [element, parentFrame.childIndex, parentFrame.childCount];
+
+    elementFrame.actions.push(['closeElement', actionArgs]);
+
+    for (var i = element.attributes.length - 1; i >= 0; i--) {
+      this.visit(element.attributes[i]);
+    }
+
+    for (i = element.children.length - 1; i >= 0; i--) {
+      elementFrame.childIndex = i;
+      this.visit(element.children[i]);
+    }
+
+    elementFrame.actions.push(['openElement', actionArgs.concat([elementFrame.mustacheCount, elementFrame.blankChildTextNodes.reverse()])]);
+    this.popFrame();
+
+    // Propagate the element's frame state to the parent frame
+    if (elementFrame.mustacheCount > 0) {
+      parentFrame.mustacheCount++;
+    }
+    parentFrame.childTemplateCount += elementFrame.childTemplateCount;
+    push.apply(parentFrame.actions, elementFrame.actions);
+  };
+
+  TemplateVisitor.prototype.AttrNode = function (attr) {
+    if (attr.value.type !== 'TextNode') {
+      this.getCurrentFrame().mustacheCount++;
+    }
+  };
+
+  TemplateVisitor.prototype.TextNode = function (text) {
+    var frame = this.getCurrentFrame();
+    if (text.chars === '') {
+      frame.blankChildTextNodes.push(domIndexOf(frame.children, text));
+    }
+    frame.actions.push(['text', [text, frame.childIndex, frame.childCount]]);
+  };
+
+  TemplateVisitor.prototype.BlockStatement = function (node) {
+    var frame = this.getCurrentFrame();
+
+    frame.mustacheCount++;
+    frame.actions.push(['block', [node, frame.childIndex, frame.childCount]]);
+
+    if (node.inverse) {
+      this.visit(node.inverse);
+    }
+    if (node.program) {
+      this.visit(node.program);
+    }
+  };
+
+  TemplateVisitor.prototype.ComponentNode = function (node) {
+    var frame = this.getCurrentFrame();
+
+    frame.mustacheCount++;
+    frame.actions.push(['component', [node, frame.childIndex, frame.childCount]]);
+
+    if (node.program) {
+      this.visit(node.program);
+    }
+  };
+
+  TemplateVisitor.prototype.PartialStatement = function (node) {
+    var frame = this.getCurrentFrame();
+    frame.mustacheCount++;
+    frame.actions.push(['mustache', [node, frame.childIndex, frame.childCount]]);
+  };
+
+  TemplateVisitor.prototype.CommentStatement = function (text) {
+    var frame = this.getCurrentFrame();
+    frame.actions.push(['comment', [text, frame.childIndex, frame.childCount]]);
+  };
+
+  TemplateVisitor.prototype.MustacheStatement = function (mustache) {
+    var frame = this.getCurrentFrame();
+    frame.mustacheCount++;
+    frame.actions.push(['mustache', [mustache, frame.childIndex, frame.childCount]]);
+  };
+
+  // Frame helpers
+
+  TemplateVisitor.prototype.getCurrentFrame = function () {
+    return this.frameStack[this.frameStack.length - 1];
+  };
+
+  TemplateVisitor.prototype.pushFrame = function () {
+    var frame = new Frame();
+    this.frameStack.push(frame);
+    return frame;
+  };
+
+  TemplateVisitor.prototype.popFrame = function () {
+    return this.frameStack.pop();
+  };
+
+  exports.default = TemplateVisitor;
+
+  // Returns the index of `domNode` in the `nodes` array, skipping
+  // over any nodes which do not represent DOM nodes.
+  function domIndexOf(nodes, domNode) {
+    var index = -1;
+
+    for (var i = 0; i < nodes.length; i++) {
+      var node = nodes[i];
+
+      if (node.type !== 'TextNode' && node.type !== 'ElementNode') {
+        continue;
+      } else {
+        index++;
+      }
+
+      if (node === domNode) {
+        return index;
+      }
+    }
+
+    return -1;
+  }
+});
+enifed("htmlbars-compiler/utils", ["exports"], function (exports) {
+  "use strict";
+
+  exports.processOpcodes = processOpcodes;
+
+  function processOpcodes(compiler, opcodes) {
+    for (var i = 0, l = opcodes.length; i < l; i++) {
+      var method = opcodes[i][0];
+      var params = opcodes[i][1];
+      if (params) {
+        compiler[method].apply(compiler, params);
+      } else {
+        compiler[method].call(compiler);
+      }
+    }
+  }
+});
+enifed('htmlbars-runtime', ['exports', 'htmlbars-runtime/hooks', 'htmlbars-runtime/render', 'htmlbars-util/morph-utils', 'htmlbars-util/template-utils'], function (exports, _htmlbarsRuntimeHooks, _htmlbarsRuntimeRender, _htmlbarsUtilMorphUtils, _htmlbarsUtilTemplateUtils) {
+  'use strict';
+
+  var internal = {
+    blockFor: _htmlbarsUtilTemplateUtils.blockFor,
+    manualElement: _htmlbarsRuntimeRender.manualElement,
+    hostBlock: _htmlbarsRuntimeHooks.hostBlock,
+    continueBlock: _htmlbarsRuntimeHooks.continueBlock,
+    hostYieldWithShadowTemplate: _htmlbarsRuntimeHooks.hostYieldWithShadowTemplate,
+    visitChildren: _htmlbarsUtilMorphUtils.visitChildren,
+    validateChildMorphs: _htmlbarsUtilMorphUtils.validateChildMorphs,
+    clearMorph: _htmlbarsUtilTemplateUtils.clearMorph
+  };
+
+  exports.hooks = _htmlbarsRuntimeHooks.default;
+  exports.render = _htmlbarsRuntimeRender.default;
+  exports.internal = internal;
+});
+enifed('htmlbars-runtime/expression-visitor', ['exports'], function (exports) {
+  /**
+    # Expression Nodes:
+  
+    These nodes are not directly responsible for any part of the DOM, but are
+    eventually passed to a Statement Node.
+  
+    * get
+    * subexpr
+    * concat
+  */
+
+  'use strict';
+
+  exports.acceptParams = acceptParams;
+  exports.acceptHash = acceptHash;
+
+  function acceptParams(nodes, env, scope) {
+    var array = [];
+
+    for (var i = 0, l = nodes.length; i < l; i++) {
+      array.push(acceptExpression(nodes[i], env, scope).value);
+    }
+
+    return array;
+  }
+
+  function acceptHash(pairs, env, scope) {
+    var object = {};
+
+    for (var i = 0, l = pairs.length; i < l; i += 2) {
+      var key = pairs[i];
+      var value = pairs[i + 1];
+      object[key] = acceptExpression(value, env, scope).value;
+    }
+
+    return object;
+  }
+
+  function acceptExpression(node, env, scope) {
+    var ret = { value: null };
+
+    // Primitive literals are unambiguously non-array representations of
+    // themselves.
+    if (Array.isArray(node)) {
+      // if (node.length !== 7) { throw new Error('FIXME: Invalid statement length!'); }
+
+      ret.value = evaluateNode(node, env, scope);
+    } else {
+      ret.value = node;
+    }
+
+    return ret;
+  }
+
+  function evaluateNode(node, env, scope) {
+    switch (node[0]) {
+      // can be used by manualElement
+      case 'value':
+        return node[1];
+      case 'get':
+        return evaluateGet(node, env, scope);
+      case 'subexpr':
+        return evaluateSubexpr(node, env, scope);
+      case 'concat':
+        return evaluateConcat(node, env, scope);
+    }
+  }
+
+  function evaluateGet(node, env, scope) {
+    var path = node[1];
+
+    return env.hooks.get(env, scope, path);
+  }
+
+  function evaluateSubexpr(node, env, scope) {
+    var path = node[1];
+    var rawParams = node[2];
+    var rawHash = node[3];
+
+    var params = acceptParams(rawParams, env, scope);
+    var hash = acceptHash(rawHash, env, scope);
+
+    return env.hooks.subexpr(env, scope, path, params, hash);
+  }
+
+  function evaluateConcat(node, env, scope) {
+    var rawParts = node[1];
+
+    var parts = acceptParams(rawParts, env, scope);
+
+    return env.hooks.concat(env, parts);
+  }
+});
+enifed("htmlbars-runtime/hooks", ["exports", "htmlbars-runtime/render", "morph-range/morph-list", "htmlbars-util/object-utils", "htmlbars-util/morph-utils", "htmlbars-util/template-utils"], function (exports, _htmlbarsRuntimeRender, _morphRangeMorphList, _htmlbarsUtilObjectUtils, _htmlbarsUtilMorphUtils, _htmlbarsUtilTemplateUtils) {
+  "use strict";
+
+  exports.wrap = wrap;
+  exports.wrapForHelper = wrapForHelper;
+  exports.createScope = createScope;
+  exports.createFreshScope = createFreshScope;
+  exports.bindShadowScope = bindShadowScope;
+  exports.createChildScope = createChildScope;
+  exports.bindSelf = bindSelf;
+  exports.updateSelf = updateSelf;
+  exports.bindLocal = bindLocal;
+  exports.updateLocal = updateLocal;
+  exports.bindBlock = bindBlock;
+  exports.block = block;
+  exports.continueBlock = continueBlock;
+  exports.hostBlock = hostBlock;
+  exports.handleRedirect = handleRedirect;
+  exports.handleKeyword = handleKeyword;
+  exports.linkRenderNode = linkRenderNode;
+  exports.inline = inline;
+  exports.keyword = keyword;
+  exports.invokeHelper = invokeHelper;
+  exports.classify = classify;
+  exports.partial = partial;
+  exports.range = range;
+  exports.element = element;
+  exports.attribute = attribute;
+  exports.subexpr = subexpr;
+  exports.get = get;
+  exports.getRoot = getRoot;
+  exports.getBlock = getBlock;
+  exports.getChild = getChild;
+  exports.getValue = getValue;
+  exports.getCellOrValue = getCellOrValue;
+  exports.component = component;
+  exports.concat = concat;
+  exports.hasHelper = hasHelper;
+  exports.lookupHelper = lookupHelper;
+  exports.bindScope = bindScope;
+  exports.updateScope = updateScope;
+
+  /**
+    HTMLBars delegates the runtime behavior of a template to
+    hooks provided by the host environment. These hooks explain
+    the lexical environment of a Handlebars template, the internal
+    representation of references, and the interaction between an
+    HTMLBars template and the DOM it is managing.
+  
+    While HTMLBars host hooks have access to all of this internal
+    machinery, templates and helpers have access to the abstraction
+    provided by the host hooks.
+  
+    ## The Lexical Environment
+  
+    The default lexical environment of an HTMLBars template includes:
+  
+    * Any local variables, provided by *block arguments*
+    * The current value of `self`
+  
+    ## Simple Nesting
+  
+    Let's look at a simple template with a nested block:
+  
+    ```hbs
+    <h1>{{title}}</h1>
+  
+    {{#if author}}
+      <p class="byline">{{author}}</p>
+    {{/if}}
+    ```
+  
+    In this case, the lexical environment at the top-level of the
+    template does not change inside of the `if` block. This is
+    achieved via an implementation of `if` that looks like this:
+  
+    ```js
+    registerHelper('if', function(params) {
+      if (!!params[0]) {
+        return this.yield();
+      }
+    });
+    ```
+  
+    A call to `this.yield` invokes the child template using the
+    current lexical environment.
+  
+    ## Block Arguments
+  
+    It is possible for nested blocks to introduce new local
+    variables:
+  
+    ```hbs
+    {{#count-calls as |i|}}
+    <h1>{{title}}</h1>
+    <p>Called {{i}} times</p>
+    {{/count}}
+    ```
+  
+    In this example, the child block inherits its surrounding
+    lexical environment, but augments it with a single new
+    variable binding.
+  
+    The implementation of `count-calls` supplies the value of
+    `i`, but does not otherwise alter the environment:
+  
+    ```js
+    var count = 0;
+    registerHelper('count-calls', function() {
+      return this.yield([ ++count ]);
+    });
+    ```
+  */
+
+  function wrap(template) {
+    if (template === null) {
+      return null;
+    }
+
+    return {
+      meta: template.meta,
+      arity: template.arity,
+      raw: template,
+      render: function (self, env, options, blockArguments) {
+        var scope = env.hooks.createFreshScope();
+
+        var contextualElement = options && options.contextualElement;
+        var renderOptions = new _htmlbarsRuntimeRender.RenderOptions(null, self, blockArguments, contextualElement);
+
+        return _htmlbarsRuntimeRender.default(template, env, scope, renderOptions);
+      }
+    };
+  }
+
+  function wrapForHelper(template, env, scope, morph, renderState, visitor) {
+    if (!template) {
+      return {};
+    }
+
+    var yieldArgs = yieldTemplate(template, env, scope, morph, renderState, visitor);
+
+    return {
+      meta: template.meta,
+      arity: template.arity,
+      'yield': yieldArgs, // quoted since it's a reserved word, see issue #420
+      yieldItem: yieldItem(template, env, scope, morph, renderState, visitor),
+      raw: template,
+
+      render: function (self, blockArguments) {
+        yieldArgs(blockArguments, self);
+      }
+    };
+  }
+
+  // Called by a user-land helper to render a template.
+  function yieldTemplate(template, env, parentScope, morph, renderState, visitor) {
+    return function (blockArguments, self) {
+      // Render state is used to track the progress of the helper (since it
+      // may call into us multiple times). As the user-land helper calls
+      // into library code, we track what needs to be cleaned up after the
+      // helper has returned.
+      //
+      // Here, we remember that a template has been yielded and so we do not
+      // need to remove the previous template. (If no template is yielded
+      // this render by the helper, we assume nothing should be shown and
+      // remove any previous rendered templates.)
+      renderState.morphToClear = null;
+
+      // In this conditional is true, it means that on the previous rendering pass
+      // the helper yielded multiple items via `yieldItem()`, but this time they
+      // are yielding a single template. In that case, we mark the morph list for
+      // cleanup so it is removed from the DOM.
+      if (morph.morphList) {
+        _htmlbarsUtilTemplateUtils.clearMorphList(morph.morphList, morph, env);
+        renderState.morphListToClear = null;
+      }
+
+      var scope = parentScope;
+
+      if (morph.lastYielded && isStableTemplate(template, morph.lastYielded)) {
+        return morph.lastResult.revalidateWith(env, undefined, self, blockArguments, visitor);
+      }
+
+      // Check to make sure that we actually **need** a new scope, and can't
+      // share the parent scope. Note that we need to move this check into
+      // a host hook, because the host's notion of scope may require a new
+      // scope in more cases than the ones we can determine statically.
+      if (self !== undefined || parentScope === null || template.arity) {
+        scope = env.hooks.createChildScope(parentScope);
+      }
+
+      morph.lastYielded = { self: self, template: template, shadowTemplate: null };
+
+      // Render the template that was selected by the helper
+      var renderOptions = new _htmlbarsRuntimeRender.RenderOptions(morph, self, blockArguments);
+      _htmlbarsRuntimeRender.default(template, env, scope, renderOptions);
+    };
+  }
+
+  function yieldItem(template, env, parentScope, morph, renderState, visitor) {
+    // Initialize state that tracks multiple items being
+    // yielded in.
+    var currentMorph = null;
+
+    // Candidate morphs for deletion.
+    var candidates = {};
+
+    // Reuse existing MorphList if this is not a first-time
+    // render.
+    var morphList = morph.morphList;
+    if (morphList) {
+      currentMorph = morphList.firstChildMorph;
+    }
+
+    // Advances the currentMorph pointer to the morph in the previously-rendered
+    // list that matches the yielded key. While doing so, it marks any morphs
+    // that it advances past as candidates for deletion. Assuming those morphs
+    // are not yielded in later, they will be removed in the prune step during
+    // cleanup.
+    // Note that this helper function assumes that the morph being seeked to is
+    // guaranteed to exist in the previous MorphList; if this is called and the
+    // morph does not exist, it will result in an infinite loop
+    function advanceToKey(key) {
+      var seek = currentMorph;
+
+      while (seek.key !== key) {
+        candidates[seek.key] = seek;
+        seek = seek.nextMorph;
+      }
+
+      currentMorph = seek.nextMorph;
+      return seek;
+    }
+
+    return function (_key, blockArguments, self) {
+      if (typeof _key !== 'string') {
+        throw new Error("You must provide a string key when calling `yieldItem`; you provided " + _key);
+      }
+
+      // At least one item has been yielded, so we do not wholesale
+      // clear the last MorphList but instead apply a prune operation.
+      renderState.morphListToClear = null;
+      morph.lastYielded = null;
+
+      var morphList, morphMap;
+
+      if (!morph.morphList) {
+        morph.morphList = new _morphRangeMorphList.default();
+        morph.morphMap = {};
+        morph.setMorphList(morph.morphList);
+      }
+
+      morphList = morph.morphList;
+      morphMap = morph.morphMap;
+
+      // A map of morphs that have been yielded in on this
+      // rendering pass. Any morphs that do not make it into
+      // this list will be pruned from the MorphList during the cleanup
+      // process.
+      var handledMorphs = renderState.handledMorphs;
+      var key = undefined;
+
+      if (_key in handledMorphs) {
+        // In this branch we are dealing with a duplicate key. The strategy
+        // is to take the original key and append a counter to it that is
+        // incremented every time the key is reused. In order to greatly
+        // reduce the chance of colliding with another valid key we also add
+        // an extra string "--z8mS2hvDW0A--" to the new key.
+        var collisions = renderState.collisions;
+        if (collisions === undefined) {
+          collisions = renderState.collisions = {};
+        }
+        var count = collisions[_key] | 0;
+        collisions[_key] = ++count;
+
+        key = _key + '--z8mS2hvDW0A--' + count;
+      } else {
+        key = _key;
+      }
+
+      if (currentMorph && currentMorph.key === key) {
+        yieldTemplate(template, env, parentScope, currentMorph, renderState, visitor)(blockArguments, self);
+        currentMorph = currentMorph.nextMorph;
+        handledMorphs[key] = currentMorph;
+      } else if (morphMap[key] !== undefined) {
+        var foundMorph = morphMap[key];
+
+        if (key in candidates) {
+          // If we already saw this morph, move it forward to this position
+          morphList.insertBeforeMorph(foundMorph, currentMorph);
+        } else {
+          // Otherwise, move the pointer forward to the existing morph for this key
+          advanceToKey(key);
+        }
+
+        handledMorphs[foundMorph.key] = foundMorph;
+        yieldTemplate(template, env, parentScope, foundMorph, renderState, visitor)(blockArguments, self);
+      } else {
+        var childMorph = _htmlbarsRuntimeRender.createChildMorph(env.dom, morph);
+        childMorph.key = key;
+        morphMap[key] = handledMorphs[key] = childMorph;
+        morphList.insertBeforeMorph(childMorph, currentMorph);
+        yieldTemplate(template, env, parentScope, childMorph, renderState, visitor)(blockArguments, self);
+      }
+
+      renderState.morphListToPrune = morphList;
+      morph.childNodes = null;
+    };
+  }
+
+  function isStableTemplate(template, lastYielded) {
+    return !lastYielded.shadowTemplate && template === lastYielded.template;
+  }
+  function optionsFor(template, inverse, env, scope, morph, visitor) {
+    // If there was a template yielded last time, set morphToClear so it will be cleared
+    // if no template is yielded on this render.
+    var morphToClear = morph.lastResult ? morph : null;
+    var renderState = new _htmlbarsUtilTemplateUtils.RenderState(morphToClear, morph.morphList || null);
+
+    return {
+      templates: {
+        template: wrapForHelper(template, env, scope, morph, renderState, visitor),
+        inverse: wrapForHelper(inverse, env, scope, morph, renderState, visitor)
+      },
+      renderState: renderState
+    };
+  }
+
+  function thisFor(options) {
+    return {
+      arity: options.template.arity,
+      'yield': options.template.yield, // quoted since it's a reserved word, see issue #420
+      yieldItem: options.template.yieldItem,
+      yieldIn: options.template.yieldIn
+    };
+  }
+
+  /**
+    Host Hook: createScope
+  
+    @param {Scope?} parentScope
+    @return Scope
+  
+    Corresponds to entering a new HTMLBars block.
+  
+    This hook is invoked when a block is entered with
+    a new `self` or additional local variables.
+  
+    When invoked for a top-level template, the
+    `parentScope` is `null`, and this hook should return
+    a fresh Scope.
+  
+    When invoked for a child template, the `parentScope`
+    is the scope for the parent environment.
+  
+    Note that the `Scope` is an opaque value that is
+    passed to other host hooks. For example, the `get`
+    hook uses the scope to retrieve a value for a given
+    scope and variable name.
+  */
+
+  function createScope(env, parentScope) {
+    if (parentScope) {
+      return env.hooks.createChildScope(parentScope);
+    } else {
+      return env.hooks.createFreshScope();
+    }
+  }
+
+  function createFreshScope() {
+    // because `in` checks have unpredictable performance, keep a
+    // separate dictionary to track whether a local was bound.
+    // See `bindLocal` for more information.
+    return { self: null, blocks: {}, locals: {}, localPresent: {} };
+  }
+
+  /**
+    Host Hook: bindShadowScope
+  
+    @param {Scope?} parentScope
+    @return Scope
+  
+    Corresponds to rendering a new template into an existing
+    render tree, but with a new top-level lexical scope. This
+    template is called the "shadow root".
+  
+    If a shadow template invokes `{{yield}}`, it will render
+    the block provided to the shadow root in the original
+    lexical scope.
+  
+    ```hbs
+    {{!-- post template --}}
+    <p>{{props.title}}</p>
+    {{yield}}
+  
+    {{!-- blog template --}}
+    {{#post title="Hello world"}}
+      <p>by {{byline}}</p>
+      <article>This is my first post</article>
+    {{/post}}
+  
+    {{#post title="Goodbye world"}}
+      <p>by {{byline}}</p>
+      <article>This is my last post</article>
+    {{/post}}
+    ```
+  
+    ```js
+    helpers.post = function(params, hash, options) {
+      options.template.yieldIn(postTemplate, { props: hash });
+    };
+  
+    blog.render({ byline: "Yehuda Katz" });
+    ```
+  
+    Produces:
+  
+    ```html
+    <p>Hello world</p>
+    <p>by Yehuda Katz</p>
+    <article>This is my first post</article>
+  
+    <p>Goodbye world</p>
+    <p>by Yehuda Katz</p>
+    <article>This is my last post</article>
+    ```
+  
+    In short, `yieldIn` creates a new top-level scope for the
+    provided template and renders it, making the original block
+    available to `{{yield}}` in that template.
+  */
+
+  function bindShadowScope(env /*, parentScope, shadowScope */) {
+    return env.hooks.createFreshScope();
+  }
+
+  function createChildScope(parent) {
+    var scope = Object.create(parent);
+    scope.locals = Object.create(parent.locals);
+    scope.localPresent = Object.create(parent.localPresent);
+    scope.blocks = Object.create(parent.blocks);
+    return scope;
+  }
+
+  /**
+    Host Hook: bindSelf
+  
+    @param {Scope} scope
+    @param {any} self
+  
+    Corresponds to entering a template.
+  
+    This hook is invoked when the `self` value for a scope is ready to be bound.
+  
+    The host must ensure that child scopes reflect the change to the `self` in
+    future calls to the `get` hook.
+  */
+
+  function bindSelf(env, scope, self) {
+    scope.self = self;
+  }
+
+  function updateSelf(env, scope, self) {
+    env.hooks.bindSelf(env, scope, self);
+  }
+
+  /**
+    Host Hook: bindLocal
+  
+    @param {Environment} env
+    @param {Scope} scope
+    @param {String} name
+    @param {any} value
+  
+    Corresponds to entering a template with block arguments.
+  
+    This hook is invoked when a local variable for a scope has been provided.
+  
+    The host must ensure that child scopes reflect the change in future calls
+    to the `get` hook.
+  */
+
+  function bindLocal(env, scope, name, value) {
+    scope.localPresent[name] = true;
+    scope.locals[name] = value;
+  }
+
+  function updateLocal(env, scope, name, value) {
+    env.hooks.bindLocal(env, scope, name, value);
+  }
+
+  /**
+    Host Hook: bindBlock
+  
+    @param {Environment} env
+    @param {Scope} scope
+    @param {Function} block
+  
+    Corresponds to entering a shadow template that was invoked by a block helper with
+    `yieldIn`.
+  
+    This hook is invoked with an opaque block that will be passed along
+    to the shadow template, and inserted into the shadow template when
+    `{{yield}}` is used. Optionally provide a non-default block name
+    that can be targeted by `{{yield to=blockName}}`.
+  */
+
+  function bindBlock(env, scope, block) {
+    var name = arguments.length <= 3 || arguments[3] === undefined ? 'default' : arguments[3];
+
+    scope.blocks[name] = block;
+  }
+
+  /**
+    Host Hook: block
+  
+    @param {RenderNode} renderNode
+    @param {Environment} env
+    @param {Scope} scope
+    @param {String} path
+    @param {Array} params
+    @param {Object} hash
+    @param {Block} block
+    @param {Block} elseBlock
+  
+    Corresponds to:
+  
+    ```hbs
+    {{#helper param1 param2 key1=val1 key2=val2}}
+      {{!-- child template --}}
+    {{/helper}}
+    ```
+  
+    This host hook is a workhorse of the system. It is invoked
+    whenever a block is encountered, and is responsible for
+    resolving the helper to call, and then invoke it.
+  
+    The helper should be invoked with:
+  
+    - `{Array} params`: the parameters passed to the helper
+      in the template.
+    - `{Object} hash`: an object containing the keys and values passed
+      in the hash position in the template.
+  
+    The values in `params` and `hash` will already be resolved
+    through a previous call to the `get` host hook.
+  
+    The helper should be invoked with a `this` value that is
+    an object with one field:
+  
+    `{Function} yield`: when invoked, this function executes the
+    block with the current scope. It takes an optional array of
+    block parameters. If block parameters are supplied, HTMLBars
+    will invoke the `bindLocal` host hook to bind the supplied
+    values to the block arguments provided by the template.
+  
+    In general, the default implementation of `block` should work
+    for most host environments. It delegates to other host hooks
+    where appropriate, and properly invokes the helper with the
+    appropriate arguments.
+  */
+
+  function block(morph, env, scope, path, params, hash, template, inverse, visitor) {
+    if (handleRedirect(morph, env, scope, path, params, hash, template, inverse, visitor)) {
+      return;
+    }
+
+    continueBlock(morph, env, scope, path, params, hash, template, inverse, visitor);
+  }
+
+  function continueBlock(morph, env, scope, path, params, hash, template, inverse, visitor) {
+    hostBlock(morph, env, scope, template, inverse, null, visitor, function (options) {
+      var helper = env.hooks.lookupHelper(env, scope, path);
+      return env.hooks.invokeHelper(morph, env, scope, visitor, params, hash, helper, options.templates, thisFor(options.templates));
+    });
+  }
+
+  function hostBlock(morph, env, scope, template, inverse, shadowOptions, visitor, callback) {
+    var options = optionsFor(template, inverse, env, scope, morph, visitor);
+    _htmlbarsUtilTemplateUtils.renderAndCleanup(morph, env, options, shadowOptions, callback);
+  }
+
+  function handleRedirect(morph, env, scope, path, params, hash, template, inverse, visitor) {
+    if (!path) {
+      return false;
+    }
+
+    var redirect = env.hooks.classify(env, scope, path);
+    if (redirect) {
+      switch (redirect) {
+        case 'component':
+          env.hooks.component(morph, env, scope, path, params, hash, { default: template, inverse: inverse }, visitor);break;
+        case 'inline':
+          env.hooks.inline(morph, env, scope, path, params, hash, visitor);break;
+        case 'block':
+          env.hooks.block(morph, env, scope, path, params, hash, template, inverse, visitor);break;
+        default:
+          throw new Error("Internal HTMLBars redirection to " + redirect + " not supported");
+      }
+      return true;
+    }
+
+    if (handleKeyword(path, morph, env, scope, params, hash, template, inverse, visitor)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function handleKeyword(path, morph, env, scope, params, hash, template, inverse, visitor) {
+    var keyword = env.hooks.keywords[path];
+    if (!keyword) {
+      return false;
+    }
+
+    if (typeof keyword === 'function') {
+      return keyword(morph, env, scope, params, hash, template, inverse, visitor);
+    }
+
+    if (keyword.willRender) {
+      keyword.willRender(morph, env);
+    }
+
+    var lastState, newState;
+    if (keyword.setupState) {
+      lastState = _htmlbarsUtilObjectUtils.shallowCopy(morph.getState());
+      newState = morph.setState(keyword.setupState(lastState, env, scope, params, hash));
+    }
+
+    if (keyword.childEnv) {
+      // Build the child environment...
+      env = keyword.childEnv(morph.getState(), env);
+
+      // ..then save off the child env builder on the render node. If the render
+      // node tree is re-rendered and this node is not dirty, the child env
+      // builder will still be invoked so that child dirty render nodes still get
+      // the correct child env.
+      morph.buildChildEnv = keyword.childEnv;
+    }
+
+    var firstTime = !morph.rendered;
+
+    if (keyword.isEmpty) {
+      var isEmpty = keyword.isEmpty(morph.getState(), env, scope, params, hash);
+
+      if (isEmpty) {
+        if (!firstTime) {
+          _htmlbarsUtilTemplateUtils.clearMorph(morph, env, false);
+        }
+        return true;
+      }
+    }
+
+    if (firstTime) {
+      if (keyword.render) {
+        keyword.render(morph, env, scope, params, hash, template, inverse, visitor);
+      }
+      morph.rendered = true;
+      return true;
+    }
+
+    var isStable;
+    if (keyword.isStable) {
+      isStable = keyword.isStable(lastState, newState);
+    } else {
+      isStable = stableState(lastState, newState);
+    }
+
+    if (isStable) {
+      if (keyword.rerender) {
+        var newEnv = keyword.rerender(morph, env, scope, params, hash, template, inverse, visitor);
+        env = newEnv || env;
+      }
+      _htmlbarsUtilMorphUtils.validateChildMorphs(env, morph, visitor);
+      return true;
+    } else {
+      _htmlbarsUtilTemplateUtils.clearMorph(morph, env, false);
+    }
+
+    // If the node is unstable, re-render from scratch
+    if (keyword.render) {
+      keyword.render(morph, env, scope, params, hash, template, inverse, visitor);
+      morph.rendered = true;
+      return true;
+    }
+  }
+
+  function stableState(oldState, newState) {
+    if (_htmlbarsUtilObjectUtils.keyLength(oldState) !== _htmlbarsUtilObjectUtils.keyLength(newState)) {
+      return false;
+    }
+
+    for (var prop in oldState) {
+      if (oldState[prop] !== newState[prop]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  function linkRenderNode() /* morph, env, scope, params, hash */{
+    return;
+  }
+
+  /**
+    Host Hook: inline
+  
+    @param {RenderNode} renderNode
+    @param {Environment} env
+    @param {Scope} scope
+    @param {String} path
+    @param {Array} params
+    @param {Hash} hash
+  
+    Corresponds to:
+  
+    ```hbs
+    {{helper param1 param2 key1=val1 key2=val2}}
+    ```
+  
+    This host hook is similar to the `block` host hook, but it
+    invokes helpers that do not supply an attached block.
+  
+    Like the `block` hook, the helper should be invoked with:
+  
+    - `{Array} params`: the parameters passed to the helper
+      in the template.
+    - `{Object} hash`: an object containing the keys and values passed
+      in the hash position in the template.
+  
+    The values in `params` and `hash` will already be resolved
+    through a previous call to the `get` host hook.
+  
+    In general, the default implementation of `inline` should work
+    for most host environments. It delegates to other host hooks
+    where appropriate, and properly invokes the helper with the
+    appropriate arguments.
+  
+    The default implementation of `inline` also makes `partial`
+    a keyword. Instead of invoking a helper named `partial`,
+    it invokes the `partial` host hook.
+  */
+
+  function inline(morph, env, scope, path, params, hash, visitor) {
+    if (handleRedirect(morph, env, scope, path, params, hash, null, null, visitor)) {
+      return;
+    }
+
+    var value = undefined,
+        hasValue = undefined;
+    if (morph.linkedResult) {
+      value = env.hooks.getValue(morph.linkedResult);
+      hasValue = true;
+    } else {
+      var options = optionsFor(null, null, env, scope, morph);
+
+      var helper = env.hooks.lookupHelper(env, scope, path);
+      var result = env.hooks.invokeHelper(morph, env, scope, visitor, params, hash, helper, options.templates, thisFor(options.templates));
+
+      if (result && result.link) {
+        morph.linkedResult = result.value;
+        _htmlbarsUtilMorphUtils.linkParams(env, scope, morph, '@content-helper', [morph.linkedResult], null);
+      }
+
+      if (result && 'value' in result) {
+        value = env.hooks.getValue(result.value);
+        hasValue = true;
+      }
+    }
+
+    if (hasValue) {
+      if (morph.lastValue !== value) {
+        morph.setContent(value);
+      }
+      morph.lastValue = value;
+    }
+  }
+
+  function keyword(path, morph, env, scope, params, hash, template, inverse, visitor) {
+    handleKeyword(path, morph, env, scope, params, hash, template, inverse, visitor);
+  }
+
+  function invokeHelper(morph, env, scope, visitor, _params, _hash, helper, templates, context) {
+    var params = normalizeArray(env, _params);
+    var hash = normalizeObject(env, _hash);
+    return { value: helper.call(context, params, hash, templates) };
+  }
+
+  function normalizeArray(env, array) {
+    var out = new Array(array.length);
+
+    for (var i = 0, l = array.length; i < l; i++) {
+      out[i] = env.hooks.getCellOrValue(array[i]);
+    }
+
+    return out;
+  }
+
+  function normalizeObject(env, object) {
+    var out = {};
+
+    for (var prop in object) {
+      out[prop] = env.hooks.getCellOrValue(object[prop]);
+    }
+
+    return out;
+  }
+
+  function classify() /* env, scope, path */{
+    return null;
+  }
+
+  var keywords = {
+    partial: function (morph, env, scope, params) {
+      var value = env.hooks.partial(morph, env, scope, params[0]);
+      morph.setContent(value);
+      return true;
+    },
+
+    // quoted since it's a reserved word, see issue #420
+    'yield': function (morph, env, scope, params, hash, template, inverse, visitor) {
+      // the current scope is provided purely for the creation of shadow
+      // scopes; it should not be provided to user code.
+
+      var to = env.hooks.getValue(hash.to) || 'default';
+      var block = env.hooks.getBlock(scope, to);
+
+      if (block) {
+        block.invoke(env, params, hash.self, morph, scope, visitor);
+      }
+      return true;
+    },
+
+    hasBlock: function (morph, env, scope, params) {
+      var name = env.hooks.getValue(params[0]) || 'default';
+      return !!env.hooks.getBlock(scope, name);
+    },
+
+    hasBlockParams: function (morph, env, scope, params) {
+      var name = env.hooks.getValue(params[0]) || 'default';
+      var block = env.hooks.getBlock(scope, name);
+      return !!(block && block.arity);
+    }
+
+  };
+
+  exports.keywords = keywords;
+  /**
+    Host Hook: partial
+  
+    @param {RenderNode} renderNode
+    @param {Environment} env
+    @param {Scope} scope
+    @param {String} path
+  
+    Corresponds to:
+  
+    ```hbs
+    {{partial "location"}}
+    ```
+  
+    This host hook is invoked by the default implementation of
+    the `inline` hook. This makes `partial` a keyword in an
+    HTMLBars environment using the default `inline` host hook.
+  
+    It is implemented as a host hook so that it can retrieve
+    the named partial out of the `Environment`. Helpers, in
+    contrast, only have access to the values passed in to them,
+    and not to the ambient lexical environment.
+  
+    The host hook should invoke the referenced partial with
+    the ambient `self`.
+  */
+
+  function partial(renderNode, env, scope, path) {
+    var template = env.partials[path];
+    return template.render(scope.self, env, {}).fragment;
+  }
+
+  /**
+    Host hook: range
+  
+    @param {RenderNode} renderNode
+    @param {Environment} env
+    @param {Scope} scope
+    @param {any} value
+  
+    Corresponds to:
+  
+    ```hbs
+    {{content}}
+    {{{unescaped}}}
+    ```
+  
+    This hook is responsible for updating a render node
+    that represents a range of content with a value.
+  */
+
+  function range(morph, env, scope, path, value, visitor) {
+    if (handleRedirect(morph, env, scope, path, [], {}, null, null, visitor)) {
+      return;
+    }
+
+    value = env.hooks.getValue(value);
+
+    if (morph.lastValue !== value) {
+      morph.setContent(value);
+    }
+
+    morph.lastValue = value;
+  }
+
+  /**
+    Host hook: element
+  
+    @param {RenderNode} renderNode
+    @param {Environment} env
+    @param {Scope} scope
+    @param {String} path
+    @param {Array} params
+    @param {Hash} hash
+  
+    Corresponds to:
+  
+    ```hbs
+    <div {{bind-attr foo=bar}}></div>
+    ```
+  
+    This hook is responsible for invoking a helper that
+    modifies an element.
+  
+    Its purpose is largely legacy support for awkward
+    idioms that became common when using the string-based
+    Handlebars engine.
+  
+    Most of the uses of the `element` hook are expected
+    to be superseded by component syntax and the
+    `attribute` hook.
+  */
+
+  function element(morph, env, scope, path, params, hash, visitor) {
+    if (handleRedirect(morph, env, scope, path, params, hash, null, null, visitor)) {
+      return;
+    }
+
+    var helper = env.hooks.lookupHelper(env, scope, path);
+    if (helper) {
+      env.hooks.invokeHelper(null, env, scope, null, params, hash, helper, { element: morph.element });
+    }
+  }
+
+  /**
+    Host hook: attribute
+  
+    @param {RenderNode} renderNode
+    @param {Environment} env
+    @param {String} name
+    @param {any} value
+  
+    Corresponds to:
+  
+    ```hbs
+    <div foo={{bar}}></div>
+    ```
+  
+    This hook is responsible for updating a render node
+    that represents an element's attribute with a value.
+  
+    It receives the name of the attribute as well as an
+    already-resolved value, and should update the render
+    node with the value if appropriate.
+  */
+
+  function attribute(morph, env, scope, name, value) {
+    value = env.hooks.getValue(value);
+
+    if (morph.lastValue !== value) {
+      morph.setContent(value);
+    }
+
+    morph.lastValue = value;
+  }
+
+  function subexpr(env, scope, helperName, params, hash) {
+    var helper = env.hooks.lookupHelper(env, scope, helperName);
+    var result = env.hooks.invokeHelper(null, env, scope, null, params, hash, helper, {});
+    if (result && 'value' in result) {
+      return env.hooks.getValue(result.value);
+    }
+  }
+
+  /**
+    Host Hook: get
+  
+    @param {Environment} env
+    @param {Scope} scope
+    @param {String} path
+  
+    Corresponds to:
+  
+    ```hbs
+    {{foo.bar}}
+      ^
+  
+    {{helper foo.bar key=value}}
+             ^           ^
+    ```
+  
+    This hook is the "leaf" hook of the system. It is used to
+    resolve a path relative to the current scope.
+  */
+
+  function get(env, scope, path) {
+    if (path === '') {
+      return scope.self;
+    }
+
+    var keys = path.split('.');
+    var value = env.hooks.getRoot(scope, keys[0])[0];
+
+    for (var i = 1; i < keys.length; i++) {
+      if (value) {
+        value = env.hooks.getChild(value, keys[i]);
+      } else {
+        break;
+      }
+    }
+
+    return value;
+  }
+
+  function getRoot(scope, key) {
+    if (scope.localPresent[key]) {
+      return [scope.locals[key]];
+    } else if (scope.self) {
+      return [scope.self[key]];
+    } else {
+      return [undefined];
+    }
+  }
+
+  function getBlock(scope, key) {
+    return scope.blocks[key];
+  }
+
+  function getChild(value, key) {
+    return value[key];
+  }
+
+  function getValue(reference) {
+    return reference;
+  }
+
+  function getCellOrValue(reference) {
+    return reference;
+  }
+
+  function component(morph, env, scope, tagName, params, attrs, templates, visitor) {
+    if (env.hooks.hasHelper(env, scope, tagName)) {
+      return env.hooks.block(morph, env, scope, tagName, params, attrs, templates.default, templates.inverse, visitor);
+    }
+
+    componentFallback(morph, env, scope, tagName, attrs, templates.default);
+  }
+
+  function concat(env, params) {
+    var value = "";
+    for (var i = 0, l = params.length; i < l; i++) {
+      value += env.hooks.getValue(params[i]);
+    }
+    return value;
+  }
+
+  function componentFallback(morph, env, scope, tagName, attrs, template) {
+    var element = env.dom.createElement(tagName);
+    for (var name in attrs) {
+      element.setAttribute(name, env.hooks.getValue(attrs[name]));
+    }
+    var fragment = _htmlbarsRuntimeRender.default(template, env, scope, {}).fragment;
+    element.appendChild(fragment);
+    morph.setNode(element);
+  }
+
+  function hasHelper(env, scope, helperName) {
+    return env.helpers[helperName] !== undefined;
+  }
+
+  function lookupHelper(env, scope, helperName) {
+    return env.helpers[helperName];
+  }
+
+  function bindScope() /* env, scope */{
+    // this function is used to handle host-specified extensions to scope
+    // other than `self`, `locals` and `block`.
+  }
+
+  function updateScope(env, scope) {
+    env.hooks.bindScope(env, scope);
+  }
+
+  exports.default = {
+    // fundamental hooks that you will likely want to override
+    bindLocal: bindLocal,
+    bindSelf: bindSelf,
+    bindScope: bindScope,
+    classify: classify,
+    component: component,
+    concat: concat,
+    createFreshScope: createFreshScope,
+    getChild: getChild,
+    getRoot: getRoot,
+    getBlock: getBlock,
+    getValue: getValue,
+    getCellOrValue: getCellOrValue,
+    keywords: keywords,
+    linkRenderNode: linkRenderNode,
+    partial: partial,
+    subexpr: subexpr,
+
+    // fundamental hooks with good default behavior
+    bindBlock: bindBlock,
+    bindShadowScope: bindShadowScope,
+    updateLocal: updateLocal,
+    updateSelf: updateSelf,
+    updateScope: updateScope,
+    createChildScope: createChildScope,
+    hasHelper: hasHelper,
+    lookupHelper: lookupHelper,
+    invokeHelper: invokeHelper,
+    cleanupRenderNode: null,
+    destroyRenderNode: null,
+    willCleanupTree: null,
+    didCleanupTree: null,
+    willRenderNode: null,
+    didRenderNode: null,
+
+    // derived hooks
+    attribute: attribute,
+    block: block,
+    createScope: createScope,
+    element: element,
+    get: get,
+    inline: inline,
+    range: range,
+    keyword: keyword
+  };
+});
+enifed("htmlbars-runtime/morph", ["exports", "morph-range"], function (exports, _morphRange) {
+  "use strict";
+
+  var guid = 1;
+
+  function HTMLBarsMorph(domHelper, contextualElement) {
+    this.super$constructor(domHelper, contextualElement);
+
+    this._state = undefined;
+    this.ownerNode = null;
+    this.isDirty = false;
+    this.isSubtreeDirty = false;
+    this.lastYielded = null;
+    this.lastResult = null;
+    this.lastValue = null;
+    this.buildChildEnv = null;
+    this.morphList = null;
+    this.morphMap = null;
+    this.key = null;
+    this.linkedParams = null;
+    this.linkedResult = null;
+    this.childNodes = null;
+    this.rendered = false;
+    this.guid = "range" + guid++;
+    this.seen = false;
+  }
+
+  HTMLBarsMorph.empty = function (domHelper, contextualElement) {
+    var morph = new HTMLBarsMorph(domHelper, contextualElement);
+    morph.clear();
+    return morph;
+  };
+
+  HTMLBarsMorph.create = function (domHelper, contextualElement, node) {
+    var morph = new HTMLBarsMorph(domHelper, contextualElement);
+    morph.setNode(node);
+    return morph;
+  };
+
+  HTMLBarsMorph.attach = function (domHelper, contextualElement, firstNode, lastNode) {
+    var morph = new HTMLBarsMorph(domHelper, contextualElement);
+    morph.setRange(firstNode, lastNode);
+    return morph;
+  };
+
+  var prototype = HTMLBarsMorph.prototype = Object.create(_morphRange.default.prototype);
+  prototype.constructor = HTMLBarsMorph;
+  prototype.super$constructor = _morphRange.default;
+
+  prototype.getState = function () {
+    if (!this._state) {
+      this._state = {};
+    }
+
+    return this._state;
+  };
+
+  prototype.setState = function (newState) {
+    /*jshint -W093 */
+
+    return this._state = newState;
+  };
+
+  exports.default = HTMLBarsMorph;
+});
+enifed("htmlbars-runtime/node-visitor", ["exports", "htmlbars-util/morph-utils", "htmlbars-runtime/expression-visitor"], function (exports, _htmlbarsUtilMorphUtils, _htmlbarsRuntimeExpressionVisitor) {
+  "use strict";
+
+  /**
+    Node classification:
+  
+    # Primary Statement Nodes:
+  
+    These nodes are responsible for a render node that represents a morph-range.
+  
+    * block
+    * inline
+    * content
+    * element
+    * component
+  
+    # Leaf Statement Nodes:
+  
+    This node is responsible for a render node that represents a morph-attr.
+  
+    * attribute
+  */
+
+  function linkParamsAndHash(env, scope, morph, path, params, hash) {
+    if (morph.linkedParams) {
+      params = morph.linkedParams.params;
+      hash = morph.linkedParams.hash;
+    } else {
+      params = params && _htmlbarsRuntimeExpressionVisitor.acceptParams(params, env, scope);
+      hash = hash && _htmlbarsRuntimeExpressionVisitor.acceptHash(hash, env, scope);
+    }
+
+    _htmlbarsUtilMorphUtils.linkParams(env, scope, morph, path, params, hash);
+    return [params, hash];
+  }
+
+  var AlwaysDirtyVisitor = {
+
+    block: function (node, morph, env, scope, template, visitor) {
+      var path = node[1];
+      var params = node[2];
+      var hash = node[3];
+      var templateId = node[4];
+      var inverseId = node[5];
+
+      var paramsAndHash = linkParamsAndHash(env, scope, morph, path, params, hash);
+
+      morph.isDirty = morph.isSubtreeDirty = false;
+      env.hooks.block(morph, env, scope, path, paramsAndHash[0], paramsAndHash[1], templateId === null ? null : template.templates[templateId], inverseId === null ? null : template.templates[inverseId], visitor);
+    },
+
+    inline: function (node, morph, env, scope, visitor) {
+      var path = node[1];
+      var params = node[2];
+      var hash = node[3];
+
+      var paramsAndHash = linkParamsAndHash(env, scope, morph, path, params, hash);
+
+      morph.isDirty = morph.isSubtreeDirty = false;
+      env.hooks.inline(morph, env, scope, path, paramsAndHash[0], paramsAndHash[1], visitor);
+    },
+
+    content: function (node, morph, env, scope, visitor) {
+      var path = node[1];
+
+      morph.isDirty = morph.isSubtreeDirty = false;
+
+      if (isHelper(env, scope, path)) {
+        env.hooks.inline(morph, env, scope, path, [], {}, visitor);
+        if (morph.linkedResult) {
+          _htmlbarsUtilMorphUtils.linkParams(env, scope, morph, '@content-helper', [morph.linkedResult], null);
+        }
+        return;
+      }
+
+      var params = undefined;
+      if (morph.linkedParams) {
+        params = morph.linkedParams.params;
+      } else {
+        params = [env.hooks.get(env, scope, path)];
+      }
+
+      _htmlbarsUtilMorphUtils.linkParams(env, scope, morph, '@range', params, null);
+      env.hooks.range(morph, env, scope, path, params[0], visitor);
+    },
+
+    element: function (node, morph, env, scope, visitor) {
+      var path = node[1];
+      var params = node[2];
+      var hash = node[3];
+
+      var paramsAndHash = linkParamsAndHash(env, scope, morph, path, params, hash);
+
+      morph.isDirty = morph.isSubtreeDirty = false;
+      env.hooks.element(morph, env, scope, path, paramsAndHash[0], paramsAndHash[1], visitor);
+    },
+
+    attribute: function (node, morph, env, scope) {
+      var name = node[1];
+      var value = node[2];
+
+      var paramsAndHash = linkParamsAndHash(env, scope, morph, '@attribute', [value], null);
+
+      morph.isDirty = morph.isSubtreeDirty = false;
+      env.hooks.attribute(morph, env, scope, name, paramsAndHash[0][0]);
+    },
+
+    component: function (node, morph, env, scope, template, visitor) {
+      var path = node[1];
+      var attrs = node[2];
+      var templateId = node[3];
+      var inverseId = node[4];
+
+      var paramsAndHash = linkParamsAndHash(env, scope, morph, path, [], attrs);
+      var templates = {
+        default: template.templates[templateId],
+        inverse: template.templates[inverseId]
+      };
+
+      morph.isDirty = morph.isSubtreeDirty = false;
+      env.hooks.component(morph, env, scope, path, paramsAndHash[0], paramsAndHash[1], templates, visitor);
+    },
+
+    attributes: function (node, morph, env, scope, parentMorph, visitor) {
+      var template = node[1];
+
+      env.hooks.attributes(morph, env, scope, template, parentMorph, visitor);
+    }
+
+  };
+
+  exports.AlwaysDirtyVisitor = AlwaysDirtyVisitor;
+  exports.default = {
+    block: function (node, morph, env, scope, template, visitor) {
+      dirtyCheck(env, morph, visitor, function (visitor) {
+        AlwaysDirtyVisitor.block(node, morph, env, scope, template, visitor);
+      });
+    },
+
+    inline: function (node, morph, env, scope, visitor) {
+      dirtyCheck(env, morph, visitor, function (visitor) {
+        AlwaysDirtyVisitor.inline(node, morph, env, scope, visitor);
+      });
+    },
+
+    content: function (node, morph, env, scope, visitor) {
+      dirtyCheck(env, morph, visitor, function (visitor) {
+        AlwaysDirtyVisitor.content(node, morph, env, scope, visitor);
+      });
+    },
+
+    element: function (node, morph, env, scope, template, visitor) {
+      dirtyCheck(env, morph, visitor, function (visitor) {
+        AlwaysDirtyVisitor.element(node, morph, env, scope, template, visitor);
+      });
+    },
+
+    attribute: function (node, morph, env, scope, template) {
+      dirtyCheck(env, morph, null, function () {
+        AlwaysDirtyVisitor.attribute(node, morph, env, scope, template);
+      });
+    },
+
+    component: function (node, morph, env, scope, template, visitor) {
+      dirtyCheck(env, morph, visitor, function (visitor) {
+        AlwaysDirtyVisitor.component(node, morph, env, scope, template, visitor);
+      });
+    },
+
+    attributes: function (node, morph, env, scope, parentMorph, visitor) {
+      AlwaysDirtyVisitor.attributes(node, morph, env, scope, parentMorph, visitor);
+    }
+  };
+
+  function dirtyCheck(_env, morph, visitor, callback) {
+    var isDirty = morph.isDirty;
+    var isSubtreeDirty = morph.isSubtreeDirty;
+    var env = _env;
+
+    if (isSubtreeDirty) {
+      visitor = AlwaysDirtyVisitor;
+    }
+
+    if (isDirty || isSubtreeDirty) {
+      callback(visitor);
+    } else {
+      if (morph.buildChildEnv) {
+        env = morph.buildChildEnv(morph.getState(), env);
+      }
+      _htmlbarsUtilMorphUtils.validateChildMorphs(env, morph, visitor);
+    }
+  }
+
+  function isHelper(env, scope, path) {
+    return env.hooks.keywords[path] !== undefined || env.hooks.hasHelper(env, scope, path);
+  }
+});
+enifed("htmlbars-runtime/render", ["exports", "htmlbars-util/morph-utils", "htmlbars-runtime/node-visitor", "htmlbars-runtime/morph", "htmlbars-util/template-utils", "htmlbars-util/void-tag-names"], function (exports, _htmlbarsUtilMorphUtils, _htmlbarsRuntimeNodeVisitor, _htmlbarsRuntimeMorph, _htmlbarsUtilTemplateUtils, _htmlbarsUtilVoidTagNames) {
+  "use strict";
+
+  exports.default = render;
+  exports.RenderOptions = RenderOptions;
+  exports.manualElement = manualElement;
+  exports.attachAttributes = attachAttributes;
+  exports.createChildMorph = createChildMorph;
+  exports.getCachedFragment = getCachedFragment;
+
+  var svgNamespace = "http://www.w3.org/2000/svg";
+
+  function render(template, env, scope, options) {
+    var dom = env.dom;
+    var contextualElement;
+
+    if (options) {
+      if (options.renderNode) {
+        contextualElement = options.renderNode.contextualElement;
+      } else if (options.contextualElement) {
+        contextualElement = options.contextualElement;
+      }
+    }
+
+    dom.detectNamespace(contextualElement);
+
+    var renderResult = RenderResult.build(env, scope, template, options, contextualElement);
+    renderResult.render();
+
+    return renderResult;
+  }
+
+  function RenderOptions(renderNode, self, blockArguments, contextualElement) {
+    this.renderNode = renderNode || null;
+    this.self = self;
+    this.blockArguments = blockArguments || null;
+    this.contextualElement = contextualElement || null;
+  }
+
+  function RenderResult(env, scope, options, rootNode, ownerNode, nodes, fragment, template, shouldSetContent) {
+    this.root = rootNode;
+    this.fragment = fragment;
+
+    this.nodes = nodes;
+    this.template = template;
+    this.statements = template.statements.slice();
+    this.env = env;
+    this.scope = scope;
+    this.shouldSetContent = shouldSetContent;
+
+    if (options.self !== undefined) {
+      this.bindSelf(options.self);
+    }
+    if (options.blockArguments !== undefined) {
+      this.bindLocals(options.blockArguments);
+    }
+
+    this.initializeNodes(ownerNode);
+  }
+
+  RenderResult.build = function (env, scope, template, options, contextualElement) {
+    var dom = env.dom;
+    var fragment = getCachedFragment(template, env);
+    var nodes = template.buildRenderNodes(dom, fragment, contextualElement);
+
+    var rootNode, ownerNode, shouldSetContent;
+
+    if (options && options.renderNode) {
+      rootNode = options.renderNode;
+      ownerNode = rootNode.ownerNode;
+      shouldSetContent = true;
+    } else {
+      rootNode = dom.createMorph(null, fragment.firstChild, fragment.lastChild, contextualElement);
+      ownerNode = rootNode;
+      rootNode.ownerNode = ownerNode;
+      shouldSetContent = false;
+    }
+
+    if (rootNode.childNodes) {
+      _htmlbarsUtilMorphUtils.visitChildren(rootNode.childNodes, function (node) {
+        _htmlbarsUtilTemplateUtils.clearMorph(node, env, true);
+      });
+    }
+
+    rootNode.childNodes = nodes;
+    return new RenderResult(env, scope, options, rootNode, ownerNode, nodes, fragment, template, shouldSetContent);
+  };
+
+  function manualElement(tagName, attributes, _isEmpty) {
+    var statements = [];
+
+    for (var key in attributes) {
+      if (typeof attributes[key] === 'string') {
+        continue;
+      }
+
+      statements.push(_htmlbarsUtilTemplateUtils.buildStatement("attribute", key, attributes[key]));
+    }
+
+    var isEmpty = _isEmpty || _htmlbarsUtilVoidTagNames.default[tagName];
+
+    if (!isEmpty) {
+      statements.push(_htmlbarsUtilTemplateUtils.buildStatement('content', 'yield'));
+    }
+
+    var template = {
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        if (tagName === 'svg') {
+          dom.setNamespace(svgNamespace);
+        }
+        var el1 = dom.createElement(tagName);
+
+        for (var key in attributes) {
+          if (typeof attributes[key] !== 'string') {
+            continue;
+          }
+          dom.setAttribute(el1, key, attributes[key]);
+        }
+
+        if (!isEmpty) {
+          var el2 = dom.createComment("");
+          dom.appendChild(el1, el2);
+        }
+
+        dom.appendChild(el0, el1);
+
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment) {
+        var element = dom.childAt(fragment, [0]);
+        var morphs = [];
+
+        for (var key in attributes) {
+          if (typeof attributes[key] === 'string') {
+            continue;
+          }
+          morphs.push(dom.createAttrMorph(element, key));
+        }
+
+        if (!isEmpty) {
+          morphs.push(dom.createMorphAt(element, 0, 0));
+        }
+
+        return morphs;
+      },
+      statements: statements,
+      locals: [],
+      templates: []
+    };
+
+    return template;
+  }
+
+  function attachAttributes(attributes) {
+    var statements = [];
+
+    for (var key in attributes) {
+      if (typeof attributes[key] === 'string') {
+        continue;
+      }
+      statements.push(_htmlbarsUtilTemplateUtils.buildStatement("attribute", key, attributes[key]));
+    }
+
+    var template = {
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = this.element;
+        if (el0.namespaceURI === "http://www.w3.org/2000/svg") {
+          dom.setNamespace(svgNamespace);
+        }
+        for (var key in attributes) {
+          if (typeof attributes[key] !== 'string') {
+            continue;
+          }
+          dom.setAttribute(el0, key, attributes[key]);
+        }
+
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom) {
+        var element = this.element;
+        var morphs = [];
+
+        for (var key in attributes) {
+          if (typeof attributes[key] === 'string') {
+            continue;
+          }
+          morphs.push(dom.createAttrMorph(element, key));
+        }
+
+        return morphs;
+      },
+      statements: statements,
+      locals: [],
+      templates: [],
+      element: null
+    };
+
+    return template;
+  }
+
+  RenderResult.prototype.initializeNodes = function (ownerNode) {
+    var childNodes = this.root.childNodes;
+
+    for (var i = 0, l = childNodes.length; i < l; i++) {
+      childNodes[i].ownerNode = ownerNode;
+    }
+  };
+
+  RenderResult.prototype.render = function () {
+    this.root.lastResult = this;
+    this.root.rendered = true;
+    this.populateNodes(_htmlbarsRuntimeNodeVisitor.AlwaysDirtyVisitor);
+
+    if (this.shouldSetContent && this.root.setContent) {
+      this.root.setContent(this.fragment);
+    }
+  };
+
+  RenderResult.prototype.dirty = function () {
+    _htmlbarsUtilMorphUtils.visitChildren([this.root], function (node) {
+      node.isDirty = true;
+    });
+  };
+
+  RenderResult.prototype.revalidate = function (env, self, blockArguments, scope) {
+    this.revalidateWith(env, scope, self, blockArguments, _htmlbarsRuntimeNodeVisitor.default);
+  };
+
+  RenderResult.prototype.rerender = function (env, self, blockArguments, scope) {
+    this.revalidateWith(env, scope, self, blockArguments, _htmlbarsRuntimeNodeVisitor.AlwaysDirtyVisitor);
+  };
+
+  RenderResult.prototype.revalidateWith = function (env, scope, self, blockArguments, visitor) {
+    if (env !== undefined) {
+      this.env = env;
+    }
+    if (scope !== undefined) {
+      this.scope = scope;
+    }
+    this.updateScope();
+
+    if (self !== undefined) {
+      this.updateSelf(self);
+    }
+    if (blockArguments !== undefined) {
+      this.updateLocals(blockArguments);
+    }
+
+    this.populateNodes(visitor);
+  };
+
+  RenderResult.prototype.destroy = function () {
+    var rootNode = this.root;
+    _htmlbarsUtilTemplateUtils.clearMorph(rootNode, this.env, true);
+  };
+
+  RenderResult.prototype.populateNodes = function (visitor) {
+    var env = this.env;
+    var scope = this.scope;
+    var template = this.template;
+    var nodes = this.nodes;
+    var statements = this.statements;
+    var i, l;
+
+    for (i = 0, l = statements.length; i < l; i++) {
+      var statement = statements[i];
+      var morph = nodes[i];
+
+      if (env.hooks.willRenderNode) {
+        env.hooks.willRenderNode(morph, env, scope);
+      }
+
+      switch (statement[0]) {
+        case 'block':
+          visitor.block(statement, morph, env, scope, template, visitor);break;
+        case 'inline':
+          visitor.inline(statement, morph, env, scope, visitor);break;
+        case 'content':
+          visitor.content(statement, morph, env, scope, visitor);break;
+        case 'element':
+          visitor.element(statement, morph, env, scope, template, visitor);break;
+        case 'attribute':
+          visitor.attribute(statement, morph, env, scope);break;
+        case 'component':
+          visitor.component(statement, morph, env, scope, template, visitor);break;
+      }
+
+      if (env.hooks.didRenderNode) {
+        env.hooks.didRenderNode(morph, env, scope);
+      }
+    }
+  };
+
+  RenderResult.prototype.bindScope = function () {
+    this.env.hooks.bindScope(this.env, this.scope);
+  };
+
+  RenderResult.prototype.updateScope = function () {
+    this.env.hooks.updateScope(this.env, this.scope);
+  };
+
+  RenderResult.prototype.bindSelf = function (self) {
+    this.env.hooks.bindSelf(this.env, this.scope, self);
+  };
+
+  RenderResult.prototype.updateSelf = function (self) {
+    this.env.hooks.updateSelf(this.env, this.scope, self);
+  };
+
+  RenderResult.prototype.bindLocals = function (blockArguments) {
+    var localNames = this.template.locals;
+
+    for (var i = 0, l = localNames.length; i < l; i++) {
+      this.env.hooks.bindLocal(this.env, this.scope, localNames[i], blockArguments[i]);
+    }
+  };
+
+  RenderResult.prototype.updateLocals = function (blockArguments) {
+    var localNames = this.template.locals;
+
+    for (var i = 0, l = localNames.length; i < l; i++) {
+      this.env.hooks.updateLocal(this.env, this.scope, localNames[i], blockArguments[i]);
+    }
+  };
+
+  function initializeNode(node, owner) {
+    node.ownerNode = owner;
+  }
+
+  function createChildMorph(dom, parentMorph, contextualElement) {
+    var morph = _htmlbarsRuntimeMorph.default.empty(dom, contextualElement || parentMorph.contextualElement);
+    initializeNode(morph, parentMorph.ownerNode);
+    return morph;
+  }
+
+  function getCachedFragment(template, env) {
+    var dom = env.dom,
+        fragment;
+    if (env.useFragmentCache && dom.canClone) {
+      if (template.cachedFragment === null) {
+        fragment = template.buildFragment(dom);
+        if (template.hasRendered) {
+          template.cachedFragment = fragment;
+        } else {
+          template.hasRendered = true;
+        }
+      }
+      if (template.cachedFragment) {
+        fragment = dom.cloneNode(template.cachedFragment, true);
+      }
+    } else if (!fragment) {
+      fragment = template.buildFragment(dom);
+    }
+
+    return fragment;
+  }
+});
+enifed("htmlbars-syntax", ["exports", "htmlbars-syntax/builders", "htmlbars-syntax/parser", "htmlbars-syntax/generation/print", "htmlbars-syntax/traversal/traverse", "htmlbars-syntax/traversal/walker"], function (exports, _htmlbarsSyntaxBuilders, _htmlbarsSyntaxParser, _htmlbarsSyntaxGenerationPrint, _htmlbarsSyntaxTraversalTraverse, _htmlbarsSyntaxTraversalWalker) {
+  "use strict";
+
+  exports.builders = _htmlbarsSyntaxBuilders.default;
+  exports.parse = _htmlbarsSyntaxParser.default;
+  exports.print = _htmlbarsSyntaxGenerationPrint.default;
+  exports.traverse = _htmlbarsSyntaxTraversalTraverse.default;
+  exports.Walker = _htmlbarsSyntaxTraversalWalker.default;
+});
+enifed("htmlbars-syntax/builders", ["exports"], function (exports) {
+  // Statements
+
+  "use strict";
+
+  exports.buildMustache = buildMustache;
+  exports.buildBlock = buildBlock;
+  exports.buildElementModifier = buildElementModifier;
+  exports.buildPartial = buildPartial;
+  exports.buildComment = buildComment;
+  exports.buildConcat = buildConcat;
+  exports.buildElement = buildElement;
+  exports.buildComponent = buildComponent;
+  exports.buildAttr = buildAttr;
+  exports.buildText = buildText;
+  exports.buildSexpr = buildSexpr;
+  exports.buildPath = buildPath;
+  exports.buildString = buildString;
+  exports.buildBoolean = buildBoolean;
+  exports.buildNumber = buildNumber;
+  exports.buildNull = buildNull;
+  exports.buildUndefined = buildUndefined;
+  exports.buildHash = buildHash;
+  exports.buildPair = buildPair;
+  exports.buildProgram = buildProgram;
+
+  function buildMustache(path, params, hash, raw, loc) {
+    return {
+      type: "MustacheStatement",
+      path: buildPath(path),
+      params: params || [],
+      hash: hash || buildHash([]),
+      escaped: !raw,
+      loc: buildLoc(loc)
+    };
+  }
+
+  function buildBlock(path, params, hash, program, inverse, loc) {
+    return {
+      type: "BlockStatement",
+      path: buildPath(path),
+      params: params || [],
+      hash: hash || buildHash([]),
+      program: program || null,
+      inverse: inverse || null,
+      loc: buildLoc(loc)
+    };
+  }
+
+  function buildElementModifier(path, params, hash, loc) {
+    return {
+      type: "ElementModifierStatement",
+      path: buildPath(path),
+      params: params || [],
+      hash: hash || buildHash([]),
+      loc: buildLoc(loc)
+    };
+  }
+
+  function buildPartial(name, params, hash, indent) {
+    return {
+      type: "PartialStatement",
+      name: name,
+      params: params || [],
+      hash: hash || buildHash([]),
+      indent: indent
+    };
+  }
+
+  function buildComment(value) {
+    return {
+      type: "CommentStatement",
+      value: value
+    };
+  }
+
+  function buildConcat(parts) {
+    return {
+      type: "ConcatStatement",
+      parts: parts || []
+    };
+  }
+
+  // Nodes
+
+  function buildElement(tag, attributes, modifiers, children, loc) {
+    return {
+      type: "ElementNode",
+      tag: tag || "",
+      attributes: attributes || [],
+      modifiers: modifiers || [],
+      children: children || [],
+      loc: buildLoc(loc)
+    };
+  }
+
+  function buildComponent(tag, attributes, program, loc) {
+    return {
+      type: "ComponentNode",
+      tag: tag,
+      attributes: attributes,
+      program: program,
+      loc: buildLoc(loc),
+
+      // this should be true only if this component node is guaranteed
+      // to produce start and end points that can never change after the
+      // initial render, regardless of changes to dynamic inputs. If
+      // a component represents a "fragment" (any number of top-level nodes),
+      // this will usually not be true.
+      isStatic: false
+    };
+  }
+
+  function buildAttr(name, value, loc) {
+    return {
+      type: "AttrNode",
+      name: name,
+      value: value,
+      loc: buildLoc(loc)
+    };
+  }
+
+  function buildText(chars, loc) {
+    return {
+      type: "TextNode",
+      chars: chars || "",
+      loc: buildLoc(loc)
+    };
+  }
+
+  // Expressions
+
+  function buildSexpr(path, params, hash) {
+    return {
+      type: "SubExpression",
+      path: buildPath(path),
+      params: params || [],
+      hash: hash || buildHash([])
+    };
+  }
+
+  function buildPath(original) {
+    if (typeof original === 'string') {
+      return {
+        type: "PathExpression",
+        original: original,
+        parts: original.split('.')
+      };
+    } else {
+      return original;
+    }
+  }
+
+  function buildString(value) {
+    return {
+      type: "StringLiteral",
+      value: value,
+      original: value
+    };
+  }
+
+  function buildBoolean(value) {
+    return {
+      type: "BooleanLiteral",
+      value: value,
+      original: value
+    };
+  }
+
+  function buildNumber(value) {
+    return {
+      type: "NumberLiteral",
+      value: value,
+      original: value
+    };
+  }
+
+  function buildNull() {
+    return {
+      type: "NullLiteral",
+      value: null,
+      original: null
+    };
+  }
+
+  function buildUndefined() {
+    return {
+      type: "UndefinedLiteral",
+      value: undefined,
+      original: undefined
+    };
+  }
+
+  // Miscellaneous
+
+  function buildHash(pairs) {
+    return {
+      type: "Hash",
+      pairs: pairs || []
+    };
+  }
+
+  function buildPair(key, value) {
+    return {
+      type: "HashPair",
+      key: key,
+      value: value
+    };
+  }
+
+  function buildProgram(body, blockParams, loc) {
+    return {
+      type: "Program",
+      body: body || [],
+      blockParams: blockParams || [],
+      loc: buildLoc(loc)
+    };
+  }
+
+  function buildSource(source) {
+    return source || null;
+  }
+
+  function buildPosition(line, column) {
+    return {
+      line: typeof line === 'number' ? line : null,
+      column: typeof column === 'number' ? column : null
+    };
+  }
+
+  function buildLoc(startLine, startColumn, endLine, endColumn, source) {
+    if (arguments.length === 1) {
+      var loc = startLine;
+
+      if (typeof loc === 'object') {
+        return {
+          source: buildSource(loc.source),
+          start: buildPosition(loc.start.line, loc.start.column),
+          end: buildPosition(loc.end.line, loc.end.column)
+        };
+      } else {
+        return null;
+      }
+    } else {
+      return {
+        source: buildSource(source),
+        start: buildPosition(startLine, startColumn),
+        end: buildPosition(endLine, endColumn)
+      };
+    }
+  }
+
+  exports.default = {
+    mustache: buildMustache,
+    block: buildBlock,
+    partial: buildPartial,
+    comment: buildComment,
+    element: buildElement,
+    elementModifier: buildElementModifier,
+    component: buildComponent,
+    attr: buildAttr,
+    text: buildText,
+    sexpr: buildSexpr,
+    path: buildPath,
+    string: buildString,
+    boolean: buildBoolean,
+    number: buildNumber,
+    undefined: buildUndefined,
+    null: buildNull,
+    concat: buildConcat,
+    hash: buildHash,
+    pair: buildPair,
+    program: buildProgram,
+    loc: buildLoc,
+    pos: buildPosition
+  };
+});
+enifed('htmlbars-syntax/generation/print', ['exports'], function (exports) {
+  'use strict';
+
+  exports.default = build;
+
+  function build(ast) {
+    if (!ast) {
+      return '';
+    }
+    var output = [];
+
+    switch (ast.type) {
+      case 'Program':
+        {
+          var chainBlock = ast.chained && ast.body[0];
+          if (chainBlock) {
+            chainBlock.chained = true;
+          }
+          var body = buildEach(ast.body).join('');
+          output.push(body);
+        }
+        break;
+      case 'ElementNode':
+        output.push('<', ast.tag);
+        if (ast.attributes.length) {
+          output.push(' ', buildEach(ast.attributes).join(' '));
+        }
+        if (ast.modifiers.length) {
+          output.push(' ', buildEach(ast.modifiers).join(' '));
+        }
+        output.push('>');
+        output.push.apply(output, buildEach(ast.children));
+        output.push('</', ast.tag, '>');
+        break;
+      case 'AttrNode':
+        output.push(ast.name, '=');
+        var value = build(ast.value);
+        if (ast.value.type === 'TextNode') {
+          output.push('"', value, '"');
+        } else {
+          output.push(value);
+        }
+        break;
+      case 'ConcatStatement':
+        output.push('"');
+        ast.parts.forEach(function (node) {
+          if (node.type === 'StringLiteral') {
+            output.push(node.original);
+          } else {
+            output.push(build(node));
+          }
+        });
+        output.push('"');
+        break;
+      case 'TextNode':
+        output.push(ast.chars);
+        break;
+      case 'MustacheStatement':
+        {
+          output.push(compactJoin(['{{', pathParams(ast), '}}']));
+        }
+        break;
+      case 'ElementModifierStatement':
+        {
+          output.push(compactJoin(['{{', pathParams(ast), '}}']));
+        }
+        break;
+      case 'PathExpression':
+        output.push(ast.original);
+        break;
+      case 'SubExpression':
+        {
+          output.push('(', pathParams(ast), ')');
+        }
+        break;
+      case 'BooleanLiteral':
+        output.push(ast.value ? 'true' : false);
+        break;
+      case 'BlockStatement':
+        {
+          var lines = [];
+
+          if (ast.chained) {
+            lines.push(['{{else ', pathParams(ast), '}}'].join(''));
+          } else {
+            lines.push(openBlock(ast));
+          }
+
+          lines.push(build(ast.program));
+
+          if (ast.inverse) {
+            if (!ast.inverse.chained) {
+              lines.push('{{else}}');
+            }
+            lines.push(build(ast.inverse));
+          }
+
+          if (!ast.chained) {
+            lines.push(closeBlock(ast));
+          }
+
+          output.push(lines.join(''));
+        }
+        break;
+      case 'PartialStatement':
+        {
+          output.push(compactJoin(['{{>', pathParams(ast), '}}']));
+        }
+        break;
+      case 'CommentStatement':
+        {
+          output.push(compactJoin(['<!--', ast.value, '-->']));
+        }
+        break;
+      case 'StringLiteral':
+        {
+          output.push('"' + ast.value + '"');
+        }
+        break;
+      case 'NumberLiteral':
+        {
+          output.push(ast.value);
+        }
+        break;
+      case 'UndefinedLiteral':
+        {
+          output.push('undefined');
+        }
+        break;
+      case 'NullLiteral':
+        {
+          output.push('null');
+        }
+        break;
+      case 'Hash':
+        {
+          output.push(ast.pairs.map(function (pair) {
+            return build(pair);
+          }).join(' '));
+        }
+        break;
+      case 'HashPair':
+        {
+          output.push(ast.key + '=' + build(ast.value));
+        }
+        break;
+    }
+    return output.join('');
+  }
+
+  function compact(array) {
+    var newArray = [];
+    array.forEach(function (a) {
+      if (typeof a !== 'undefined' && a !== null && a !== '') {
+        newArray.push(a);
+      }
+    });
+    return newArray;
+  }
+
+  function buildEach(asts) {
+    var output = [];
+    asts.forEach(function (node) {
+      output.push(build(node));
+    });
+    return output;
+  }
+
+  function pathParams(ast) {
+    var name = build(ast.name);
+    var path = build(ast.path);
+    var params = buildEach(ast.params).join(' ');
+    var hash = build(ast.hash);
+    return compactJoin([name, path, params, hash], ' ');
+  }
+
+  function compactJoin(array, delimiter) {
+    return compact(array).join(delimiter || '');
+  }
+
+  function blockParams(block) {
+    var params = block.program.blockParams;
+    if (params.length) {
+      return ' as |' + params.join(',') + '|';
+    }
+  }
+
+  function openBlock(block) {
+    return ['{{#', pathParams(block), blockParams(block), '}}'].join('');
+  }
+
+  function closeBlock(block) {
+    return ['{{/', build(block.path), '}}'].join('');
+  }
+});
+enifed('htmlbars-syntax/handlebars/compiler/ast', ['exports'], function (exports) {
   'use strict';
 
   var AST = {
@@ -25300,15 +15448,14 @@ enifed('handlebars/compiler/ast', ['exports'], function (exports) {
   // must modify the object to operate properly.
   exports.default = AST;
 });
-
-enifed('handlebars/compiler/base', ['exports', 'handlebars/compiler/parser', 'handlebars/compiler/ast', 'handlebars/compiler/whitespace-control', 'handlebars/compiler/helpers', 'handlebars/utils'], function (exports, _handlebarsCompilerParser, _handlebarsCompilerAst, _handlebarsCompilerWhitespaceControl, _handlebarsCompilerHelpers, _handlebarsUtils) {
+enifed('htmlbars-syntax/handlebars/compiler/base', ['exports', 'htmlbars-syntax/handlebars/compiler/parser', 'htmlbars-syntax/handlebars/compiler/ast', 'htmlbars-syntax/handlebars/compiler/whitespace-control', 'htmlbars-syntax/handlebars/compiler/helpers', 'htmlbars-syntax/handlebars/utils'], function (exports, _htmlbarsSyntaxHandlebarsCompilerParser, _htmlbarsSyntaxHandlebarsCompilerAst, _htmlbarsSyntaxHandlebarsCompilerWhitespaceControl, _htmlbarsSyntaxHandlebarsCompilerHelpers, _htmlbarsSyntaxHandlebarsUtils) {
   'use strict';
 
   exports.parse = parse;
-  exports.parser = _handlebarsCompilerParser.default;
+  exports.parser = _htmlbarsSyntaxHandlebarsCompilerParser.default;
 
   var yy = {};
-  _handlebarsUtils.extend(yy, _handlebarsCompilerHelpers, _handlebarsCompilerAst.default);
+  _htmlbarsSyntaxHandlebarsUtils.extend(yy, _htmlbarsSyntaxHandlebarsCompilerHelpers, _htmlbarsSyntaxHandlebarsCompilerAst.default);
 
   function parse(input, options) {
     // Just return if an already-compiled AST was passed in.
@@ -25316,19 +15463,18 @@ enifed('handlebars/compiler/base', ['exports', 'handlebars/compiler/parser', 'ha
       return input;
     }
 
-    _handlebarsCompilerParser.default.yy = yy;
+    _htmlbarsSyntaxHandlebarsCompilerParser.default.yy = yy;
 
     // Altering the shared object here, but this is ok as parser is a sync operation
     yy.locInfo = function (locInfo) {
       return new yy.SourceLocation(options && options.srcName, locInfo);
     };
 
-    var strip = new _handlebarsCompilerWhitespaceControl.default();
-    return strip.accept(_handlebarsCompilerParser.default.parse(input));
+    var strip = new _htmlbarsSyntaxHandlebarsCompilerWhitespaceControl.default();
+    return strip.accept(_htmlbarsSyntaxHandlebarsCompilerParser.default.parse(input));
   }
 });
-
-enifed('handlebars/compiler/helpers', ['exports', 'handlebars/exception'], function (exports, _handlebarsException) {
+enifed('htmlbars-syntax/handlebars/compiler/helpers', ['exports', 'htmlbars-syntax/handlebars/exception'], function (exports, _htmlbarsSyntaxHandlebarsException) {
   'use strict';
 
   exports.SourceLocation = SourceLocation;
@@ -25389,7 +15535,7 @@ enifed('handlebars/compiler/helpers', ['exports', 'handlebars/exception'], funct
 
       if (!isLiteral && (part === '..' || part === '.' || part === 'this')) {
         if (dig.length > 0) {
-          throw new _handlebarsException.default('Invalid path: ' + original, { loc: locInfo });
+          throw new _htmlbarsSyntaxHandlebarsException.default('Invalid path: ' + original, { loc: locInfo });
         } else if (part === '..') {
           depth++;
           depthString += '../';
@@ -25414,7 +15560,7 @@ enifed('handlebars/compiler/helpers', ['exports', 'handlebars/exception'], funct
     if (openRawBlock.path.original !== close) {
       var errorNode = { loc: openRawBlock.path.loc };
 
-      throw new _handlebarsException.default(openRawBlock.path.original + " doesn't match " + close, errorNode);
+      throw new _htmlbarsSyntaxHandlebarsException.default(openRawBlock.path.original + " doesn't match " + close, errorNode);
     }
 
     locInfo = this.locInfo(locInfo);
@@ -25428,7 +15574,7 @@ enifed('handlebars/compiler/helpers', ['exports', 'handlebars/exception'], funct
     if (close && close.path && openBlock.path.original !== close.path.original) {
       var errorNode = { loc: openBlock.path.loc };
 
-      throw new _handlebarsException.default(openBlock.path.original + ' doesn\'t match ' + close.path.original, errorNode);
+      throw new _htmlbarsSyntaxHandlebarsException.default(openBlock.path.original + ' doesn\'t match ' + close.path.original, errorNode);
     }
 
     program.blockParams = openBlock.blockParams;
@@ -25454,8 +15600,7 @@ enifed('handlebars/compiler/helpers', ['exports', 'handlebars/exception'], funct
     return new this.BlockStatement(openBlock.path, openBlock.params, openBlock.hash, program, inverse, openBlock.strip, inverseStrip, close && close.strip, this.locInfo(locInfo));
   }
 });
-
-enifed("handlebars/compiler/parser", ["exports"], function (exports) {
+enifed("htmlbars-syntax/handlebars/compiler/parser", ["exports"], function (exports) {
     /* istanbul ignore next */
     /* Jison generated parser */
     "use strict";
@@ -26129,8 +16274,7 @@ enifed("handlebars/compiler/parser", ["exports"], function (exports) {
         return new Parser();
     })();exports.default = handlebars;
 });
-
-enifed('handlebars/compiler/visitor', ['exports', 'handlebars/exception', 'handlebars/compiler/ast'], function (exports, _handlebarsException, _handlebarsCompilerAst) {
+enifed('htmlbars-syntax/handlebars/compiler/visitor', ['exports', 'htmlbars-syntax/handlebars/exception', 'htmlbars-syntax/handlebars/compiler/ast'], function (exports, _htmlbarsSyntaxHandlebarsException, _htmlbarsSyntaxHandlebarsCompilerAst) {
   'use strict';
 
   function Visitor() {
@@ -26146,8 +16290,8 @@ enifed('handlebars/compiler/visitor', ['exports', 'handlebars/exception', 'handl
       var value = this.accept(node[name]);
       if (this.mutating) {
         // Hacky sanity check:
-        if (value && (!value.type || !_handlebarsCompilerAst.default[value.type])) {
-          throw new _handlebarsException.default('Unexpected node type "' + value.type + '" found when accepting ' + name + ' on ' + node.type);
+        if (value && (!value.type || !_htmlbarsSyntaxHandlebarsCompilerAst.default[value.type])) {
+          throw new _htmlbarsSyntaxHandlebarsException.default('Unexpected node type "' + value.type + '" found when accepting ' + name + ' on ' + node.type);
         }
         node[name] = value;
       }
@@ -26159,7 +16303,7 @@ enifed('handlebars/compiler/visitor', ['exports', 'handlebars/exception', 'handl
       this.acceptKey(node, name);
 
       if (!node[name]) {
-        throw new _handlebarsException.default(node.type + ' requires ' + name);
+        throw new _htmlbarsSyntaxHandlebarsException.default(node.type + ' requires ' + name);
       }
     },
 
@@ -26250,12 +16394,11 @@ enifed('handlebars/compiler/visitor', ['exports', 'handlebars/exception', 'handl
 
   exports.default = Visitor;
 });
-
-enifed('handlebars/compiler/whitespace-control', ['exports', 'handlebars/compiler/visitor'], function (exports, _handlebarsCompilerVisitor) {
+enifed('htmlbars-syntax/handlebars/compiler/whitespace-control', ['exports', 'htmlbars-syntax/handlebars/compiler/visitor'], function (exports, _htmlbarsSyntaxHandlebarsCompilerVisitor) {
   'use strict';
 
   function WhitespaceControl() {}
-  WhitespaceControl.prototype = new _handlebarsCompilerVisitor.default();
+  WhitespaceControl.prototype = new _htmlbarsSyntaxHandlebarsCompilerVisitor.default();
 
   WhitespaceControl.prototype.Program = function (program) {
     var isRoot = !this.isRootSeen;
@@ -26456,8 +16599,7 @@ enifed('handlebars/compiler/whitespace-control', ['exports', 'handlebars/compile
 
   exports.default = WhitespaceControl;
 });
-
-enifed('handlebars/exception', ['exports'], function (exports) {
+enifed('htmlbars-syntax/handlebars/exception', ['exports'], function (exports) {
   'use strict';
 
   var errorProps = ['description', 'fileName', 'lineNumber', 'message', 'name', 'number', 'stack'];
@@ -26494,8 +16636,7 @@ enifed('handlebars/exception', ['exports'], function (exports) {
 
   exports.default = Exception;
 });
-
-enifed('handlebars/safe-string', ['exports'], function (exports) {
+enifed('htmlbars-syntax/handlebars/safe-string', ['exports'], function (exports) {
   // Build out our basic SafeString type
   'use strict';
 
@@ -26509,8 +16650,7 @@ enifed('handlebars/safe-string', ['exports'], function (exports) {
 
   exports.default = SafeString;
 });
-
-enifed('handlebars/utils', ['exports'], function (exports) {
+enifed('htmlbars-syntax/handlebars/utils', ['exports'], function (exports) {
   'use strict';
 
   exports.extend = extend;
@@ -26626,7 +16766,2126 @@ enifed('handlebars/utils', ['exports'], function (exports) {
     return (contextPath ? contextPath + '.' : '') + id;
   }
 });
+enifed("htmlbars-syntax/parser", ["exports", "htmlbars-syntax/handlebars/compiler/base", "htmlbars-syntax", "simple-html-tokenizer/evented-tokenizer", "simple-html-tokenizer/entity-parser", "simple-html-tokenizer/html5-named-char-refs", "htmlbars-syntax/parser/handlebars-node-visitors", "htmlbars-syntax/parser/tokenizer-event-handlers"], function (exports, _htmlbarsSyntaxHandlebarsCompilerBase, _htmlbarsSyntax, _simpleHtmlTokenizerEventedTokenizer, _simpleHtmlTokenizerEntityParser, _simpleHtmlTokenizerHtml5NamedCharRefs, _htmlbarsSyntaxParserHandlebarsNodeVisitors, _htmlbarsSyntaxParserTokenizerEventHandlers) {
+  "use strict";
 
+  exports.preprocess = preprocess;
+  exports.Parser = Parser;
+
+  function preprocess(html, options) {
+    var ast = typeof html === 'object' ? html : _htmlbarsSyntaxHandlebarsCompilerBase.parse(html);
+    var combined = new Parser(html, options).acceptNode(ast);
+
+    if (options && options.plugins && options.plugins.ast) {
+      for (var i = 0, l = options.plugins.ast.length; i < l; i++) {
+        var plugin = new options.plugins.ast[i](options);
+
+        plugin.syntax = _htmlbarsSyntax;
+
+        combined = plugin.transform(combined);
+      }
+    }
+
+    return combined;
+  }
+
+  exports.default = preprocess;
+
+  var entityParser = new _simpleHtmlTokenizerEntityParser.default(_simpleHtmlTokenizerHtml5NamedCharRefs.default);
+
+  function Parser(source, options) {
+    this.options = options || {};
+    this.elementStack = [];
+    this.tokenizer = new _simpleHtmlTokenizerEventedTokenizer.default(this, entityParser);
+
+    this.currentNode = null;
+    this.currentAttribute = null;
+
+    if (typeof source === 'string') {
+      this.source = source.split(/(?:\r\n?|\n)/g);
+    }
+  }
+
+  for (var key in _htmlbarsSyntaxParserHandlebarsNodeVisitors.default) {
+    Parser.prototype[key] = _htmlbarsSyntaxParserHandlebarsNodeVisitors.default[key];
+  }
+
+  for (var key in _htmlbarsSyntaxParserTokenizerEventHandlers.default) {
+    Parser.prototype[key] = _htmlbarsSyntaxParserTokenizerEventHandlers.default[key];
+  }
+
+  Parser.prototype.acceptNode = function (node) {
+    return this[node.type](node);
+  };
+
+  Parser.prototype.currentElement = function () {
+    return this.elementStack[this.elementStack.length - 1];
+  };
+
+  Parser.prototype.sourceForMustache = function (mustache) {
+    var firstLine = mustache.loc.start.line - 1;
+    var lastLine = mustache.loc.end.line - 1;
+    var currentLine = firstLine - 1;
+    var firstColumn = mustache.loc.start.column + 2;
+    var lastColumn = mustache.loc.end.column - 2;
+    var string = [];
+    var line;
+
+    if (!this.source) {
+      return '{{' + mustache.path.id.original + '}}';
+    }
+
+    while (currentLine < lastLine) {
+      currentLine++;
+      line = this.source[currentLine];
+
+      if (currentLine === firstLine) {
+        if (firstLine === lastLine) {
+          string.push(line.slice(firstColumn, lastColumn));
+        } else {
+          string.push(line.slice(firstColumn));
+        }
+      } else if (currentLine === lastLine) {
+        string.push(line.slice(0, lastColumn));
+      } else {
+        string.push(line);
+      }
+    }
+
+    return string.join('\n');
+  };
+});
+enifed("htmlbars-syntax/parser/handlebars-node-visitors", ["exports", "htmlbars-syntax/builders", "htmlbars-syntax/utils"], function (exports, _htmlbarsSyntaxBuilders, _htmlbarsSyntaxUtils) {
+  "use strict";
+
+  exports.default = {
+
+    Program: function (program) {
+      var body = [];
+      var node = _htmlbarsSyntaxBuilders.default.program(body, program.blockParams, program.loc);
+      var i,
+          l = program.body.length;
+
+      this.elementStack.push(node);
+
+      if (l === 0) {
+        return this.elementStack.pop();
+      }
+
+      for (i = 0; i < l; i++) {
+        this.acceptNode(program.body[i]);
+      }
+
+      // Ensure that that the element stack is balanced properly.
+      var poppedNode = this.elementStack.pop();
+      if (poppedNode !== node) {
+        throw new Error("Unclosed element `" + poppedNode.tag + "` (on line " + poppedNode.loc.start.line + ").");
+      }
+
+      return node;
+    },
+
+    BlockStatement: function (block) {
+      delete block.inverseStrip;
+      delete block.openString;
+      delete block.closeStrip;
+
+      if (this.tokenizer.state === 'comment') {
+        this.appendToCommentData('{{' + this.sourceForMustache(block) + '}}');
+        return;
+      }
+
+      if (this.tokenizer.state !== 'comment' && this.tokenizer.state !== 'data' && this.tokenizer.state !== 'beforeData') {
+        throw new Error("A block may only be used inside an HTML element or another block.");
+      }
+
+      block = acceptCommonNodes(this, block);
+      var program = block.program ? this.acceptNode(block.program) : null;
+      var inverse = block.inverse ? this.acceptNode(block.inverse) : null;
+
+      var node = _htmlbarsSyntaxBuilders.default.block(block.path, block.params, block.hash, program, inverse, block.loc);
+      var parentProgram = this.currentElement();
+      _htmlbarsSyntaxUtils.appendChild(parentProgram, node);
+    },
+
+    MustacheStatement: function (rawMustache) {
+      var tokenizer = this.tokenizer;
+      var path = rawMustache.path;
+      var params = rawMustache.params;
+      var hash = rawMustache.hash;
+      var escaped = rawMustache.escaped;
+      var loc = rawMustache.loc;
+
+      var mustache = _htmlbarsSyntaxBuilders.default.mustache(path, params, hash, !escaped, loc);
+
+      if (tokenizer.state === 'comment') {
+        this.appendToCommentData('{{' + this.sourceForMustache(mustache) + '}}');
+        return;
+      }
+
+      acceptCommonNodes(this, mustache);
+
+      switch (tokenizer.state) {
+        // Tag helpers
+        case "tagName":
+          addElementModifier(this.currentNode, mustache);
+          tokenizer.state = "beforeAttributeName";
+          break;
+        case "beforeAttributeName":
+          addElementModifier(this.currentNode, mustache);
+          break;
+        case "attributeName":
+        case "afterAttributeName":
+          this.beginAttributeValue(false);
+          this.finishAttributeValue();
+          addElementModifier(this.currentNode, mustache);
+          tokenizer.state = "beforeAttributeName";
+          break;
+        case "afterAttributeValueQuoted":
+          addElementModifier(this.currentNode, mustache);
+          tokenizer.state = "beforeAttributeName";
+          break;
+
+        // Attribute values
+        case "beforeAttributeValue":
+          appendDynamicAttributeValuePart(this.currentAttribute, mustache);
+          tokenizer.state = 'attributeValueUnquoted';
+          break;
+        case "attributeValueDoubleQuoted":
+        case "attributeValueSingleQuoted":
+        case "attributeValueUnquoted":
+          appendDynamicAttributeValuePart(this.currentAttribute, mustache);
+          break;
+
+        // TODO: Only append child when the tokenizer state makes
+        // sense to do so, otherwise throw an error.
+        default:
+          _htmlbarsSyntaxUtils.appendChild(this.currentElement(), mustache);
+      }
+
+      return mustache;
+    },
+
+    ContentStatement: function (content) {
+      updateTokenizerLocation(this.tokenizer, content);
+
+      this.tokenizer.tokenizePart(content.value);
+      this.tokenizer.flushData();
+    },
+
+    CommentStatement: function (comment) {
+      return comment;
+    },
+
+    PartialStatement: function (partial) {
+      _htmlbarsSyntaxUtils.appendChild(this.currentElement(), partial);
+      return partial;
+    },
+
+    SubExpression: function (sexpr) {
+      return acceptCommonNodes(this, sexpr);
+    },
+
+    PathExpression: function (path) {
+      delete path.data;
+      delete path.depth;
+
+      return path;
+    },
+
+    Hash: function (hash) {
+      for (var i = 0; i < hash.pairs.length; i++) {
+        this.acceptNode(hash.pairs[i].value);
+      }
+
+      return hash;
+    },
+
+    StringLiteral: function () {},
+    BooleanLiteral: function () {},
+    NumberLiteral: function () {},
+    UndefinedLiteral: function () {},
+    NullLiteral: function () {}
+  };
+
+  function calculateRightStrippedOffsets(original, value) {
+    if (value === '') {
+      // if it is empty, just return the count of newlines
+      // in original
+      return {
+        lines: original.split("\n").length - 1,
+        columns: 0
+      };
+    }
+
+    // otherwise, return the number of newlines prior to
+    // `value`
+    var difference = original.split(value)[0];
+    var lines = difference.split(/\n/);
+    var lineCount = lines.length - 1;
+
+    return {
+      lines: lineCount,
+      columns: lines[lineCount].length
+    };
+  }
+
+  function updateTokenizerLocation(tokenizer, content) {
+    var line = content.loc.start.line;
+    var column = content.loc.start.column;
+
+    if (content.rightStripped) {
+      var offsets = calculateRightStrippedOffsets(content.original, content.value);
+
+      line = line + offsets.lines;
+      if (offsets.lines) {
+        column = offsets.columns;
+      } else {
+        column = column + offsets.columns;
+      }
+    }
+
+    tokenizer.line = line;
+    tokenizer.column = column;
+  }
+
+  function acceptCommonNodes(compiler, node) {
+    compiler.acceptNode(node.path);
+
+    if (node.params) {
+      for (var i = 0; i < node.params.length; i++) {
+        compiler.acceptNode(node.params[i]);
+      }
+    } else {
+      node.params = [];
+    }
+
+    if (node.hash) {
+      compiler.acceptNode(node.hash);
+    } else {
+      node.hash = _htmlbarsSyntaxBuilders.default.hash();
+    }
+
+    return node;
+  }
+
+  function addElementModifier(element, mustache) {
+    var path = mustache.path;
+    var params = mustache.params;
+    var hash = mustache.hash;
+    var loc = mustache.loc;
+
+    var modifier = _htmlbarsSyntaxBuilders.default.elementModifier(path, params, hash, loc);
+    element.modifiers.push(modifier);
+  }
+
+  function appendDynamicAttributeValuePart(attribute, part) {
+    attribute.isDynamic = true;
+    attribute.parts.push(part);
+  }
+});
+enifed("htmlbars-syntax/parser/tokenizer-event-handlers", ["exports", "htmlbars-util/void-tag-names", "htmlbars-syntax/builders", "htmlbars-syntax/utils"], function (exports, _htmlbarsUtilVoidTagNames, _htmlbarsSyntaxBuilders, _htmlbarsSyntaxUtils) {
+  "use strict";
+
+  exports.default = {
+    reset: function () {
+      this.currentNode = null;
+    },
+
+    // Comment
+
+    beginComment: function () {
+      this.currentNode = _htmlbarsSyntaxBuilders.default.comment("");
+      this.currentNode.loc = {
+        source: null,
+        start: _htmlbarsSyntaxBuilders.default.pos(this.tagOpenLine, this.tagOpenColumn),
+        end: null
+      };
+    },
+
+    appendToCommentData: function (char) {
+      this.currentNode.value += char;
+    },
+
+    finishComment: function () {
+      this.currentNode.loc.end = _htmlbarsSyntaxBuilders.default.pos(this.tokenizer.line, this.tokenizer.column);
+
+      _htmlbarsSyntaxUtils.appendChild(this.currentElement(), this.currentNode);
+    },
+
+    // Data
+
+    beginData: function () {
+      this.currentNode = _htmlbarsSyntaxBuilders.default.text();
+      this.currentNode.loc = {
+        source: null,
+        start: _htmlbarsSyntaxBuilders.default.pos(this.tokenizer.line, this.tokenizer.column),
+        end: null
+      };
+    },
+
+    appendToData: function (char) {
+      this.currentNode.chars += char;
+    },
+
+    finishData: function () {
+      this.currentNode.loc.end = _htmlbarsSyntaxBuilders.default.pos(this.tokenizer.line, this.tokenizer.column);
+
+      _htmlbarsSyntaxUtils.appendChild(this.currentElement(), this.currentNode);
+    },
+
+    // Tags - basic
+
+    tagOpen: function () {
+      this.tagOpenLine = this.tokenizer.line;
+      this.tagOpenColumn = this.tokenizer.column;
+    },
+
+    beginStartTag: function () {
+      this.currentNode = {
+        type: 'StartTag',
+        name: "",
+        attributes: [],
+        modifiers: [],
+        selfClosing: false,
+        loc: null
+      };
+    },
+
+    beginEndTag: function () {
+      this.currentNode = {
+        type: 'EndTag',
+        name: "",
+        attributes: [],
+        modifiers: [],
+        selfClosing: false,
+        loc: null
+      };
+    },
+
+    finishTag: function () {
+      var _tokenizer = this.tokenizer;
+      var line = _tokenizer.line;
+      var column = _tokenizer.column;
+
+      var tag = this.currentNode;
+      tag.loc = _htmlbarsSyntaxBuilders.default.loc(this.tagOpenLine, this.tagOpenColumn, line, column);
+
+      if (tag.type === 'StartTag') {
+        this.finishStartTag();
+
+        if (_htmlbarsUtilVoidTagNames.default.hasOwnProperty(tag.name) || tag.selfClosing) {
+          this.finishEndTag(true);
+        }
+      } else if (tag.type === 'EndTag') {
+        this.finishEndTag(false);
+      }
+    },
+
+    finishStartTag: function () {
+      var _currentNode = this.currentNode;
+      var name = _currentNode.name;
+      var attributes = _currentNode.attributes;
+      var modifiers = _currentNode.modifiers;
+
+      validateStartTag(this.currentNode, this.tokenizer);
+
+      var loc = _htmlbarsSyntaxBuilders.default.loc(this.tagOpenLine, this.tagOpenColumn);
+      var element = _htmlbarsSyntaxBuilders.default.element(name, attributes, modifiers, [], loc);
+      this.elementStack.push(element);
+    },
+
+    finishEndTag: function (isVoid) {
+      var tag = this.currentNode;
+
+      var element = this.elementStack.pop();
+      var parent = this.currentElement();
+      var disableComponentGeneration = this.options.disableComponentGeneration === true;
+
+      validateEndTag(tag, element, isVoid);
+
+      element.loc.end.line = this.tokenizer.line;
+      element.loc.end.column = this.tokenizer.column;
+
+      if (disableComponentGeneration || cannotBeComponent(element.tag)) {
+        _htmlbarsSyntaxUtils.appendChild(parent, element);
+      } else {
+        var program = _htmlbarsSyntaxBuilders.default.program(element.children);
+        _htmlbarsSyntaxUtils.parseComponentBlockParams(element, program);
+        var component = _htmlbarsSyntaxBuilders.default.component(element.tag, element.attributes, program, element.loc);
+        _htmlbarsSyntaxUtils.appendChild(parent, component);
+      }
+    },
+
+    markTagAsSelfClosing: function () {
+      this.currentNode.selfClosing = true;
+    },
+
+    // Tags - name
+
+    appendToTagName: function (char) {
+      this.currentNode.name += char;
+    },
+
+    // Tags - attributes
+
+    beginAttribute: function () {
+      var tag = this.currentNode;
+      if (tag.type === 'EndTag') {
+        throw new Error("Invalid end tag: closing tag must not have attributes, " + ("in `" + tag.name + "` (on line " + this.tokenizer.line + ")."));
+      }
+
+      this.currentAttribute = {
+        name: "",
+        parts: [],
+        isQuoted: false,
+        isDynamic: false,
+        // beginAttribute isn't called until after the first char is consumed
+        start: _htmlbarsSyntaxBuilders.default.pos(this.tokenizer.line, this.tokenizer.column),
+        valueStartLine: null,
+        valueStartColumn: null
+      };
+    },
+
+    appendToAttributeName: function (char) {
+      this.currentAttribute.name += char;
+    },
+
+    beginAttributeValue: function (isQuoted) {
+      this.currentAttribute.isQuoted = isQuoted;
+      this.currentAttribute.valueStartLine = this.tokenizer.line;
+      this.currentAttribute.valueStartColumn = this.tokenizer.column;
+    },
+
+    appendToAttributeValue: function (char) {
+      var parts = this.currentAttribute.parts;
+
+      if (typeof parts[parts.length - 1] === 'string') {
+        parts[parts.length - 1] += char;
+      } else {
+        parts.push(char);
+      }
+    },
+
+    finishAttributeValue: function () {
+      var _currentAttribute = this.currentAttribute;
+      var name = _currentAttribute.name;
+      var parts = _currentAttribute.parts;
+      var isQuoted = _currentAttribute.isQuoted;
+      var isDynamic = _currentAttribute.isDynamic;
+      var valueStartLine = _currentAttribute.valueStartLine;
+      var valueStartColumn = _currentAttribute.valueStartColumn;
+
+      var value = assembleAttributeValue(parts, isQuoted, isDynamic, this.tokenizer.line);
+      value.loc = _htmlbarsSyntaxBuilders.default.loc(valueStartLine, valueStartColumn, this.tokenizer.line, this.tokenizer.column);
+
+      var loc = _htmlbarsSyntaxBuilders.default.loc(this.currentAttribute.start.line, this.currentAttribute.start.column, this.tokenizer.line, this.tokenizer.column);
+
+      var attribute = _htmlbarsSyntaxBuilders.default.attr(name, value, loc);
+
+      this.currentNode.attributes.push(attribute);
+    }
+  };
+
+  function assembleAttributeValue(parts, isQuoted, isDynamic, line) {
+    if (isDynamic) {
+      if (isQuoted) {
+        return assembleConcatenatedValue(parts);
+      } else {
+        if (parts.length === 1 || parts.length === 2 && parts[1] === '/') {
+          return parts[0];
+        } else {
+          throw new Error("An unquoted attribute value must be a string or a mustache, " + "preceeded by whitespace or a '=' character, and " + ("followed by whitespace, a '>' character or a '/>' (on line " + line + ")"));
+        }
+      }
+    } else {
+      return _htmlbarsSyntaxBuilders.default.text(parts.length > 0 ? parts[0] : "");
+    }
+  }
+
+  function assembleConcatenatedValue(parts) {
+    for (var i = 0; i < parts.length; i++) {
+      var part = parts[i];
+
+      if (typeof part === 'string') {
+        parts[i] = _htmlbarsSyntaxBuilders.default.string(parts[i]);
+      } else {
+        if (part.type === 'MustacheStatement') {
+          parts[i] = _htmlbarsSyntaxUtils.unwrapMustache(part);
+        } else {
+          throw new Error("Unsupported node in quoted attribute value: " + part.type);
+        }
+      }
+    }
+
+    return _htmlbarsSyntaxBuilders.default.concat(parts);
+  }
+
+  function cannotBeComponent(tagName) {
+    return tagName.indexOf("-") === -1 && tagName.indexOf(".") === -1;
+  }
+
+  function validateStartTag(tag, tokenizer) {
+    // No support for <script> tags
+    if (tag.name === "script") {
+      throw new Error("`SCRIPT` tags are not allowed in HTMLBars templates (on line " + tokenizer.tagLine + ")");
+    }
+  }
+
+  function validateEndTag(tag, element, selfClosing) {
+    if (_htmlbarsUtilVoidTagNames.default[tag.name] && !selfClosing) {
+      // EngTag is also called by StartTag for void and self-closing tags (i.e.
+      // <input> or <br />, so we need to check for that here. Otherwise, we would
+      // throw an error for those cases.
+      throw new Error("Invalid end tag " + formatEndTagInfo(tag) + " (void elements cannot have end tags).");
+    } else if (element.tag === undefined) {
+      throw new Error("Closing tag " + formatEndTagInfo(tag) + " without an open tag.");
+    } else if (element.tag !== tag.name) {
+      throw new Error("Closing tag " + formatEndTagInfo(tag) + " did not match last open tag `" + element.tag + "` (on line " + element.loc.start.line + ").");
+    }
+  }
+
+  function formatEndTagInfo(tag) {
+    return "`" + tag.name + "` (on line " + tag.loc.end.line + ")";
+  }
+});
+enifed("htmlbars-syntax/traversal/errors", ["exports"], function (exports) {
+  "use strict";
+
+  exports.cannotRemoveNode = cannotRemoveNode;
+  exports.cannotReplaceNode = cannotReplaceNode;
+  exports.cannotReplaceOrRemoveInKeyHandlerYet = cannotReplaceOrRemoveInKeyHandlerYet;
+  function TraversalError(message, node, parent, key) {
+    this.name = "TraversalError";
+    this.message = message;
+    this.node = node;
+    this.parent = parent;
+    this.key = key;
+  }
+
+  TraversalError.prototype = Object.create(Error.prototype);
+  TraversalError.prototype.constructor = TraversalError;
+
+  exports.default = TraversalError;
+
+  function cannotRemoveNode(node, parent, key) {
+    return new TraversalError("Cannot remove a node unless it is part of an array", node, parent, key);
+  }
+
+  function cannotReplaceNode(node, parent, key) {
+    return new TraversalError("Cannot replace a node with multiple nodes unless it is part of an array", node, parent, key);
+  }
+
+  function cannotReplaceOrRemoveInKeyHandlerYet(node, key) {
+    return new TraversalError("Replacing and removing in key handlers is not yet supported.", node, null, key);
+  }
+});
+enifed('htmlbars-syntax/traversal/traverse', ['exports', 'htmlbars-syntax/types/visitor-keys', 'htmlbars-syntax/traversal/errors'], function (exports, _htmlbarsSyntaxTypesVisitorKeys, _htmlbarsSyntaxTraversalErrors) {
+  'use strict';
+
+  exports.default = traverse;
+  exports.normalizeVisitor = normalizeVisitor;
+
+  function visitNode(visitor, node) {
+    var handler = visitor[node.type] || visitor.All;
+    var result = undefined;
+
+    if (handler && handler.enter) {
+      result = handler.enter.call(null, node);
+    }
+
+    if (result === undefined) {
+      var keys = _htmlbarsSyntaxTypesVisitorKeys.default[node.type];
+
+      for (var i = 0; i < keys.length; i++) {
+        visitKey(visitor, handler, node, keys[i]);
+      }
+
+      if (handler && handler.exit) {
+        result = handler.exit.call(null, node);
+      }
+    }
+
+    return result;
+  }
+
+  function visitKey(visitor, handler, node, key) {
+    var value = node[key];
+    if (!value) {
+      return;
+    }
+
+    var keyHandler = handler && (handler.keys[key] || handler.keys.All);
+    var result = undefined;
+
+    if (keyHandler && keyHandler.enter) {
+      result = keyHandler.enter.call(null, node, key);
+      if (result !== undefined) {
+        throw _htmlbarsSyntaxTraversalErrors.cannotReplaceOrRemoveInKeyHandlerYet(node, key);
+      }
+    }
+
+    if (Array.isArray(value)) {
+      visitArray(visitor, value);
+    } else {
+      var _result = visitNode(visitor, value);
+      if (_result !== undefined) {
+        assignKey(node, key, _result);
+      }
+    }
+
+    if (keyHandler && keyHandler.exit) {
+      result = keyHandler.exit.call(null, node, key);
+      if (result !== undefined) {
+        throw _htmlbarsSyntaxTraversalErrors.cannotReplaceOrRemoveInKeyHandlerYet(node, key);
+      }
+    }
+  }
+
+  function visitArray(visitor, array) {
+    for (var i = 0; i < array.length; i++) {
+      var result = visitNode(visitor, array[i]);
+      if (result !== undefined) {
+        i += spliceArray(array, i, result) - 1;
+      }
+    }
+  }
+
+  function assignKey(node, key, result) {
+    if (result === null) {
+      throw _htmlbarsSyntaxTraversalErrors.cannotRemoveNode(node[key], node, key);
+    } else if (Array.isArray(result)) {
+      if (result.length === 1) {
+        node[key] = result[0];
+      } else {
+        if (result.length === 0) {
+          throw _htmlbarsSyntaxTraversalErrors.cannotRemoveNode(node[key], node, key);
+        } else {
+          throw _htmlbarsSyntaxTraversalErrors.cannotReplaceNode(node[key], node, key);
+        }
+      }
+    } else {
+      node[key] = result;
+    }
+  }
+
+  function spliceArray(array, index, result) {
+    if (result === null) {
+      array.splice(index, 1);
+      return 0;
+    } else if (Array.isArray(result)) {
+      array.splice.apply(array, [index, 1].concat(result));
+      return result.length;
+    } else {
+      array.splice(index, 1, result);
+      return 1;
+    }
+  }
+
+  function traverse(node, visitor) {
+    visitNode(normalizeVisitor(visitor), node);
+  }
+
+  function normalizeVisitor(visitor) {
+    var normalizedVisitor = {};
+
+    for (var type in visitor) {
+      var handler = visitor[type] || visitor.All;
+      var normalizedKeys = {};
+
+      if (typeof handler === 'object') {
+        var keys = handler.keys;
+        if (keys) {
+          for (var key in keys) {
+            var keyHandler = keys[key];
+            if (typeof keyHandler === 'object') {
+              normalizedKeys[key] = {
+                enter: typeof keyHandler.enter === 'function' ? keyHandler.enter : null,
+                exit: typeof keyHandler.exit === 'function' ? keyHandler.exit : null
+              };
+            } else if (typeof keyHandler === 'function') {
+              normalizedKeys[key] = {
+                enter: keyHandler,
+                exit: null
+              };
+            }
+          }
+        }
+
+        normalizedVisitor[type] = {
+          enter: typeof handler.enter === 'function' ? handler.enter : null,
+          exit: typeof handler.exit === 'function' ? handler.exit : null,
+          keys: normalizedKeys
+        };
+      } else if (typeof handler === 'function') {
+        normalizedVisitor[type] = {
+          enter: handler,
+          exit: null,
+          keys: normalizedKeys
+        };
+      }
+    }
+
+    return normalizedVisitor;
+  }
+});
+enifed('htmlbars-syntax/traversal/walker', ['exports'], function (exports) {
+  'use strict';
+
+  function Walker(order) {
+    this.order = order;
+    this.stack = [];
+  }
+
+  exports.default = Walker;
+
+  Walker.prototype.visit = function (node, callback) {
+    if (!node) {
+      return;
+    }
+
+    this.stack.push(node);
+
+    if (this.order === 'post') {
+      this.children(node, callback);
+      callback(node, this);
+    } else {
+      callback(node, this);
+      this.children(node, callback);
+    }
+
+    this.stack.pop();
+  };
+
+  var visitors = {
+    Program: function (walker, node, callback) {
+      for (var i = 0; i < node.body.length; i++) {
+        walker.visit(node.body[i], callback);
+      }
+    },
+
+    ElementNode: function (walker, node, callback) {
+      for (var i = 0; i < node.children.length; i++) {
+        walker.visit(node.children[i], callback);
+      }
+    },
+
+    BlockStatement: function (walker, node, callback) {
+      walker.visit(node.program, callback);
+      walker.visit(node.inverse, callback);
+    },
+
+    ComponentNode: function (walker, node, callback) {
+      walker.visit(node.program, callback);
+    }
+  };
+
+  Walker.prototype.children = function (node, callback) {
+    var visitor = visitors[node.type];
+    if (visitor) {
+      visitor(this, node, callback);
+    }
+  };
+});
+enifed('htmlbars-syntax/types/visitor-keys', ['exports'], function (exports) {
+  'use strict';
+
+  exports.default = {
+    Program: ['body'],
+
+    MustacheStatement: ['path', 'params', 'hash'],
+    BlockStatement: ['path', 'params', 'hash', 'program', 'inverse'],
+    ElementModifierStatement: ['path', 'params', 'hash'],
+    PartialStatement: ['name', 'params', 'hash'],
+    CommentStatement: [],
+    ElementNode: ['attributes', 'modifiers', 'children'],
+    ComponentNode: ['attributes', 'program'],
+    AttrNode: ['value'],
+    TextNode: [],
+
+    ConcatStatement: ['parts'],
+    SubExpression: ['path', 'params', 'hash'],
+    PathExpression: [],
+
+    StringLiteral: [],
+    BooleanLiteral: [],
+    NumberLiteral: [],
+    NullLiteral: [],
+    UndefinedLiteral: [],
+
+    Hash: ['pairs'],
+    HashPair: ['value']
+  };
+});
+enifed('htmlbars-syntax/utils', ['exports', 'htmlbars-util/array-utils'], function (exports, _htmlbarsUtilArrayUtils) {
+  'use strict';
+
+  exports.parseComponentBlockParams = parseComponentBlockParams;
+  exports.childrenFor = childrenFor;
+  exports.appendChild = appendChild;
+  exports.isHelper = isHelper;
+  exports.unwrapMustache = unwrapMustache;
+
+  // Regex to validate the identifier for block parameters.
+  // Based on the ID validation regex in Handlebars.
+
+  var ID_INVERSE_PATTERN = /[!"#%-,\.\/;->@\[-\^`\{-~]/;
+
+  // Checks the component's attributes to see if it uses block params.
+  // If it does, registers the block params with the program and
+  // removes the corresponding attributes from the element.
+
+  function parseComponentBlockParams(element, program) {
+    var l = element.attributes.length;
+    var attrNames = [];
+
+    for (var i = 0; i < l; i++) {
+      attrNames.push(element.attributes[i].name);
+    }
+
+    var asIndex = _htmlbarsUtilArrayUtils.indexOfArray(attrNames, 'as');
+
+    if (asIndex !== -1 && l > asIndex && attrNames[asIndex + 1].charAt(0) === '|') {
+      // Some basic validation, since we're doing the parsing ourselves
+      var paramsString = attrNames.slice(asIndex).join(' ');
+      if (paramsString.charAt(paramsString.length - 1) !== '|' || paramsString.match(/\|/g).length !== 2) {
+        throw new Error('Invalid block parameters syntax: \'' + paramsString + '\'');
+      }
+
+      var params = [];
+      for (i = asIndex + 1; i < l; i++) {
+        var param = attrNames[i].replace(/\|/g, '');
+        if (param !== '') {
+          if (ID_INVERSE_PATTERN.test(param)) {
+            throw new Error('Invalid identifier for block parameters: \'' + param + '\' in \'' + paramsString + '\'');
+          }
+          params.push(param);
+        }
+      }
+
+      if (params.length === 0) {
+        throw new Error('Cannot use zero block parameters: \'' + paramsString + '\'');
+      }
+
+      element.attributes = element.attributes.slice(0, asIndex);
+      program.blockParams = params;
+    }
+  }
+
+  function childrenFor(node) {
+    if (node.type === 'Program') {
+      return node.body;
+    }
+    if (node.type === 'ElementNode') {
+      return node.children;
+    }
+  }
+
+  function appendChild(parent, node) {
+    childrenFor(parent).push(node);
+  }
+
+  function isHelper(mustache) {
+    return mustache.params && mustache.params.length > 0 || mustache.hash && mustache.hash.pairs.length > 0;
+  }
+
+  function unwrapMustache(mustache) {
+    if (isHelper(mustache)) {
+      return mustache;
+    } else {
+      return mustache.path;
+    }
+  }
+});
+enifed("htmlbars-test-helpers", ["exports", "simple-html-tokenizer/index", "htmlbars-util/array-utils"], function (exports, _simpleHtmlTokenizerIndex, _htmlbarsUtilArrayUtils) {
+  "use strict";
+
+  exports.equalInnerHTML = equalInnerHTML;
+  exports.equalHTML = equalHTML;
+  exports.equalTokens = equalTokens;
+  exports.normalizeInnerHTML = normalizeInnerHTML;
+  exports.isCheckedInputHTML = isCheckedInputHTML;
+  exports.getTextContent = getTextContent;
+
+  function equalInnerHTML(fragment, html) {
+    var actualHTML = normalizeInnerHTML(fragment.innerHTML);
+    QUnit.push(actualHTML === html, actualHTML, html);
+  }
+
+  function equalHTML(node, html) {
+    var fragment;
+    if (!node.nodeType && node.length) {
+      fragment = document.createDocumentFragment();
+      while (node[0]) {
+        fragment.appendChild(node[0]);
+      }
+    } else {
+      fragment = node;
+    }
+
+    var div = document.createElement("div");
+    div.appendChild(fragment.cloneNode(true));
+
+    equalInnerHTML(div, html);
+  }
+
+  function generateTokens(fragmentOrHtml) {
+    var div = document.createElement("div");
+    if (typeof fragmentOrHtml === 'string') {
+      div.innerHTML = fragmentOrHtml;
+    } else {
+      div.appendChild(fragmentOrHtml.cloneNode(true));
+    }
+
+    return { tokens: _simpleHtmlTokenizerIndex.tokenize(div.innerHTML), html: div.innerHTML };
+  }
+
+  function equalTokens(fragment, html, message) {
+    if (fragment.fragment) {
+      fragment = fragment.fragment;
+    }
+    if (html.fragment) {
+      html = html.fragment;
+    }
+
+    var fragTokens = generateTokens(fragment);
+    var htmlTokens = generateTokens(html);
+
+    function normalizeTokens(token) {
+      if (token.type === 'StartTag') {
+        token.attributes = token.attributes.sort(function (a, b) {
+          if (a[0] > b[0]) {
+            return 1;
+          }
+          if (a[0] < b[0]) {
+            return -1;
+          }
+          return 0;
+        });
+      }
+    }
+
+    _htmlbarsUtilArrayUtils.forEach(fragTokens.tokens, normalizeTokens);
+    _htmlbarsUtilArrayUtils.forEach(htmlTokens.tokens, normalizeTokens);
+
+    var msg = "Expected: " + html + "; Actual: " + fragTokens.html;
+
+    if (message) {
+      msg += " (" + message + ")";
+    }
+
+    deepEqual(fragTokens.tokens, htmlTokens.tokens, msg);
+  }
+
+  // detect side-effects of cloning svg elements in IE9-11
+  var ieSVGInnerHTML = (function () {
+    if (!document.createElementNS) {
+      return false;
+    }
+    var div = document.createElement('div');
+    var node = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    div.appendChild(node);
+    var clone = div.cloneNode(true);
+    return clone.innerHTML === '<svg xmlns="http://www.w3.org/2000/svg" />';
+  })();
+
+  function normalizeInnerHTML(actualHTML) {
+    if (ieSVGInnerHTML) {
+      // Replace `<svg xmlns="http://www.w3.org/2000/svg" height="50%" />` with `<svg height="50%"></svg>`, etc.
+      // drop namespace attribute
+      actualHTML = actualHTML.replace(/ xmlns="[^"]+"/, '');
+      // replace self-closing elements
+      actualHTML = actualHTML.replace(/<([^ >]+) [^\/>]*\/>/gi, function (tag, tagName) {
+        return tag.slice(0, tag.length - 3) + '></' + tagName + '>';
+      });
+    }
+
+    return actualHTML;
+  }
+
+  // detect weird IE8 checked element string
+  var checkedInput = document.createElement('input');
+  checkedInput.setAttribute('checked', 'checked');
+  var checkedInputString = checkedInput.outerHTML;
+
+  function isCheckedInputHTML(element) {
+    equal(element.outerHTML, checkedInputString);
+  }
+
+  // check which property has the node's text content
+  var textProperty = document.createElement('div').textContent === undefined ? 'innerText' : 'textContent';
+
+  function getTextContent(el) {
+    // textNode
+    if (el.nodeType === 3) {
+      return el.nodeValue;
+    } else {
+      return el[textProperty];
+    }
+  }
+});
+enifed('htmlbars-util', ['exports', 'htmlbars-util/safe-string', 'htmlbars-util/handlebars/utils', 'htmlbars-util/namespaces', 'htmlbars-util/morph-utils'], function (exports, _htmlbarsUtilSafeString, _htmlbarsUtilHandlebarsUtils, _htmlbarsUtilNamespaces, _htmlbarsUtilMorphUtils) {
+  'use strict';
+
+  exports.SafeString = _htmlbarsUtilSafeString.default;
+  exports.escapeExpression = _htmlbarsUtilHandlebarsUtils.escapeExpression;
+  exports.getAttrNamespace = _htmlbarsUtilNamespaces.getAttrNamespace;
+  exports.validateChildMorphs = _htmlbarsUtilMorphUtils.validateChildMorphs;
+  exports.linkParams = _htmlbarsUtilMorphUtils.linkParams;
+  exports.dump = _htmlbarsUtilMorphUtils.dump;
+});
+enifed('htmlbars-util/array-utils', ['exports'], function (exports) {
+  'use strict';
+
+  exports.forEach = forEach;
+  exports.map = map;
+
+  function forEach(array, callback, binding) {
+    var i, l;
+    if (binding === undefined) {
+      for (i = 0, l = array.length; i < l; i++) {
+        callback(array[i], i, array);
+      }
+    } else {
+      for (i = 0, l = array.length; i < l; i++) {
+        callback.call(binding, array[i], i, array);
+      }
+    }
+  }
+
+  function map(array, callback) {
+    var output = [];
+    var i, l;
+
+    for (i = 0, l = array.length; i < l; i++) {
+      output.push(callback(array[i], i, array));
+    }
+
+    return output;
+  }
+
+  var getIdx;
+  if (Array.prototype.indexOf) {
+    getIdx = function (array, obj, from) {
+      return array.indexOf(obj, from);
+    };
+  } else {
+    getIdx = function (array, obj, from) {
+      if (from === undefined || from === null) {
+        from = 0;
+      } else if (from < 0) {
+        from = Math.max(0, array.length + from);
+      }
+      for (var i = from, l = array.length; i < l; i++) {
+        if (array[i] === obj) {
+          return i;
+        }
+      }
+      return -1;
+    };
+  }
+
+  var isArray = Array.isArray || function (array) {
+    return Object.prototype.toString.call(array) === '[object Array]';
+  };
+
+  exports.isArray = isArray;
+  var indexOfArray = getIdx;
+  exports.indexOfArray = indexOfArray;
+});
+enifed('htmlbars-util/handlebars/safe-string', ['exports'], function (exports) {
+  // Build out our basic SafeString type
+  'use strict';
+
+  function SafeString(string) {
+    this.string = string;
+  }
+
+  SafeString.prototype.toString = SafeString.prototype.toHTML = function () {
+    return '' + this.string;
+  };
+
+  exports.default = SafeString;
+});
+enifed('htmlbars-util/handlebars/utils', ['exports'], function (exports) {
+  'use strict';
+
+  exports.extend = extend;
+  exports.indexOf = indexOf;
+  exports.escapeExpression = escapeExpression;
+  exports.isEmpty = isEmpty;
+  exports.blockParams = blockParams;
+  exports.appendContextPath = appendContextPath;
+  var escape = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#x27;',
+    '`': '&#x60;'
+  };
+
+  var badChars = /[&<>"'`]/g,
+      possible = /[&<>"'`]/;
+
+  function escapeChar(chr) {
+    return escape[chr];
+  }
+
+  function extend(obj /* , ...source */) {
+    for (var i = 1; i < arguments.length; i++) {
+      for (var key in arguments[i]) {
+        if (Object.prototype.hasOwnProperty.call(arguments[i], key)) {
+          obj[key] = arguments[i][key];
+        }
+      }
+    }
+
+    return obj;
+  }
+
+  var toString = Object.prototype.toString;
+
+  exports.toString = toString;
+  // Sourced from lodash
+  // https://github.com/bestiejs/lodash/blob/master/LICENSE.txt
+  /*eslint-disable func-style, no-var */
+  var isFunction = function (value) {
+    return typeof value === 'function';
+  };
+  // fallback for older versions of Chrome and Safari
+  /* istanbul ignore next */
+  if (isFunction(/x/)) {
+    exports.isFunction = isFunction = function (value) {
+      return typeof value === 'function' && toString.call(value) === '[object Function]';
+    };
+  }
+  var isFunction;
+  exports.isFunction = isFunction;
+  /*eslint-enable func-style, no-var */
+
+  /* istanbul ignore next */
+  var isArray = Array.isArray || function (value) {
+    return value && typeof value === 'object' ? toString.call(value) === '[object Array]' : false;
+  };
+
+  exports.isArray = isArray;
+  // Older IE versions do not directly support indexOf so we must implement our own, sadly.
+
+  function indexOf(array, value) {
+    for (var i = 0, len = array.length; i < len; i++) {
+      if (array[i] === value) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  function escapeExpression(string) {
+    if (typeof string !== 'string') {
+      // don't escape SafeStrings, since they're already safe
+      if (string && string.toHTML) {
+        return string.toHTML();
+      } else if (string == null) {
+        return '';
+      } else if (!string) {
+        return string + '';
+      }
+
+      // Force a string conversion as this will be done by the append regardless and
+      // the regex test will do this transparently behind the scenes, causing issues if
+      // an object's to string has escaped characters in it.
+      string = '' + string;
+    }
+
+    if (!possible.test(string)) {
+      return string;
+    }
+    return string.replace(badChars, escapeChar);
+  }
+
+  function isEmpty(value) {
+    if (!value && value !== 0) {
+      return true;
+    } else if (isArray(value) && value.length === 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  function blockParams(params, ids) {
+    params.path = ids;
+    return params;
+  }
+
+  function appendContextPath(contextPath, id) {
+    return (contextPath ? contextPath + '.' : '') + id;
+  }
+});
+enifed("htmlbars-util/morph-utils", ["exports"], function (exports) {
+  /*globals console*/
+
+  "use strict";
+
+  exports.visitChildren = visitChildren;
+  exports.validateChildMorphs = validateChildMorphs;
+  exports.linkParams = linkParams;
+  exports.dump = dump;
+
+  function visitChildren(nodes, callback) {
+    if (!nodes || nodes.length === 0) {
+      return;
+    }
+
+    nodes = nodes.slice();
+
+    while (nodes.length) {
+      var node = nodes.pop();
+      callback(node);
+
+      if (node.childNodes) {
+        nodes.push.apply(nodes, node.childNodes);
+      } else if (node.firstChildMorph) {
+        var current = node.firstChildMorph;
+
+        while (current) {
+          nodes.push(current);
+          current = current.nextMorph;
+        }
+      } else if (node.morphList) {
+        var current = node.morphList.firstChildMorph;
+
+        while (current) {
+          nodes.push(current);
+          current = current.nextMorph;
+        }
+      }
+    }
+  }
+
+  function validateChildMorphs(env, morph, visitor) {
+    var morphList = morph.morphList;
+    if (morph.morphList) {
+      var current = morphList.firstChildMorph;
+
+      while (current) {
+        var next = current.nextMorph;
+        validateChildMorphs(env, current, visitor);
+        current = next;
+      }
+    } else if (morph.lastResult) {
+      morph.lastResult.revalidateWith(env, undefined, undefined, undefined, visitor);
+    } else if (morph.childNodes) {
+      // This means that the childNodes were wired up manually
+      for (var i = 0, l = morph.childNodes.length; i < l; i++) {
+        validateChildMorphs(env, morph.childNodes[i], visitor);
+      }
+    }
+  }
+
+  function linkParams(env, scope, morph, path, params, hash) {
+    if (morph.linkedParams) {
+      return;
+    }
+
+    if (env.hooks.linkRenderNode(morph, env, scope, path, params, hash)) {
+      morph.linkedParams = { params: params, hash: hash };
+    }
+  }
+
+  function dump(node) {
+    console.group(node, node.isDirty);
+
+    if (node.childNodes) {
+      map(node.childNodes, dump);
+    } else if (node.firstChildMorph) {
+      var current = node.firstChildMorph;
+
+      while (current) {
+        dump(current);
+        current = current.nextMorph;
+      }
+    } else if (node.morphList) {
+      dump(node.morphList);
+    }
+
+    console.groupEnd();
+  }
+
+  function map(nodes, cb) {
+    for (var i = 0, l = nodes.length; i < l; i++) {
+      cb(nodes[i]);
+    }
+  }
+});
+enifed('htmlbars-util/namespaces', ['exports'], function (exports) {
+  // ref http://dev.w3.org/html5/spec-LC/namespaces.html
+  'use strict';
+
+  exports.getAttrNamespace = getAttrNamespace;
+  var defaultNamespaces = {
+    html: 'http://www.w3.org/1999/xhtml',
+    mathml: 'http://www.w3.org/1998/Math/MathML',
+    svg: 'http://www.w3.org/2000/svg',
+    xlink: 'http://www.w3.org/1999/xlink',
+    xml: 'http://www.w3.org/XML/1998/namespace'
+  };
+
+  function getAttrNamespace(attrName, detectedNamespace) {
+    if (detectedNamespace) {
+      return detectedNamespace;
+    }
+
+    var namespace;
+
+    var colonIndex = attrName.indexOf(':');
+    if (colonIndex !== -1) {
+      var prefix = attrName.slice(0, colonIndex);
+      namespace = defaultNamespaces[prefix];
+    }
+
+    return namespace || null;
+  }
+});
+enifed("htmlbars-util/object-utils", ["exports"], function (exports) {
+  "use strict";
+
+  exports.merge = merge;
+  exports.shallowCopy = shallowCopy;
+  exports.keySet = keySet;
+  exports.keyLength = keyLength;
+
+  function merge(options, defaults) {
+    for (var prop in defaults) {
+      if (options.hasOwnProperty(prop)) {
+        continue;
+      }
+      options[prop] = defaults[prop];
+    }
+    return options;
+  }
+
+  function shallowCopy(obj) {
+    return merge({}, obj);
+  }
+
+  function keySet(obj) {
+    var set = {};
+
+    for (var prop in obj) {
+      if (obj.hasOwnProperty(prop)) {
+        set[prop] = true;
+      }
+    }
+
+    return set;
+  }
+
+  function keyLength(obj) {
+    var count = 0;
+
+    for (var prop in obj) {
+      if (obj.hasOwnProperty(prop)) {
+        count++;
+      }
+    }
+
+    return count;
+  }
+});
+enifed("htmlbars-util/quoting", ["exports"], function (exports) {
+  "use strict";
+
+  exports.hash = hash;
+  exports.repeat = repeat;
+  function escapeString(str) {
+    str = str.replace(/\\/g, "\\\\");
+    str = str.replace(/"/g, '\\"');
+    str = str.replace(/\n/g, "\\n");
+    return str;
+  }
+
+  exports.escapeString = escapeString;
+
+  function string(str) {
+    return '"' + escapeString(str) + '"';
+  }
+
+  exports.string = string;
+
+  function array(a) {
+    return "[" + a + "]";
+  }
+
+  exports.array = array;
+
+  function hash(pairs) {
+    return "{" + pairs.join(", ") + "}";
+  }
+
+  function repeat(chars, times) {
+    var str = "";
+    while (times--) {
+      str += chars;
+    }
+    return str;
+  }
+});
+enifed('htmlbars-util/safe-string', ['exports', 'htmlbars-util/handlebars/safe-string'], function (exports, _htmlbarsUtilHandlebarsSafeString) {
+  'use strict';
+
+  exports.default = _htmlbarsUtilHandlebarsSafeString.default;
+});
+enifed("htmlbars-util/template-utils", ["exports", "htmlbars-util/morph-utils", "htmlbars-runtime/render"], function (exports, _htmlbarsUtilMorphUtils, _htmlbarsRuntimeRender) {
+  "use strict";
+
+  var _slice = Array.prototype.slice;
+  exports.RenderState = RenderState;
+  exports.blockFor = blockFor;
+  exports.renderAndCleanup = renderAndCleanup;
+  exports.clearMorph = clearMorph;
+  exports.clearMorphList = clearMorphList;
+  exports.buildStatement = buildStatement;
+
+  function RenderState(renderNode, morphList) {
+    // The morph list that is no longer needed and can be
+    // destroyed.
+    this.morphListToClear = morphList;
+
+    // The morph list that needs to be pruned of any items
+    // that were not yielded on a subsequent render.
+    this.morphListToPrune = null;
+
+    // A map of morphs for each item yielded in during this
+    // rendering pass. Any morphs in the DOM but not in this map
+    // will be pruned during cleanup.
+    this.handledMorphs = {};
+    this.collisions = undefined;
+
+    // The morph to clear once rendering is complete. By
+    // default, we set this to the previous morph (to catch
+    // the case where nothing is yielded; in that case, we
+    // should just clear the morph). Otherwise this gets set
+    // to null if anything is rendered.
+    this.morphToClear = renderNode;
+
+    this.shadowOptions = null;
+  }
+
+  function Block(render, template, blockOptions) {
+    this.render = render;
+    this.template = template;
+    this.blockOptions = blockOptions;
+    this.arity = template.arity;
+  }
+
+  Block.prototype.invoke = function (env, blockArguments, _self, renderNode, parentScope, visitor) {
+    if (renderNode.lastResult) {
+      renderNode.lastResult.revalidateWith(env, undefined, _self, blockArguments, visitor);
+    } else {
+      this._firstRender(env, blockArguments, _self, renderNode, parentScope);
+    }
+  };
+
+  Block.prototype._firstRender = function (env, blockArguments, _self, renderNode, parentScope) {
+    var options = { renderState: new RenderState(renderNode) };
+    var render = this.render;
+    var template = this.template;
+    var scope = this.blockOptions.scope;
+
+    var shadowScope = scope ? env.hooks.createChildScope(scope) : env.hooks.createFreshScope();
+
+    env.hooks.bindShadowScope(env, parentScope, shadowScope, this.blockOptions.options);
+
+    if (_self !== undefined) {
+      env.hooks.bindSelf(env, shadowScope, _self);
+    } else if (this.blockOptions.self !== undefined) {
+      env.hooks.bindSelf(env, shadowScope, this.blockOptions.self);
+    }
+
+    bindBlocks(env, shadowScope, this.blockOptions.yieldTo);
+
+    renderAndCleanup(renderNode, env, options, null, function () {
+      options.renderState.morphToClear = null;
+      var renderOptions = new _htmlbarsRuntimeRender.RenderOptions(renderNode, undefined, blockArguments);
+      render(template, env, shadowScope, renderOptions);
+    });
+  };
+
+  function blockFor(render, template, blockOptions) {
+    return new Block(render, template, blockOptions);
+  }
+
+  function bindBlocks(env, shadowScope, blocks) {
+    if (!blocks) {
+      return;
+    }
+    if (blocks instanceof Block) {
+      env.hooks.bindBlock(env, shadowScope, blocks);
+    } else {
+      for (var name in blocks) {
+        if (blocks.hasOwnProperty(name)) {
+          env.hooks.bindBlock(env, shadowScope, blocks[name], name);
+        }
+      }
+    }
+  }
+
+  function renderAndCleanup(morph, env, options, shadowOptions, callback) {
+    // The RenderState object is used to collect information about what the
+    // helper or hook being invoked has yielded. Once it has finished either
+    // yielding multiple items (via yieldItem) or a single template (via
+    // yieldTemplate), we detect what was rendered and how it differs from
+    // the previous render, cleaning up old state in DOM as appropriate.
+    var renderState = options.renderState;
+    renderState.collisions = undefined;
+    renderState.shadowOptions = shadowOptions;
+
+    // Invoke the callback, instructing it to save information about what it
+    // renders into RenderState.
+    var result = callback(options);
+
+    // The hook can opt-out of cleanup if it handled cleanup itself.
+    if (result && result.handled) {
+      return;
+    }
+
+    var morphMap = morph.morphMap;
+
+    // Walk the morph list, clearing any items that were yielded in a previous
+    // render but were not yielded during this render.
+    var morphList = renderState.morphListToPrune;
+    if (morphList) {
+      var handledMorphs = renderState.handledMorphs;
+      var item = morphList.firstChildMorph;
+
+      while (item) {
+        var next = item.nextMorph;
+
+        // If we don't see the key in handledMorphs, it wasn't
+        // yielded in and we can safely remove it from DOM.
+        if (!(item.key in handledMorphs)) {
+          morphMap[item.key] = undefined;
+          clearMorph(item, env, true);
+          item.destroy();
+        }
+
+        item = next;
+      }
+    }
+
+    morphList = renderState.morphListToClear;
+    if (morphList) {
+      clearMorphList(morphList, morph, env);
+    }
+
+    var toClear = renderState.morphToClear;
+    if (toClear) {
+      clearMorph(toClear, env);
+    }
+  }
+
+  function clearMorph(morph, env, destroySelf) {
+    var cleanup = env.hooks.cleanupRenderNode;
+    var destroy = env.hooks.destroyRenderNode;
+    var willCleanup = env.hooks.willCleanupTree;
+    var didCleanup = env.hooks.didCleanupTree;
+
+    function destroyNode(node) {
+      if (cleanup) {
+        cleanup(node);
+      }
+      if (destroy) {
+        destroy(node);
+      }
+    }
+
+    if (willCleanup) {
+      willCleanup(env, morph, destroySelf);
+    }
+    if (cleanup) {
+      cleanup(morph);
+    }
+    if (destroySelf && destroy) {
+      destroy(morph);
+    }
+
+    _htmlbarsUtilMorphUtils.visitChildren(morph.childNodes, destroyNode);
+
+    // TODO: Deal with logical children that are not in the DOM tree
+    morph.clear();
+    if (didCleanup) {
+      didCleanup(env, morph, destroySelf);
+    }
+
+    morph.lastResult = null;
+    morph.lastYielded = null;
+    morph.childNodes = null;
+  }
+
+  function clearMorphList(morphList, morph, env) {
+    var item = morphList.firstChildMorph;
+
+    while (item) {
+      var next = item.nextMorph;
+      morph.morphMap[item.key] = undefined;
+      clearMorph(item, env, true);
+      item.destroy();
+
+      item = next;
+    }
+
+    // Remove the MorphList from the morph.
+    morphList.clear();
+    morph.morphList = null;
+  }
+
+  function buildStatement() {
+    var statement = [].concat(_slice.call(arguments));
+
+    // ensure array length is 7 by padding with 0
+    for (var i = arguments.length; i < 7; i++) {
+      statement[i] = 0;
+    }
+
+    return statement;
+  }
+});
+enifed("htmlbars-util/void-tag-names", ["exports", "htmlbars-util/array-utils"], function (exports, _htmlbarsUtilArrayUtils) {
+  "use strict";
+
+  // The HTML elements in this list are speced by
+  // http://www.w3.org/TR/html-markup/syntax.html#syntax-elements,
+  // and will be forced to close regardless of if they have a
+  // self-closing /> at the end.
+  var voidTagNames = "area base br col command embed hr img input keygen link meta param source track wbr";
+  var voidMap = {};
+
+  _htmlbarsUtilArrayUtils.forEach(voidTagNames.split(" "), function (tagName) {
+    voidMap[tagName] = true;
+  });
+
+  exports.default = voidMap;
+});
+enifed('morph-range', ['exports', 'morph-range/utils'], function (exports, _morphRangeUtils) {
+  'use strict';
+
+  // constructor just initializes the fields
+  // use one of the static initializers to create a valid morph.
+  function Morph(domHelper, contextualElement) {
+    this.domHelper = domHelper;
+    // context if content if current content is detached
+    this.contextualElement = contextualElement;
+    // inclusive range of morph
+    // these should be nodeType 1, 3, or 8
+    this.firstNode = null;
+    this.lastNode = null;
+
+    // flag to force text to setContent to be treated as html
+    this.parseTextAsHTML = false;
+
+    // morph list graph
+    this.parentMorphList = null;
+    this.previousMorph = null;
+    this.nextMorph = null;
+  }
+
+  Morph.empty = function (domHelper, contextualElement) {
+    var morph = new Morph(domHelper, contextualElement);
+    morph.clear();
+    return morph;
+  };
+
+  Morph.create = function (domHelper, contextualElement, node) {
+    var morph = new Morph(domHelper, contextualElement);
+    morph.setNode(node);
+    return morph;
+  };
+
+  Morph.attach = function (domHelper, contextualElement, firstNode, lastNode) {
+    var morph = new Morph(domHelper, contextualElement);
+    morph.setRange(firstNode, lastNode);
+    return morph;
+  };
+
+  Morph.prototype.setContent = function Morph$setContent(content) {
+    if (content === null || content === undefined) {
+      return this.clear();
+    }
+
+    var type = typeof content;
+    switch (type) {
+      case 'string':
+        if (this.parseTextAsHTML) {
+          return this.domHelper.setMorphHTML(this, content);
+        }
+        return this.setText(content);
+      case 'object':
+        if (typeof content.nodeType === 'number') {
+          return this.setNode(content);
+        }
+        /* Handlebars.SafeString */
+        if (typeof content.toHTML === 'function') {
+          return this.setHTML(content.toHTML());
+        }
+        if (this.parseTextAsHTML) {
+          return this.setHTML(content.toString());
+        }
+      /* falls through */
+      case 'boolean':
+      case 'number':
+        return this.setText(content.toString());
+      case 'function':
+        raiseCannotBindToFunction(content);
+      default:
+        throw new TypeError('unsupported content');
+    }
+  };
+
+  function raiseCannotBindToFunction(content) {
+    var functionName = content.name;
+    var message;
+
+    if (functionName) {
+      message = 'Unsupported Content: Cannot bind to function `' + functionName + '`';
+    } else {
+      message = 'Unsupported Content: Cannot bind to function';
+    }
+
+    throw new TypeError(message);
+  }
+
+  Morph.prototype.clear = function Morph$clear() {
+    var node = this.setNode(this.domHelper.createComment(''));
+    return node;
+  };
+
+  Morph.prototype.setText = function Morph$setText(text) {
+    var firstNode = this.firstNode;
+    var lastNode = this.lastNode;
+
+    if (firstNode && lastNode === firstNode && firstNode.nodeType === 3) {
+      firstNode.nodeValue = text;
+      return firstNode;
+    }
+
+    return this.setNode(text ? this.domHelper.createTextNode(text) : this.domHelper.createComment(''));
+  };
+
+  Morph.prototype.setNode = function Morph$setNode(newNode) {
+    var firstNode, lastNode;
+    switch (newNode.nodeType) {
+      case 3:
+        firstNode = newNode;
+        lastNode = newNode;
+        break;
+      case 11:
+        firstNode = newNode.firstChild;
+        lastNode = newNode.lastChild;
+        if (firstNode === null) {
+          firstNode = this.domHelper.createComment('');
+          newNode.appendChild(firstNode);
+          lastNode = firstNode;
+        }
+        break;
+      default:
+        firstNode = newNode;
+        lastNode = newNode;
+        break;
+    }
+
+    this.setRange(firstNode, lastNode);
+
+    return newNode;
+  };
+
+  Morph.prototype.setRange = function (firstNode, lastNode) {
+    var previousFirstNode = this.firstNode;
+    if (previousFirstNode !== null) {
+
+      var parentNode = previousFirstNode.parentNode;
+      if (parentNode !== null) {
+        _morphRangeUtils.insertBefore(parentNode, firstNode, lastNode, previousFirstNode);
+        _morphRangeUtils.clear(parentNode, previousFirstNode, this.lastNode);
+      }
+    }
+
+    this.firstNode = firstNode;
+    this.lastNode = lastNode;
+
+    if (this.parentMorphList) {
+      this._syncFirstNode();
+      this._syncLastNode();
+    }
+  };
+
+  Morph.prototype.destroy = function Morph$destroy() {
+    this.unlink();
+
+    var firstNode = this.firstNode;
+    var lastNode = this.lastNode;
+    var parentNode = firstNode && firstNode.parentNode;
+
+    this.firstNode = null;
+    this.lastNode = null;
+
+    _morphRangeUtils.clear(parentNode, firstNode, lastNode);
+  };
+
+  Morph.prototype.unlink = function Morph$unlink() {
+    var parentMorphList = this.parentMorphList;
+    var previousMorph = this.previousMorph;
+    var nextMorph = this.nextMorph;
+
+    if (previousMorph) {
+      if (nextMorph) {
+        previousMorph.nextMorph = nextMorph;
+        nextMorph.previousMorph = previousMorph;
+      } else {
+        previousMorph.nextMorph = null;
+        parentMorphList.lastChildMorph = previousMorph;
+      }
+    } else {
+      if (nextMorph) {
+        nextMorph.previousMorph = null;
+        parentMorphList.firstChildMorph = nextMorph;
+      } else if (parentMorphList) {
+        parentMorphList.lastChildMorph = parentMorphList.firstChildMorph = null;
+      }
+    }
+
+    this.parentMorphList = null;
+    this.nextMorph = null;
+    this.previousMorph = null;
+
+    if (parentMorphList && parentMorphList.mountedMorph) {
+      if (!parentMorphList.firstChildMorph) {
+        // list is empty
+        parentMorphList.mountedMorph.clear();
+        return;
+      } else {
+        parentMorphList.firstChildMorph._syncFirstNode();
+        parentMorphList.lastChildMorph._syncLastNode();
+      }
+    }
+  };
+
+  Morph.prototype.setHTML = function (text) {
+    var fragment = this.domHelper.parseHTML(text, this.contextualElement);
+    return this.setNode(fragment);
+  };
+
+  Morph.prototype.setMorphList = function Morph$appendMorphList(morphList) {
+    morphList.mountedMorph = this;
+    this.clear();
+
+    var originalFirstNode = this.firstNode;
+
+    if (morphList.firstChildMorph) {
+      this.firstNode = morphList.firstChildMorph.firstNode;
+      this.lastNode = morphList.lastChildMorph.lastNode;
+
+      var current = morphList.firstChildMorph;
+
+      while (current) {
+        var next = current.nextMorph;
+        current.insertBeforeNode(originalFirstNode, null);
+        current = next;
+      }
+      originalFirstNode.parentNode.removeChild(originalFirstNode);
+    }
+  };
+
+  Morph.prototype._syncFirstNode = function Morph$syncFirstNode() {
+    var morph = this;
+    var parentMorphList;
+    while (parentMorphList = morph.parentMorphList) {
+      if (parentMorphList.mountedMorph === null) {
+        break;
+      }
+      if (morph !== parentMorphList.firstChildMorph) {
+        break;
+      }
+      if (morph.firstNode === parentMorphList.mountedMorph.firstNode) {
+        break;
+      }
+
+      parentMorphList.mountedMorph.firstNode = morph.firstNode;
+
+      morph = parentMorphList.mountedMorph;
+    }
+  };
+
+  Morph.prototype._syncLastNode = function Morph$syncLastNode() {
+    var morph = this;
+    var parentMorphList;
+    while (parentMorphList = morph.parentMorphList) {
+      if (parentMorphList.mountedMorph === null) {
+        break;
+      }
+      if (morph !== parentMorphList.lastChildMorph) {
+        break;
+      }
+      if (morph.lastNode === parentMorphList.mountedMorph.lastNode) {
+        break;
+      }
+
+      parentMorphList.mountedMorph.lastNode = morph.lastNode;
+
+      morph = parentMorphList.mountedMorph;
+    }
+  };
+
+  Morph.prototype.insertBeforeNode = function Morph$insertBeforeNode(parentNode, refNode) {
+    _morphRangeUtils.insertBefore(parentNode, this.firstNode, this.lastNode, refNode);
+  };
+
+  Morph.prototype.appendToNode = function Morph$appendToNode(parentNode) {
+    _morphRangeUtils.insertBefore(parentNode, this.firstNode, this.lastNode, null);
+  };
+
+  exports.default = Morph;
+});
+enifed('morph-range/morph-list', ['exports', 'morph-range/utils'], function (exports, _morphRangeUtils) {
+  'use strict';
+
+  function MorphList() {
+    // morph graph
+    this.firstChildMorph = null;
+    this.lastChildMorph = null;
+
+    this.mountedMorph = null;
+  }
+
+  var prototype = MorphList.prototype;
+
+  prototype.clear = function MorphList$clear() {
+    var current = this.firstChildMorph;
+
+    while (current) {
+      var next = current.nextMorph;
+      current.previousMorph = null;
+      current.nextMorph = null;
+      current.parentMorphList = null;
+      current = next;
+    }
+
+    this.firstChildMorph = this.lastChildMorph = null;
+  };
+
+  prototype.destroy = function MorphList$destroy() {};
+
+  prototype.appendMorph = function MorphList$appendMorph(morph) {
+    this.insertBeforeMorph(morph, null);
+  };
+
+  prototype.insertBeforeMorph = function MorphList$insertBeforeMorph(morph, referenceMorph) {
+    if (morph.parentMorphList !== null) {
+      morph.unlink();
+    }
+    if (referenceMorph && referenceMorph.parentMorphList !== this) {
+      throw new Error('The morph before which the new morph is to be inserted is not a child of this morph.');
+    }
+
+    var mountedMorph = this.mountedMorph;
+
+    if (mountedMorph) {
+
+      var parentNode = mountedMorph.firstNode.parentNode;
+      var referenceNode = referenceMorph ? referenceMorph.firstNode : mountedMorph.lastNode.nextSibling;
+
+      _morphRangeUtils.insertBefore(parentNode, morph.firstNode, morph.lastNode, referenceNode);
+
+      // was not in list mode replace current content
+      if (!this.firstChildMorph) {
+        _morphRangeUtils.clear(this.mountedMorph.firstNode.parentNode, this.mountedMorph.firstNode, this.mountedMorph.lastNode);
+      }
+    }
+
+    morph.parentMorphList = this;
+
+    var previousMorph = referenceMorph ? referenceMorph.previousMorph : this.lastChildMorph;
+    if (previousMorph) {
+      previousMorph.nextMorph = morph;
+      morph.previousMorph = previousMorph;
+    } else {
+      this.firstChildMorph = morph;
+    }
+
+    if (referenceMorph) {
+      referenceMorph.previousMorph = morph;
+      morph.nextMorph = referenceMorph;
+    } else {
+      this.lastChildMorph = morph;
+    }
+
+    this.firstChildMorph._syncFirstNode();
+    this.lastChildMorph._syncLastNode();
+  };
+
+  prototype.removeChildMorph = function MorphList$removeChildMorph(morph) {
+    if (morph.parentMorphList !== this) {
+      throw new Error("Cannot remove a morph from a parent it is not inside of");
+    }
+
+    morph.destroy();
+  };
+
+  exports.default = MorphList;
+});
+enifed('morph-range/morph-list.umd', ['exports', 'morph-range/morph-list'], function (exports, _morphRangeMorphList) {
+  'use strict';
+
+  (function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+      define([], factory);
+    } else if (typeof exports === 'object') {
+      module.exports = factory();
+    } else {
+      root.MorphList = factory();
+    }
+  })(undefined, function () {
+    return _morphRangeMorphList.default;
+  });
+});
+enifed("morph-range/utils", ["exports"], function (exports) {
+  // inclusive of both nodes
+  "use strict";
+
+  exports.clear = clear;
+  exports.insertBefore = insertBefore;
+
+  function clear(parentNode, firstNode, lastNode) {
+    if (!parentNode) {
+      return;
+    }
+
+    var node = firstNode;
+    var nextNode;
+    do {
+      nextNode = node.nextSibling;
+      parentNode.removeChild(node);
+      if (node === lastNode) {
+        break;
+      }
+      node = nextNode;
+    } while (node);
+  }
+
+  function insertBefore(parentNode, firstNode, lastNode, refNode) {
+    var node = firstNode;
+    var nextNode;
+    do {
+      nextNode = node.nextSibling;
+      parentNode.insertBefore(node, refNode);
+      if (node === lastNode) {
+        break;
+      }
+      node = nextNode;
+    } while (node);
+  }
+});
 enifed("simple-html-tokenizer/entity-parser", ["exports"], function (exports) {
   "use strict";
 

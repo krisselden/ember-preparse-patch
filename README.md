@@ -1,5 +1,12 @@
-# ember-preparse-patch
+Ember.js
+========
 
-This is a rebuild of the ember build, that compiles out the require and eager loads modules required right away and moves modules not required to the top level so the V8 preparse will skip them.
+Shim repository for [Ember Application Framework](http://emberjs.com/).
 
-Built with [broccoli-ember-preparse](https://github.com/asakusuma/broccoli-ember-preparse)
+This package provides the core of the ember.js framework.
+
+Package Managers
+----------------
+
+* [Bower](http://bower.io): `ember`
+* [Composer](http://packagist.org/packages/components/ember): `components/ember`

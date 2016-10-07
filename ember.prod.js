@@ -5,7 +5,7 @@
  *            Portions Copyright 2008-2011 Apple Inc. All rights reserved.
  * @license   Licensed under MIT license
  *            See https://raw.github.com/emberjs/ember.js/master/LICENSE
- * @version   2.8.1
+ * @version   2.8.2
  */
 if (typeof Ember === 'undefined') { Em = Ember = {}; }
 Em.__global = this
@@ -17526,8 +17526,10 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   var COMPONENT_POSITIONAL_PARAMS = _emberMetalSymbol.default('COMPONENT_POSITIONAL_PARAMS');
   exports.COMPONENT_POSITIONAL_PARAMS = COMPONENT_POSITIONAL_PARAMS;
   var COMPONENT_HASH = _emberMetalSymbol.default('COMPONENT_HASH');
-
   exports.COMPONENT_HASH = COMPONENT_HASH;
+  var COMPONENT_SOURCE = _emberMetalSymbol.default('COMPONENT_SOURCE');
+
+  exports.COMPONENT_SOURCE = COMPONENT_SOURCE;
   var ClosureComponentStream = _emberHtmlbarsStreamsStream.default.extend({
     init: function (env, path, params, hash) {
       this._env = env;
@@ -17578,7 +17580,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
   }
 
   function isValidComponentPath(env, path) {
-    var result = _emberViewsUtilsLookupComponent.default(env.owner, path);
+    var result = _emberViewsUtilsLookupComponent.default(env.owner, path, { source: env.meta.moduleName && 'template:' + env.meta.moduleName });
 
     return !!(result.component || result.layout);
   }
@@ -17593,7 +17595,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     // This needs to be done in each nesting level to avoid raising assertions.
     processPositionalParamsFromCell(componentCell, params, hash);
 
-    return _ref = {}, _ref[COMPONENT_PATH] = componentCell[COMPONENT_PATH], _ref[COMPONENT_HASH] = mergeInNewHash(componentCell[COMPONENT_HASH], hash, componentCell[COMPONENT_POSITIONAL_PARAMS], params), _ref[COMPONENT_POSITIONAL_PARAMS] = componentCell[COMPONENT_POSITIONAL_PARAMS], _ref[COMPONENT_CELL] = true, _ref;
+    return _ref = {}, _ref[COMPONENT_PATH] = componentCell[COMPONENT_PATH], _ref[COMPONENT_SOURCE] = componentCell[COMPONENT_SOURCE], _ref[COMPONENT_HASH] = mergeInNewHash(componentCell[COMPONENT_HASH], hash, componentCell[COMPONENT_POSITIONAL_PARAMS], params), _ref[COMPONENT_POSITIONAL_PARAMS] = componentCell[COMPONENT_POSITIONAL_PARAMS], _ref[COMPONENT_CELL] = true, _ref;
   }
 
   function processPositionalParamsFromCell(componentCell, params, hash) {
@@ -17610,7 +17612,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
     // This needs to be done in each nesting level to avoid raising assertions.
     _emberHtmlbarsUtilsExtractPositionalParams.processPositionalParams(null, positionalParams, params, hash);
 
-    return _ref2 = {}, _ref2[COMPONENT_PATH] = componentPath, _ref2[COMPONENT_HASH] = hash, _ref2[COMPONENT_POSITIONAL_PARAMS] = positionalParams, _ref2[COMPONENT_CELL] = true, _ref2;
+    return _ref2 = {}, _ref2[COMPONENT_PATH] = componentPath, _ref2[COMPONENT_SOURCE] = env.meta.moduleName, _ref2[COMPONENT_HASH] = hash, _ref2[COMPONENT_POSITIONAL_PARAMS] = positionalParams, _ref2[COMPONENT_CELL] = true, _ref2;
   }
 
   /*
@@ -26314,7 +26316,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 (function (exports) {
   "use strict";
 
-  exports.default = "2.8.1";
+  exports.default = "2.8.2";
 })(Em._e[200]);
 (function (exports, _emberMetalDebug, _emberMetalProperty_get, _emberHtmlbarsNodeManagersViewNodeManager, _emberHtmlbarsTemplatesTopLevelView, _emberMetalFeatures, _emberVersion) {
   /**
@@ -26739,6 +26741,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       _emberHtmlbarsKeywordsClosureComponent.processPositionalParamsFromCell(closureComponent, params, hash);
       hash = _emberHtmlbarsKeywordsClosureComponent.mergeInNewHash(closureComponent[_emberHtmlbarsKeywordsClosureComponent.COMPONENT_HASH], hash, closureComponent[_emberHtmlbarsKeywordsClosureComponent.COMPONENT_POSITIONAL_PARAMS], params);
       params = [];
+      env = env.childWithMeta(_emberMetalAssign.default({}, env.meta, { moduleName: closureComponent[_emberHtmlbarsKeywordsClosureComponent.COMPONENT_SOURCE] }));
     }
 
     var templates = { default: template, inverse: inverse };
@@ -42754,7 +42757,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
       pathLen = path.length;
       if (pathLen > 1 && path.charAt(pathLen - 1) === "/") {
         path = path.substr(0, pathLen - 1);
-        originalPath = originalPath.substr(0, pathLen - 1);
+        originalPath = originalPath.substr(0, originalPath.length - 1);
         isSlashDropped = true;
       }
 
@@ -42789,7 +42792,7 @@ Em.__loader.define("rsvp/platform", ["exports"], function (exports) {
 
   RouteRecognizer.prototype.map = map;
 
-  RouteRecognizer.VERSION = '0.2.6';
+  RouteRecognizer.VERSION = '0.2.7';
 
   // Set to false to opt-out of encoding and decoding path segments.
   // See https://github.com/tildeio/route-recognizer/pull/55
